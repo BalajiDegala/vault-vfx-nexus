@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,7 +138,6 @@ const Projects = () => {
           )}
         </div>
 
-        {/* Search and Filters */}
         <div className="bg-gray-900/50 rounded-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -174,7 +172,6 @@ const Projects = () => {
           </div>
         </div>
 
-        {/* Projects Grid */}
         {filteredProjects.length === 0 ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-bold text-white mb-4">No Projects Found</h2>
@@ -243,6 +240,7 @@ const Projects = () => {
           setShowCreateModal(false);
           fetchProjects();
         }}
+        userId={user.id}
       />
     </div>
   );
