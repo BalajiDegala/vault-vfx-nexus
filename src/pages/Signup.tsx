@@ -8,10 +8,15 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, User, Building, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
-  const [selectedRole, setSelectedRole] = useState(searchParams.get("role") || "");
+  const [selectedRole, setSelectedRole] = useState<AppRole | "">(
+    (searchParams.get("role") as AppRole) || ""
+  );
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -60,7 +65,10 @@ const Signup = () => {
     });
   };
 
-  const waitForProfile = async (userId: string, maxAttempts = 10): Promise<boolean> => {
+  const waitForProfile = async (
+    userId: string,
+    maxAttempts = 20
+  ): Promise<boolean> => {
     for (let i = 0; i < maxAttempts; i++) {
       console.log(`Checking for profile (attempt ${i + 1})...`);
       
@@ -83,14 +91,14 @@ const Signup = () => {
     return false;
   };
 
-  const assignRole = async (userId: string, role: string): Promise<boolean> => {
+  const assignRole = async (userId: string, role: AppRole): Promise<boolean> => {
     console.log(`Assigning role ${role} to user ${userId}`);
     
     const { data, error } = await supabase
       .from("user_roles")
       .insert({
         user_id: userId,
-        role: role as any
+        role
       })
       .select();
 
@@ -110,6 +118,16 @@ const Signup = () => {
       toast({
         title: "Role Required",
         description: "Please select your role to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
@@ -189,7 +207,10 @@ const Signup = () => {
 
       // Step 3: Assign the role
       console.log("Assigning role...");
-      const roleAssigned = await assignRole(authData.user.id, selectedRole);
+      const roleAssigned = await assignRole(
+        authData.user.id,
+        selectedRole as AppRole
+      );
 
       if (!roleAssigned) {
         toast({

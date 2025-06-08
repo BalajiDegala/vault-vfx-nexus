@@ -82,10 +82,15 @@ const Profiles = () => {
           return;
         }
 
-        const profilesWithRoles = profilesData?.map(profile => ({
-          ...profile,
-          roles: profile.user_roles?.map((ur: any) => ur.role) || []
-        })) || [];
+        const profilesWithRoles =
+          profilesData?.map(profile => ({
+            ...profile,
+            roles:
+              profile.user_roles?.map(
+                (ur: Database["public"]["Tables"]["user_roles"]["Row"]) =>
+                  ur.role
+              ) || []
+          })) || [];
 
         setProfiles(profilesWithRoles);
       } catch (error) {
