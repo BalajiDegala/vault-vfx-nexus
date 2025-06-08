@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, Users, TrendingUp, Send, Heart, MessageCircle, UserPlus, Filter, Search } from "lucide-react";
+import { MessageSquare, Users, TrendingUp, Send, Heart, MessageCircle, UserPlus, Search } from "lucide-react";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -43,22 +43,28 @@ interface Profile {
 
 interface CommunityPost {
   id: string;
-  author: string;
-  authorId: string;
-  role: AppRole;
+  author_id: string;
   content: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  trending?: boolean;
-  likedBy: string[];
-  mentionedUsers: string[];
+  created_at: string;
+  likes_count: number;
+  comments_count: number;
+  mentioned_users: string[];
+  trending: boolean;
+  author?: {
+    first_name: string | null;
+    last_name: string | null;
+    username: string | null;
+    email: string;
+    user_roles: { role: AppRole }[];
+  };
+  liked_by_user?: boolean;
 }
 
 const Community = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [newPost, setNewPost] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Profile[]>([]);
   const [showUserSearch, setShowUserSearch] = useState(false);
@@ -66,37 +72,9 @@ const Community = () => {
   const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppRole | "all">("all");
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Sample community data (in real app, this would come from database)
-  const [posts, setPosts] = useState<CommunityPost[]>([
-    {
-      id: "1",
-      author: "Alex Rodriguez",
-      authorId: "user1",
-      role: "artist",
-      content: "Just finished an amazing VFX sequence for an upcoming sci-fi film! The particle simulations took weeks to perfect, but the final result is incredible. Anyone else working on particle systems lately?",
-      timestamp: "2 hours ago",
-      likes: 24,
-      comments: 8,
-      trending: true,
-      likedBy: [],
-      mentionedUsers: []
-    },
-    {
-      id: "2",
-      author: "Pixel Studios",
-      authorId: "studio1",
-      role: "studio",
-      content: "We're looking for talented compositors to join our team for a major blockbuster project. Experience with Nuke and After Effects required. Remote work available!",
-      timestamp: "4 hours ago",
-      likes: 45,
-      comments: 12,
-      likedBy: [],
-      mentionedUsers: []
-    }
-  ]);
 
   const trendingTopics = [
     { tag: "#VFXTips", posts: 234 },
@@ -110,6 +88,12 @@ const Community = () => {
     checkAuth();
     fetchAllProfiles();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchPosts();
+    }
+  }, [user]);
 
   useEffect(() => {
     filterProfiles();
@@ -141,6 +125,53 @@ const Community = () => {
       navigate("/login");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPosts = async () => {
+    try {
+      setPostsLoading(true);
+      
+      // Fetch posts with author details and user's like status
+      const { data: postsData, error: postsError } = await supabase
+        .from("community_posts")
+        .select(`
+          *,
+          author:profiles(
+            first_name,
+            last_name,
+            username,
+            email,
+            user_roles(role)
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+        return;
+      }
+
+      // Check which posts the current user has liked
+      const postIds = postsData?.map(post => post.id) || [];
+      const { data: likesData } = await supabase
+        .from("community_post_likes")
+        .select("post_id")
+        .eq("user_id", user?.id || "")
+        .in("post_id", postIds);
+
+      const likedPostIds = new Set(likesData?.map(like => like.post_id) || []);
+
+      const postsWithLikes = postsData?.map(post => ({
+        ...post,
+        liked_by_user: likedPostIds.has(post.id)
+      })) || [];
+
+      setPosts(postsWithLikes);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setPostsLoading(false);
     }
   };
 
@@ -205,48 +236,98 @@ const Community = () => {
     setSelectedUsers(selectedUsers.filter(u => u.id !== userId));
   };
 
-  const handleCreatePost = () => {
-    if (!newPost.trim()) return;
+  const handleCreatePost = async () => {
+    if (!newPost.trim() || !user) return;
 
-    const post: CommunityPost = {
-      id: Date.now().toString(),
-      author: user?.user_metadata?.first_name || user?.email || "Anonymous",
-      authorId: user?.id || "",
-      role: userRole || "artist",
-      content: newPost,
-      timestamp: "Just now",
-      likes: 0,
-      comments: 0,
-      likedBy: [],
-      mentionedUsers: selectedUsers.map(u => u.id)
-    };
+    try {
+      const { data: postData, error } = await supabase
+        .from("community_posts")
+        .insert({
+          author_id: user.id,
+          content: newPost,
+          mentioned_users: selectedUsers.map(u => u.id)
+        })
+        .select()
+        .single();
 
-    setPosts([post, ...posts]);
-    setNewPost("");
-    setSelectedUsers([]);
-    
-    toast({
-      title: "Post Created",
-      description: `Your post has been shared with the community${selectedUsers.length > 0 ? ` and ${selectedUsers.length} users mentioned` : ''}!`,
-    });
+      if (error) {
+        console.error("Error creating post:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create post. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setNewPost("");
+      setSelectedUsers([]);
+      
+      toast({
+        title: "Post Created",
+        description: `Your post has been shared with the community${selectedUsers.length > 0 ? ` and ${selectedUsers.length} users mentioned` : ''}!`,
+      });
+
+      // Refresh posts
+      fetchPosts();
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleLikePost = (postId: string) => {
+  const handleLikePost = async (postId: string) => {
     if (!user) return;
 
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const isLiked = post.likedBy.includes(user.id);
-        return {
-          ...post,
-          likes: isLiked ? post.likes - 1 : post.likes + 1,
-          likedBy: isLiked 
-            ? post.likedBy.filter(id => id !== user.id)
-            : [...post.likedBy, user.id]
-        };
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    try {
+      if (post.liked_by_user) {
+        // Unlike the post
+        const { error } = await supabase
+          .from("community_post_likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Error unliking post:", error);
+          return;
+        }
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from("community_post_likes")
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+
+        if (error) {
+          console.error("Error liking post:", error);
+          return;
+        }
       }
-      return post;
-    }));
+
+      // Update local state immediately for better UX
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            likes_count: p.liked_by_user ? p.likes_count - 1 : p.likes_count + 1,
+            liked_by_user: !p.liked_by_user
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error("Error handling like:", error);
+    }
   };
 
   const getRoleColor = (role: AppRole) => {
@@ -267,6 +348,30 @@ const Community = () => {
       case "admin": return "Admin";
       default: return "User";
     }
+  };
+
+  const getAuthorName = (post: CommunityPost) => {
+    if (post.author) {
+      return post.author.username || 
+             `${post.author.first_name || ''} ${post.author.last_name || ''}`.trim() || 
+             post.author.email;
+    }
+    return "Unknown User";
+  };
+
+  const getAuthorRole = (post: CommunityPost): AppRole => {
+    return post.author?.user_roles?.[0]?.role || "artist";
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   if (loading) {
@@ -381,62 +486,75 @@ const Community = () => {
 
             {/* Posts Feed */}
             <div className="space-y-4">
-              {posts.map((post) => (
-                <Card key={post.id} className="bg-gray-900/80 border-blue-500/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-3 mb-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className={`${getRoleColor(post.role)} text-white`}>
-                          {post.author[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-semibold text-white">{post.author}</span>
-                          <Badge className={`${getRoleColor(post.role)} text-white text-xs`}>
-                            {getRoleLabel(post.role)}
-                          </Badge>
-                          {post.trending && (
-                            <Badge variant="outline" className="border-orange-500 text-orange-400 text-xs">
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                              Trending
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-gray-400 text-sm">{post.timestamp}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-300 mb-4 leading-relaxed">{post.content}</p>
-                    
-                    {post.mentionedUsers.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm text-blue-400">
-                          Mentioned {post.mentionedUsers.length} user{post.mentionedUsers.length > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center space-x-6 text-gray-400">
-                      <button 
-                        onClick={() => handleLikePost(post.id)}
-                        className={`flex items-center space-x-1 transition-colors ${
-                          post.likedBy.includes(user?.id || '') 
-                            ? 'text-red-400' 
-                            : 'hover:text-red-400'
-                        }`}
-                      >
-                        <Heart className={`h-4 w-4 ${post.likedBy.includes(user?.id || '') ? 'fill-current' : ''}`} />
-                        <span>{post.likes}</span>
-                      </button>
-                      <button className="flex items-center space-x-1 hover:text-blue-400 transition-colors">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{post.comments}</span>
-                      </button>
-                    </div>
+              {postsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                </div>
+              ) : posts.length === 0 ? (
+                <Card className="bg-gray-900/80 border-blue-500/20">
+                  <CardContent className="p-8 text-center">
+                    <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">No posts yet. Be the first to share something!</p>
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                posts.map((post) => (
+                  <Card key={post.id} className="bg-gray-900/80 border-blue-500/20">
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-3 mb-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className={`${getRoleColor(getAuthorRole(post))} text-white`}>
+                            {getAuthorName(post)[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-semibold text-white">{getAuthorName(post)}</span>
+                            <Badge className={`${getRoleColor(getAuthorRole(post))} text-white text-xs`}>
+                              {getRoleLabel(getAuthorRole(post))}
+                            </Badge>
+                            {post.trending && (
+                              <Badge variant="outline" className="border-orange-500 text-orange-400 text-xs">
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                                Trending
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-gray-400 text-sm">{formatTimestamp(post.created_at)}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-300 mb-4 leading-relaxed">{post.content}</p>
+                      
+                      {post.mentioned_users && post.mentioned_users.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-sm text-blue-400">
+                            Mentioned {post.mentioned_users.length} user{post.mentioned_users.length > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center space-x-6 text-gray-400">
+                        <button 
+                          onClick={() => handleLikePost(post.id)}
+                          className={`flex items-center space-x-1 transition-colors ${
+                            post.liked_by_user
+                              ? 'text-red-400' 
+                              : 'hover:text-red-400'
+                          }`}
+                        >
+                          <Heart className={`h-4 w-4 ${post.liked_by_user ? 'fill-current' : ''}`} />
+                          <span>{post.likes_count}</span>
+                        </button>
+                        <button className="flex items-center space-x-1 hover:text-blue-400 transition-colors">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>{post.comments_count}</span>
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 
