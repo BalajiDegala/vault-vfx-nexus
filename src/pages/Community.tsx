@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,19 +12,47 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageSquare, Users, TrendingUp, Send, Heart, MessageCircle } from "lucide-react";
+import { 
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MessageSquare, Users, TrendingUp, Send, Heart, MessageCircle, UserPlus, Filter, Search } from "lucide-react";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
+
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+  email: string;
+  roles: AppRole[];
+}
 
 interface CommunityPost {
   id: string;
   author: string;
+  authorId: string;
   role: AppRole;
   content: string;
   timestamp: string;
   likes: number;
   comments: number;
   trending?: boolean;
+  likedBy: string[];
+  mentionedUsers: string[];
 }
 
 const Community = () => {
@@ -31,6 +60,12 @@ const Community = () => {
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<Profile[]>([]);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<AppRole | "all">("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,40 +74,27 @@ const Community = () => {
     {
       id: "1",
       author: "Alex Rodriguez",
+      authorId: "user1",
       role: "artist",
       content: "Just finished an amazing VFX sequence for an upcoming sci-fi film! The particle simulations took weeks to perfect, but the final result is incredible. Anyone else working on particle systems lately?",
       timestamp: "2 hours ago",
       likes: 24,
       comments: 8,
-      trending: true
+      trending: true,
+      likedBy: [],
+      mentionedUsers: []
     },
     {
       id: "2",
       author: "Pixel Studios",
+      authorId: "studio1",
       role: "studio",
       content: "We're looking for talented compositors to join our team for a major blockbuster project. Experience with Nuke and After Effects required. Remote work available!",
       timestamp: "4 hours ago",
       likes: 45,
-      comments: 12
-    },
-    {
-      id: "3",
-      author: "Sarah Chen",
-      role: "producer",
-      content: "Excited to announce that our latest VFX-heavy short film just got selected for Cannes! Huge thanks to all the artists who made this possible. The V3 platform has been instrumental in connecting us with amazing talent.",
-      timestamp: "1 day ago",
-      likes: 89,
-      comments: 23,
-      trending: true
-    },
-    {
-      id: "4",
-      author: "Maya Patel",
-      role: "artist",
-      content: "Quick tip for fellow artists: When working on complex fluid simulations, try breaking them into layers. It's much easier to control and iterate on individual elements. What are your favorite simulation techniques?",
-      timestamp: "2 days ago",
-      likes: 67,
-      comments: 15
+      comments: 12,
+      likedBy: [],
+      mentionedUsers: []
     }
   ]);
 
@@ -86,7 +108,12 @@ const Community = () => {
 
   useEffect(() => {
     checkAuth();
+    fetchAllProfiles();
   }, []);
+
+  useEffect(() => {
+    filterProfiles();
+  }, [allProfiles, searchQuery, roleFilter]);
 
   const checkAuth = async () => {
     try {
@@ -117,26 +144,109 @@ const Community = () => {
     }
   };
 
+  const fetchAllProfiles = async () => {
+    try {
+      const { data: profilesData, error } = await supabase
+        .from("profiles")
+        .select(`
+          *,
+          user_roles(role)
+        `);
+
+      if (error) {
+        console.error("Error fetching profiles:", error);
+        return;
+      }
+
+      const profilesWithRoles = profilesData?.map(profile => ({
+        id: profile.id,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        username: profile.username,
+        email: profile.email,
+        roles: profile.user_roles?.map((ur: any) => ur.role) || []
+      })) || [];
+
+      setAllProfiles(profilesWithRoles);
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+    }
+  };
+
+  const filterProfiles = () => {
+    let filtered = allProfiles;
+
+    if (searchQuery) {
+      filtered = filtered.filter(profile => 
+        profile.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (roleFilter !== "all") {
+      filtered = filtered.filter(profile => 
+        profile.roles.includes(roleFilter as AppRole)
+      );
+    }
+
+    setFilteredProfiles(filtered);
+  };
+
+  const handleUserSelect = (profile: Profile) => {
+    if (!selectedUsers.find(u => u.id === profile.id)) {
+      setSelectedUsers([...selectedUsers, profile]);
+    }
+    setShowUserSearch(false);
+  };
+
+  const removeSelectedUser = (userId: string) => {
+    setSelectedUsers(selectedUsers.filter(u => u.id !== userId));
+  };
+
   const handleCreatePost = () => {
     if (!newPost.trim()) return;
 
     const post: CommunityPost = {
       id: Date.now().toString(),
       author: user?.user_metadata?.first_name || user?.email || "Anonymous",
+      authorId: user?.id || "",
       role: userRole || "artist",
       content: newPost,
       timestamp: "Just now",
       likes: 0,
-      comments: 0
+      comments: 0,
+      likedBy: [],
+      mentionedUsers: selectedUsers.map(u => u.id)
     };
 
     setPosts([post, ...posts]);
     setNewPost("");
+    setSelectedUsers([]);
     
     toast({
       title: "Post Created",
-      description: "Your post has been shared with the community!",
+      description: `Your post has been shared with the community${selectedUsers.length > 0 ? ` and ${selectedUsers.length} users mentioned` : ''}!`,
     });
+  };
+
+  const handleLikePost = (postId: string) => {
+    if (!user) return;
+
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        const isLiked = post.likedBy.includes(user.id);
+        return {
+          ...post,
+          likes: isLiked ? post.likes - 1 : post.likes + 1,
+          likedBy: isLiked 
+            ? post.likedBy.filter(id => id !== user.id)
+            : [...post.likedBy, user.id]
+        };
+      }
+      return post;
+    }));
   };
 
   const getRoleColor = (role: AppRole) => {
@@ -202,6 +312,47 @@ const Community = () => {
                   onChange={(e) => setNewPost(e.target.value)}
                   className="bg-gray-800/50 border-gray-600 text-white min-h-[100px]"
                 />
+                
+                {/* User Selection */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowUserSearch(true)}
+                      className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Mention Users
+                    </Button>
+                    {selectedUsers.length > 0 && (
+                      <span className="text-sm text-gray-400">
+                        {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} mentioned
+                      </span>
+                    )}
+                  </div>
+                  
+                  {selectedUsers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUsers.map(profile => (
+                        <Badge
+                          key={profile.id}
+                          variant="secondary"
+                          className="bg-blue-500/20 text-blue-400 border-blue-500/30"
+                        >
+                          @{profile.username || profile.first_name || profile.email}
+                          <button
+                            onClick={() => removeSelectedUser(profile.id)}
+                            className="ml-2 text-blue-300 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
@@ -258,9 +409,24 @@ const Community = () => {
                     
                     <p className="text-gray-300 mb-4 leading-relaxed">{post.content}</p>
                     
+                    {post.mentionedUsers.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm text-blue-400">
+                          Mentioned {post.mentionedUsers.length} user{post.mentionedUsers.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center space-x-6 text-gray-400">
-                      <button className="flex items-center space-x-1 hover:text-red-400 transition-colors">
-                        <Heart className="h-4 w-4" />
+                      <button 
+                        onClick={() => handleLikePost(post.id)}
+                        className={`flex items-center space-x-1 transition-colors ${
+                          post.likedBy.includes(user?.id || '') 
+                            ? 'text-red-400' 
+                            : 'hover:text-red-400'
+                        }`}
+                      >
+                        <Heart className={`h-4 w-4 ${post.likedBy.includes(user?.id || '') ? 'fill-current' : ''}`} />
                         <span>{post.likes}</span>
                       </button>
                       <button className="flex items-center space-x-1 hover:text-blue-400 transition-colors">
@@ -276,6 +442,59 @@ const Community = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* User Search */}
+            <Card className="bg-gray-900/80 border-green-500/20">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Search className="h-5 w-5 mr-2 text-green-400" />
+                  Find Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                />
+                <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as AppRole | "all")}>
+                  <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="artist">Artists</SelectItem>
+                    <SelectItem value="studio">Studios</SelectItem>
+                    <SelectItem value="producer">Producers</SelectItem>
+                    <SelectItem value="admin">Admins</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {filteredProfiles.slice(0, 5).map(profile => (
+                    <div
+                      key={profile.id}
+                      className="flex items-center justify-between p-2 bg-gray-800/30 rounded cursor-pointer hover:bg-gray-700/30"
+                      onClick={() => handleUserSelect(profile)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="bg-blue-500 text-white text-xs">
+                            {(profile.first_name?.[0] || profile.email[0]).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-white">
+                          {profile.username || profile.first_name || profile.email}
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {profile.roles[0] || 'user'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Community Stats */}
             <Card className="bg-gray-900/80 border-green-500/20">
               <CardHeader>
@@ -287,15 +506,17 @@ const Community = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total Members</span>
-                  <span className="text-green-400 font-semibold">2,847</span>
+                  <span className="text-green-400 font-semibold">{allProfiles.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Active Today</span>
-                  <span className="text-blue-400 font-semibold">423</span>
+                  <span className="text-blue-400 font-semibold">
+                    {Math.floor(allProfiles.length * 0.15)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Posts This Week</span>
-                  <span className="text-purple-400 font-semibold">156</span>
+                  <span className="text-purple-400 font-semibold">{posts.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Projects Shared</span>
@@ -340,6 +561,7 @@ const Community = () => {
                 <Button 
                   variant="outline" 
                   className="w-full border-green-500 text-green-400 hover:bg-green-500/10"
+                  onClick={() => navigate("/profiles")}
                 >
                   Find Talent
                 </Button>
@@ -354,6 +576,34 @@ const Community = () => {
           </div>
         </div>
       </div>
+
+      {/* User Search Dialog */}
+      <CommandDialog open={showUserSearch} onOpenChange={setShowUserSearch}>
+        <CommandInput placeholder="Search users..." />
+        <CommandList>
+          <CommandEmpty>No users found.</CommandEmpty>
+          <CommandGroup heading="Users">
+            {filteredProfiles.map(profile => (
+              <CommandItem
+                key={profile.id}
+                onSelect={() => handleUserSelect(profile)}
+              >
+                <div className="flex items-center space-x-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-blue-500 text-white text-xs">
+                      {(profile.first_name?.[0] || profile.email[0]).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{profile.username || profile.first_name || profile.email}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {profile.roles[0] || 'user'}
+                  </Badge>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };
