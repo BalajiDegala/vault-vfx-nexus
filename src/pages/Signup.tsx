@@ -27,7 +27,7 @@ const Signup = () => {
 
   const roles = [
     {
-      id: "freelancer",
+      id: "artist",
       title: "Freelancer",
       description: "VFX Artist, Animator, or Technical Specialist",
       icon: User,
@@ -93,6 +93,8 @@ const Signup = () => {
     setLoading(true);
 
     try {
+      console.log("Attempting signup with:", { email: formData.email, role: selectedRole });
+
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -108,6 +110,7 @@ const Signup = () => {
       });
 
       if (error) {
+        console.error("Signup error:", error);
         toast({
           title: "Signup Failed",
           description: error.message,
@@ -117,13 +120,39 @@ const Signup = () => {
       }
 
       if (data.user) {
+        console.log("User created:", data.user.id);
+
+        // Wait a moment for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Add the specific role if it's not 'artist' (since artist is default)
+        if (selectedRole !== "artist") {
+          console.log("Adding additional role:", selectedRole);
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .insert({
+              user_id: data.user.id,
+              role: selectedRole as any
+            });
+
+          if (roleError) {
+            console.error("Role assignment error:", roleError);
+            // Don't fail the signup for role assignment issues
+            toast({
+              title: "Account Created",
+              description: "Account created but role assignment failed. Please contact support.",
+            });
+          }
+        }
+
         toast({
           title: "Welcome to V3!",
-          description: "Please check your email to verify your account.",
+          description: "Please check your email to verify your account, then you can log in.",
         });
         navigate("/login");
       }
     } catch (error) {
+      console.error("Unexpected signup error:", error);
       toast({
         title: "Signup Error",
         description: "An unexpected error occurred. Please try again.",

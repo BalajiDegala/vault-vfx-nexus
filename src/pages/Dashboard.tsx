@@ -20,16 +20,18 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check authentication and get user role
     const checkAuth = async () => {
       try {
+        console.log("Checking authentication...");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log("No session found, redirecting to login");
           navigate("/login");
           return;
         }
 
+        console.log("Session found for user:", session.user.id);
         setUser(session.user);
 
         // Get user roles from user_roles table
@@ -37,6 +39,8 @@ const Dashboard = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id);
+
+        console.log("Roles query result:", { rolesData, roleError });
 
         if (roleError) {
           console.error("Error fetching user roles:", roleError);
@@ -50,7 +54,7 @@ const Dashboard = () => {
         }
 
         if (!rolesData || rolesData.length === 0) {
-          // User has no roles assigned, redirect to signup or login
+          console.log("No roles found for user");
           toast({
             title: "No Role Assigned",
             description: "Please complete your registration or contact support.",
@@ -60,16 +64,17 @@ const Dashboard = () => {
           return;
         }
 
-        // If user has multiple roles, we can implement role switching later
-        // For now, use the first available role or prioritize admin > producer > studio > artist
+        // Use the first available role as primary role
         const roles = rolesData.map(r => r.role);
         let selectedRole: AppRole = roles[0];
 
+        // Prioritize roles: admin > producer > studio > artist
         if (roles.includes('admin')) selectedRole = 'admin';
         else if (roles.includes('producer')) selectedRole = 'producer';
         else if (roles.includes('studio')) selectedRole = 'studio';
         else if (roles.includes('artist')) selectedRole = 'artist';
 
+        console.log("Selected role for dashboard:", selectedRole);
         setUserRole(selectedRole);
       } catch (error) {
         console.error("Auth check error:", error);
@@ -89,6 +94,7 @@ const Dashboard = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT' || !session) {
           navigate("/login");
         } else if (event === 'SIGNED_IN' && session) {

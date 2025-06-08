@@ -63,12 +63,15 @@ const Login = () => {
     setLoading(true);
 
     try {
+      console.log("Attempting login with:", { email, role: selectedRole });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login error:", error);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -78,15 +81,30 @@ const Login = () => {
       }
 
       if (data.user) {
+        console.log("User logged in:", data.user.id);
+        
         // Check if user has the selected role
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
-          .eq("role", selectedRole)
-          .single();
+          .eq("role", selectedRole);
 
-        if (roleError || !roleData) {
+        console.log("Role check result:", { roleData, roleError, selectedRole });
+
+        if (roleError) {
+          console.error("Role check error:", roleError);
+          toast({
+            title: "Access Error",
+            description: "Unable to verify your role. Please try again.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
+        if (!roleData || roleData.length === 0) {
+          console.log("User does not have the selected role");
           toast({
             title: "Access Denied",
             description: `You don't have the ${selectedRole} role. Please contact an administrator or select a different role.`,
@@ -96,6 +114,7 @@ const Login = () => {
           return;
         }
 
+        console.log("Login successful, redirecting to dashboard");
         toast({
           title: "Welcome back!",
           description: `Successfully logged in as ${selectedRole}.`,
@@ -103,6 +122,7 @@ const Login = () => {
         navigate("/dashboard");
       }
     } catch (error) {
+      console.error("Unexpected login error:", error);
       toast({
         title: "Login Error",
         description: "An unexpected error occurred. Please try again.",
