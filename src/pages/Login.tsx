@@ -65,62 +65,101 @@ const Login = () => {
     try {
       console.log("Attempting login with:", { email, role: selectedRole });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // First, authenticate the user
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error("Login error:", error);
+      if (authError) {
+        console.error("Authentication error:", authError);
         toast({
           title: "Login Failed",
-          description: error.message,
+          description: authError.message,
           variant: "destructive",
         });
         return;
       }
 
-      if (data.user) {
-        console.log("User logged in:", data.user.id);
+      if (!authData.user) {
+        console.error("No user data returned");
+        toast({
+          title: "Login Failed",
+          description: "Authentication failed.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("User authenticated successfully:", authData.user.id);
+
+      // Check user roles with retry logic
+      let roleData = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (!roleData && attempts < maxAttempts) {
+        attempts++;
+        console.log(`Checking user roles (attempt ${attempts})...`);
         
-        // Check if user has the selected role
-        const { data: roleData, error: roleError } = await supabase
+        const { data, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", data.user.id)
-          .eq("role", selectedRole);
-
-        console.log("Role check result:", { roleData, roleError, selectedRole });
+          .eq("user_id", authData.user.id);
 
         if (roleError) {
           console.error("Role check error:", roleError);
-          toast({
-            title: "Access Error",
-            description: "Unable to verify your role. Please try again.",
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-          return;
+          if (attempts >= maxAttempts) {
+            toast({
+              title: "Access Error",
+              description: "Unable to verify your roles. Please try again or contact support.",
+              variant: "destructive",
+            });
+            await supabase.auth.signOut();
+            return;
+          }
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
         }
 
-        if (!roleData || roleData.length === 0) {
-          console.log("User does not have the selected role");
-          toast({
-            title: "Access Denied",
-            description: `You don't have the ${selectedRole} role. Please contact an administrator or select a different role.`,
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-          return;
-        }
-
-        console.log("Login successful, redirecting to dashboard");
-        toast({
-          title: "Welcome back!",
-          description: `Successfully logged in as ${selectedRole}.`,
-        });
-        navigate("/dashboard");
+        roleData = data;
+        console.log("Role check result:", { roleData, selectedRole });
       }
+
+      if (!roleData || roleData.length === 0) {
+        console.log("No roles found for user");
+        toast({
+          title: "No Roles Assigned",
+          description: "Your account doesn't have any roles assigned. Please contact an administrator.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // Check if user has the selected role
+      const userRoles = roleData.map(r => r.role);
+      console.log("User has roles:", userRoles);
+
+      if (!userRoles.includes(selectedRole)) {
+        console.log("User does not have the selected role");
+        toast({
+          title: "Access Denied",
+          description: `You don't have the ${selectedRole} role. Available roles: ${userRoles.join(", ")}`,
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      console.log("Login successful, redirecting to dashboard");
+      toast({
+        title: "Welcome back!",
+        description: `Successfully logged in as ${selectedRole}.`,
+      });
+      navigate("/dashboard");
+
     } catch (error) {
       console.error("Unexpected login error:", error);
       toast({
@@ -240,8 +279,8 @@ const Login = () => {
 
             <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg">
               <p className="text-blue-400 text-sm">
-                <strong>Note:</strong> You can only log in with roles that have been assigned to your account. 
-                Contact an administrator if you need additional role access.
+                <strong>Testing:</strong> Create different users with different roles to test the system. 
+                Each user can only login with their assigned role.
               </p>
             </div>
           </CardContent>

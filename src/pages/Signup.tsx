@@ -93,9 +93,10 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      console.log("Attempting signup with:", { email: formData.email, role: selectedRole });
+      console.log("Starting signup process for:", { email: formData.email, role: selectedRole });
 
-      const { data, error } = await supabase.auth.signUp({
+      // First, sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -103,54 +104,64 @@ const Signup = () => {
             first_name: formData.firstName,
             last_name: formData.lastName,
             username: formData.username,
-            role: selectedRole,
           },
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
-      if (error) {
-        console.error("Signup error:", error);
+      if (authError) {
+        console.error("Auth signup error:", authError);
         toast({
           title: "Signup Failed",
-          description: error.message,
+          description: authError.message,
           variant: "destructive",
         });
         return;
       }
 
-      if (data.user) {
-        console.log("User created:", data.user.id);
+      if (!authData.user) {
+        console.error("No user returned from signup");
+        toast({
+          title: "Signup Failed",
+          description: "Failed to create user account.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        // Wait a moment for the trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("User created successfully:", authData.user.id);
 
-        // Add the specific role if it's not 'artist' (since artist is default)
-        if (selectedRole !== "artist") {
-          console.log("Adding additional role:", selectedRole);
-          const { error: roleError } = await supabase
-            .from("user_roles")
-            .insert({
-              user_id: data.user.id,
-              role: selectedRole as any
-            });
+      // Wait for the database trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-          if (roleError) {
-            console.error("Role assignment error:", roleError);
-            // Don't fail the signup for role assignment issues
-            toast({
-              title: "Account Created",
-              description: "Account created but role assignment failed. Please contact support.",
-            });
-          }
-        }
+      // Now add the selected role
+      console.log("Adding role to user:", { userId: authData.user.id, role: selectedRole });
+      
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: selectedRole as any
+        });
 
+      if (roleError) {
+        console.error("Role assignment error:", roleError);
+        toast({
+          title: "Account Created",
+          description: "Account created but role assignment failed. Please contact support.",
+          variant: "destructive",
+        });
+      } else {
+        console.log("Role assigned successfully");
         toast({
           title: "Welcome to V3!",
-          description: "Please check your email to verify your account, then you can log in.",
+          description: "Account created successfully! Please check your email to verify your account, then you can log in.",
         });
-        navigate("/login");
       }
+
+      // Always navigate to login regardless of role assignment result
+      navigate("/login");
+
     } catch (error) {
       console.error("Unexpected signup error:", error);
       toast({
