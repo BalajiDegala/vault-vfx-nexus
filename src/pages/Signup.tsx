@@ -131,8 +131,44 @@ const Signup = () => {
 
       console.log("User created successfully:", authData.user.id);
 
-      // Wait for the database trigger to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for the database trigger to complete profile creation
+      console.log("Waiting for profile creation...");
+      let profileExists = false;
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (!profileExists && attempts < maxAttempts) {
+        attempts++;
+        console.log(`Checking for profile existence (attempt ${attempts})...`);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile check error:", profileError);
+        } else if (profileData) {
+          console.log("Profile found:", profileData);
+          profileExists = true;
+        } else {
+          console.log("Profile not yet created, waiting...");
+        }
+      }
+
+      if (!profileExists) {
+        console.error("Profile was not created after waiting");
+        toast({
+          title: "Account Setup Error",
+          description: "Account created but profile setup failed. Please try logging in.",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
 
       // Now add the selected role
       console.log("Adding role to user:", { userId: authData.user.id, role: selectedRole });
@@ -147,19 +183,19 @@ const Signup = () => {
       if (roleError) {
         console.error("Role assignment error:", roleError);
         toast({
-          title: "Account Created",
-          description: "Account created but role assignment failed. Please contact support.",
+          title: "Role Assignment Failed",
+          description: "Account created but role assignment failed. Please contact support or try logging in.",
           variant: "destructive",
         });
       } else {
         console.log("Role assigned successfully");
         toast({
           title: "Welcome to V3!",
-          description: "Account created successfully! Please check your email to verify your account, then you can log in.",
+          description: "Account created successfully! You can now log in with your credentials.",
         });
       }
 
-      // Always navigate to login regardless of role assignment result
+      // Navigate to login regardless of role assignment result
       navigate("/login");
 
     } catch (error) {
