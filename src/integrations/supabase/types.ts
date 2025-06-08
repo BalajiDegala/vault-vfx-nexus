@@ -131,6 +131,149 @@ export type Database = {
           },
         ]
       }
+      marketplace_items: {
+        Row: {
+          category: Database["public"]["Enums"]["marketplace_category"]
+          created_at: string
+          description: string
+          downloads: number | null
+          files: Json | null
+          id: string
+          image_url: string | null
+          price: number
+          rating: number | null
+          seller_id: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          total_ratings: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["marketplace_category"]
+          created_at?: string
+          description: string
+          downloads?: number | null
+          files?: Json | null
+          id?: string
+          image_url?: string | null
+          price: number
+          rating?: number | null
+          seller_id: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          total_ratings?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["marketplace_category"]
+          created_at?: string
+          description?: string
+          downloads?: number | null
+          files?: Json | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          rating?: number | null
+          seller_id?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          total_ratings?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_items_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_purchases: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          item_id: string
+          price_paid: number
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          price_paid: number
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          price_paid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_purchases_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_ratings: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          item_id: string
+          rating: number
+          review: string | null
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          rating: number
+          review?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          rating?: number
+          review?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_ratings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_ratings_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachments: string[] | null
@@ -396,7 +539,14 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      trending_hashtags: {
+        Row: {
+          hashtag: string | null
+          post_count: number | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -409,6 +559,7 @@ export type Database = {
     }
     Enums: {
       app_role: "artist" | "studio" | "producer" | "admin"
+      marketplace_category: "training" | "assets" | "templates" | "services"
       payment_status:
         | "pending"
         | "escrow"
@@ -538,6 +689,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["artist", "studio", "producer", "admin"],
+      marketplace_category: ["training", "assets", "templates", "services"],
       payment_status: [
         "pending",
         "escrow",
