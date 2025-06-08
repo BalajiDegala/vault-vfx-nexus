@@ -1,17 +1,17 @@
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, DollarSign, Users, Calendar } from "lucide-react";
-import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import CreateProjectModal from "@/components/projects/CreateProjectModal";
-import ProjectCard from "@/components/projects/ProjectCard";
 import { Database } from "@/integrations/supabase/types";
+import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import ProjectCard from "@/components/projects/ProjectCard";
+import CreateProjectModal from "@/components/projects/CreateProjectModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Filter } from "lucide-react";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -22,12 +22,20 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const statusOptions = [
+    { value: "all", label: "All Projects" },
+    { value: "open", label: "Open" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+  ];
+
   useEffect(() => {
     checkAuth();
-    fetchProjects();
   }, []);
 
   const checkAuth = async () => {
@@ -42,21 +50,15 @@ const Projects = () => {
       setUser(session.user);
 
       // Get user role
-      const { data: rolesData } = await supabase
+      const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.user.id);
+        .eq("user_id", session.user.id)
+        .single();
 
-      if (rolesData && rolesData.length > 0) {
-        const roles = rolesData.map(r => r.role);
-        let selectedRole: AppRole = roles[0];
-
-        if (roles.includes('admin')) selectedRole = 'admin';
-        else if (roles.includes('producer')) selectedRole = 'producer';
-        else if (roles.includes('studio')) selectedRole = 'studio';
-        else if (roles.includes('artist')) selectedRole = 'artist';
-
-        setUserRole(selectedRole);
+      if (roleData) {
+        setUserRole(roleData.role);
+        fetchProjects();
       }
     } catch (error) {
       console.error("Auth check error:", error);
@@ -71,13 +73,13 @@ const Projects = () => {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("status", "open")
         .order("created_at", { ascending: false });
 
       if (error) {
+        console.error("Error fetching projects:", error);
         toast({
           title: "Error",
-          description: "Failed to fetch projects",
+          description: "Failed to load projects",
           variant: "destructive",
         });
         return;
@@ -89,14 +91,14 @@ const Projects = () => {
     }
   };
 
-  const handleProjectCreated = () => {
-    setShowCreateModal(false);
-    fetchProjects();
-    toast({
-      title: "Success",
-      description: "Project created successfully!",
-    });
-  };
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const canCreateProject = userRole && ["studio", "producer", "admin"].includes(userRole);
 
   if (loading) {
     return (
@@ -113,8 +115,6 @@ const Projects = () => {
     return null;
   }
 
-  const canCreateProject = userRole === "studio" || userRole === "producer" || userRole === "admin";
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <DashboardNavbar user={user} userRole={userRole} />
@@ -122,119 +122,127 @@ const Projects = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Project Marketplace
-            </h1>
-            <p className="text-gray-400">Discover and collaborate on VFX projects</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Project Marketplace</h1>
+            <p className="text-gray-400">
+              {userRole === "artist" ? "Find exciting VFX projects to work on" : "Manage and create new projects"}
+            </p>
           </div>
           
           {canCreateProject && (
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Post Project
+              Post New Project
             </Button>
           )}
         </div>
 
-        {/* Project Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gray-900/80 border-blue-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Open Projects</p>
-                  <p className="text-2xl font-bold text-blue-400">{projects.length}</p>
-                </div>
-                <Clock className="h-8 w-8 text-blue-400" />
+        {/* Search and Filters */}
+        <div className="bg-gray-900/50 rounded-lg p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search projects by title or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-gray-800/50 border-gray-600 text-white"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <div className="flex gap-2">
+                {statusOptions.map((option) => (
+                  <Badge
+                    key={option.value}
+                    variant={statusFilter === option.value ? "default" : "outline"}
+                    className={`cursor-pointer transition-colors ${
+                      statusFilter === option.value 
+                        ? "bg-blue-600 text-white" 
+                        : "border-gray-600 text-gray-300 hover:bg-gray-700"
+                    }`}
+                    onClick={() => setStatusFilter(option.value)}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900/80 border-green-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Total Budget</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {projects.reduce((sum, p) => sum + (p.budget_max || 0), 0).toLocaleString()} V3C
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900/80 border-purple-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Active Artists</p>
-                  <p className="text-2xl font-bold text-purple-400">156</p>
-                </div>
-                <Users className="h-8 w-8 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900/80 border-orange-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">This Week</p>
-                  <p className="text-2xl font-bold text-orange-400">
-                    {projects.filter(p => 
-                      new Date(p.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                    ).length}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              userRole={userRole}
-              onUpdate={fetchProjects}
-            />
-          ))}
-        </div>
-
-        {projects.length === 0 && (
+        {filteredProjects.length === 0 ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-white mb-4">No Projects Available</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">No Projects Found</h2>
             <p className="text-gray-400 mb-6">
-              {canCreateProject 
-                ? "Be the first to post a project and connect with talented VFX artists!"
-                : "Check back soon for new project opportunities."
-              }
+              {searchQuery || statusFilter !== "all" 
+                ? "Try adjusting your search criteria" 
+                : "Be the first to post a project!"}
             </p>
             {canCreateProject && (
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Post Your First Project
+                Create First Project
               </Button>
             )}
           </div>
+        ) : (
+          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                userRole={userRole}
+                onUpdate={fetchProjects}
+              />
+            ))}
+          </div>
         )}
+
+        {/* Statistics */}
+        <div className="mt-12 bg-gray-900/50 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-white mb-4">Marketplace Statistics</h3>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">{projects.length}</div>
+              <div className="text-gray-400 text-sm">Total Projects</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-400">
+                {projects.filter(p => p.status === "open").length}
+              </div>
+              <div className="text-gray-400 text-sm">Open Projects</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-400">
+                {projects.filter(p => p.status === "in_progress").length}
+              </div>
+              <div className="text-gray-400 text-sm">In Progress</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-400">
+                {projects.filter(p => p.status === "completed").length}
+              </div>
+              <div className="text-gray-400 text-sm">Completed</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <CreateProjectModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={handleProjectCreated}
-        userId={user.id}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          fetchProjects();
+        }}
       />
     </div>
   );

@@ -87,30 +87,13 @@ const Login = () => {
           .single();
 
         if (roleError || !roleData) {
-          // If user doesn't have this role, create it (for admin, this might need special handling)
-          if (selectedRole === "admin") {
-            toast({
-              title: "Access Denied",
-              description: "You don't have admin privileges. Contact the system administrator.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-          
-          // For other roles, we can create them
-          const { error: insertError } = await supabase
-            .from("user_roles")
-            .insert({ user_id: data.user.id, role: selectedRole });
-
-          if (insertError) {
-            toast({
-              title: "Role Assignment Failed",
-              description: "Failed to assign role. Please try again.",
-              variant: "destructive",
-            });
-            return;
-          }
+          toast({
+            title: "Access Denied",
+            description: `You don't have the ${selectedRole} role. Please contact an administrator or select a different role.`,
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          return;
         }
 
         toast({
@@ -235,14 +218,12 @@ const Login = () => {
               </p>
             </div>
 
-            {selectedRole === "admin" && (
-              <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
-                <p className="text-yellow-400 text-sm">
-                  <strong>Admin Access:</strong> Admin privileges must be granted by a system administrator. 
-                  Contact support if you need admin access.
-                </p>
-              </div>
-            )}
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+              <p className="text-blue-400 text-sm">
+                <strong>Note:</strong> You can only log in with roles that have been assigned to your account. 
+                Contact an administrator if you need additional role access.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
