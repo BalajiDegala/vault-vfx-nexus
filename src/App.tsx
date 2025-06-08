@@ -13,6 +13,7 @@ import Community from "./pages/Community";
 import MachineRental from "./pages/MachineRental";
 import Profiles from "./pages/Profiles";
 import Marketplace from "./pages/Marketplace";
+import TestUsers from "./pages/TestUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/community" element={<Community />} />
           <Route path="/machine-rental" element={<MachineRental />} />
+          <Route path="/test-users" element={<TestUsers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

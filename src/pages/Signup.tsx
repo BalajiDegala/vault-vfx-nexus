@@ -60,6 +60,49 @@ const Signup = () => {
     });
   };
 
+  const waitForProfile = async (userId: string, maxAttempts = 10): Promise<boolean> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      console.log(`Checking for profile (attempt ${i + 1})...`);
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .single();
+
+      if (!error && data) {
+        console.log("Profile found!");
+        return true;
+      }
+      
+      // Wait 500ms before next attempt
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    console.log("Profile not found after waiting");
+    return false;
+  };
+
+  const assignRole = async (userId: string, role: string): Promise<boolean> => {
+    console.log(`Assigning role ${role} to user ${userId}`);
+    
+    const { data, error } = await supabase
+      .from("user_roles")
+      .insert({
+        user_id: userId,
+        role: role as any
+      })
+      .select();
+
+    if (error) {
+      console.error("Role assignment error:", error);
+      return false;
+    }
+
+    console.log("Role assigned successfully:", data);
+    return true;
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -93,9 +136,9 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      console.log("Starting signup process for:", { email: formData.email, role: selectedRole });
+      console.log("Starting signup process...");
 
-      // Sign up the user with metadata
+      // Step 1: Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -105,7 +148,6 @@ const Signup = () => {
             last_name: formData.lastName,
             username: formData.username,
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
@@ -131,33 +173,38 @@ const Signup = () => {
 
       console.log("User created successfully:", authData.user.id);
 
-      // Wait a moment for the database trigger to complete
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Step 2: Wait for profile to be created by the trigger
+      console.log("Waiting for profile to be created...");
+      const profileCreated = await waitForProfile(authData.user.id);
 
-      // Add the selected role
-      console.log("Adding role to user:", { userId: authData.user.id, role: selectedRole });
-      
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: selectedRole as any
-        });
-
-      if (roleError) {
-        console.error("Role assignment error:", roleError);
+      if (!profileCreated) {
+        console.error("Profile was not created by trigger");
         toast({
-          title: "Role Assignment Failed",
-          description: "Account created but role assignment failed. Please try logging in.",
+          title: "Setup Error",
+          description: "Profile creation failed. Please try again.",
           variant: "destructive",
         });
-      } else {
-        console.log("Role assigned successfully");
-        toast({
-          title: "Welcome to V3!",
-          description: "Account created successfully! You can now log in with your credentials.",
-        });
+        return;
       }
+
+      // Step 3: Assign the role
+      console.log("Assigning role...");
+      const roleAssigned = await assignRole(authData.user.id, selectedRole);
+
+      if (!roleAssigned) {
+        toast({
+          title: "Role Assignment Failed",
+          description: "Account created but role assignment failed. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Signup completed successfully!");
+      toast({
+        title: "Welcome to V3!",
+        description: "Account created successfully! You can now log in.",
+      });
 
       // Navigate to login
       navigate("/login");
@@ -339,6 +386,12 @@ const Signup = () => {
                 <Link to="/login" className="text-blue-400 hover:text-blue-300">
                   Sign in here
                 </Link>
+              </p>
+            </div>
+
+            <div className="mt-4 p-3 bg-green-900/20 border border-green-500/20 rounded-lg">
+              <p className="text-green-400 text-sm">
+                <strong>Test Account:</strong> You can create a test account with any email (doesn't need to be real) and password to test the system.
               </p>
             </div>
           </CardContent>
