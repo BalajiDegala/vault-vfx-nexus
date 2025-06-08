@@ -8,11 +8,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, User, Building, Video, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,25 +23,25 @@ const Login = () => {
 
   const roles = [
     {
-      id: "freelancer",
+      id: "artist" as AppRole,
       title: "Freelancer/Artist",
       description: "VFX Artist, Animator, or Technical Specialist",
       icon: User,
     },
     {
-      id: "studio",
+      id: "studio" as AppRole,
       title: "Studio",
       description: "VFX Studio or Production Company",
       icon: Building,
     },
     {
-      id: "producer",
+      id: "producer" as AppRole,
       title: "Producer",
       description: "Film Producer or Project Manager",
       icon: Video,
     },
     {
-      id: "admin",
+      id: "admin" as AppRole,
       title: "Admin",
       description: "Platform Administrator",
       icon: Shield,
@@ -98,7 +101,7 @@ const Login = () => {
           // For other roles, we can create them
           const { error: insertError } = await supabase
             .from("user_roles")
-            .insert([{ user_id: data.user.id, role: selectedRole }]);
+            .insert({ user_id: data.user.id, role: selectedRole });
 
           if (insertError) {
             toast({

@@ -8,10 +8,13 @@ import FreelancerDashboard from "@/components/dashboard/FreelancerDashboard";
 import StudioDashboard from "@/components/dashboard/StudioDashboard";
 import ProducerDashboard from "@/components/dashboard/ProducerDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,14 +61,14 @@ const Dashboard = () => {
         }
 
         // If user has multiple roles, we can implement role switching later
-        // For now, use the first available role or prioritize admin > producer > studio > freelancer
+        // For now, use the first available role or prioritize admin > producer > studio > artist
         const roles = rolesData.map(r => r.role);
-        let selectedRole = roles[0];
+        let selectedRole: AppRole = roles[0];
 
         if (roles.includes('admin')) selectedRole = 'admin';
         else if (roles.includes('producer')) selectedRole = 'producer';
         else if (roles.includes('studio')) selectedRole = 'studio';
-        else if (roles.includes('freelancer') || roles.includes('artist')) selectedRole = 'freelancer';
+        else if (roles.includes('artist')) selectedRole = 'artist';
 
         setUserRole(selectedRole);
       } catch (error) {
@@ -116,7 +119,6 @@ const Dashboard = () => {
 
   // Render role-specific dashboard
   switch (userRole) {
-    case "freelancer":
     case "artist":
       return <FreelancerDashboard user={user} />;
     case "studio":
