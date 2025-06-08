@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,19 +31,19 @@ const Signup = () => {
 
   const roles = [
     {
-      id: "artist",
+      id: "artist" as AppRole,
       title: "Freelancer",
       description: "VFX Artist, Animator, or Technical Specialist",
       icon: User,
     },
     {
-      id: "studio",
+      id: "studio" as AppRole,
       title: "Studio",
       description: "VFX Studio or Production Company",
       icon: Building,
     },
     {
-      id: "producer",
+      id: "producer" as AppRole,
       title: "Producer",
       description: "Film Producer or Project Manager",
       icon: Video,
@@ -52,8 +51,8 @@ const Signup = () => {
   ];
 
   useEffect(() => {
-    const roleFromUrl = searchParams.get("role");
-    if (roleFromUrl) {
+    const roleFromUrl = searchParams.get("role") as AppRole;
+    if (roleFromUrl && ["artist", "studio", "producer"].includes(roleFromUrl)) {
       setSelectedRole(roleFromUrl);
     }
   }, [searchParams]);
