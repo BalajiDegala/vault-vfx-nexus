@@ -5,20 +5,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, User, Building, Video, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const roles = [
+    {
+      id: "freelancer",
+      title: "Freelancer/Artist",
+      description: "VFX Artist, Animator, or Technical Specialist",
+      icon: User,
+    },
+    {
+      id: "studio",
+      title: "Studio",
+      description: "VFX Studio or Production Company",
+      icon: Building,
+    },
+    {
+      id: "producer",
+      title: "Producer",
+      description: "Film Producer or Project Manager",
+      icon: Video,
+    },
+    {
+      id: "admin",
+      title: "Admin",
+      description: "Platform Administrator",
+      icon: Shield,
+    },
+  ];
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedRole) {
+      toast({
+        title: "Role Required",
+        description: "Please select your role to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,9 +75,44 @@ const Login = () => {
       }
 
       if (data.user) {
+        // Check if user has the selected role
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .eq("role", selectedRole)
+          .single();
+
+        if (roleError || !roleData) {
+          // If user doesn't have this role, create it (for admin, this might need special handling)
+          if (selectedRole === "admin") {
+            toast({
+              title: "Access Denied",
+              description: "You don't have admin privileges. Contact the system administrator.",
+              variant: "destructive",
+            });
+            await supabase.auth.signOut();
+            return;
+          }
+          
+          // For other roles, we can create them
+          const { error: insertError } = await supabase
+            .from("user_roles")
+            .insert([{ user_id: data.user.id, role: selectedRole }]);
+
+          if (insertError) {
+            toast({
+              title: "Role Assignment Failed",
+              description: "Failed to assign role. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+
         toast({
           title: "Welcome back!",
-          description: "Successfully logged in to V3.",
+          description: `Successfully logged in as ${selectedRole}.`,
         });
         navigate("/dashboard");
       }
@@ -56,7 +129,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <Link to="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Home
@@ -70,7 +143,41 @@ const Login = () => {
             <p className="text-gray-400">Sign in to your account</p>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Role Selection */}
+            <div>
+              <Label className="text-lg font-semibold text-gray-300 mb-4 block">
+                Select Your Role
+              </Label>
+              <div className="grid md:grid-cols-2 gap-3">
+                {roles.map((role) => {
+                  const Icon = role.icon;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => setSelectedRole(role.id)}
+                      className={`p-4 rounded-lg border-2 transition-all text-left ${
+                        selectedRole === role.id
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-gray-600 hover:border-gray-500"
+                      }`}
+                    >
+                      <Icon className={`h-6 w-6 mb-2 ${
+                        selectedRole === role.id ? "text-blue-400" : "text-gray-400"
+                      }`} />
+                      <h3 className={`font-bold mb-1 text-sm ${
+                        selectedRole === role.id ? "text-blue-400" : "text-white"
+                      }`}>
+                        {role.title}
+                      </h3>
+                      <p className="text-xs text-gray-400">{role.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-300">Email</Label>
@@ -109,10 +216,10 @@ const Login = () => {
               
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !selectedRole}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? "Signing In..." : `Sign In as ${selectedRole ? roles.find(r => r.id === selectedRole)?.title : 'User'}`}
               </Button>
             </form>
             
@@ -124,6 +231,15 @@ const Login = () => {
                 </Link>
               </p>
             </div>
+
+            {selectedRole === "admin" && (
+              <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
+                <p className="text-yellow-400 text-sm">
+                  <strong>Admin Access:</strong> Admin privileges must be granted by a system administrator. 
+                  Contact support if you need admin access.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -29,21 +29,45 @@ const Dashboard = () => {
 
         setUser(session.user);
 
-        // Get user role from user_roles table
-        const { data: roleData, error: roleError } = await supabase
+        // Get user roles from user_roles table
+        const { data: rolesData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+          .eq("user_id", session.user.id);
 
         if (roleError) {
-          console.error("Error fetching user role:", roleError);
-          // Fallback to metadata if no role in database
-          const role = session.user.user_metadata?.role || "freelancer";
-          setUserRole(role);
-        } else {
-          setUserRole(roleData.role);
+          console.error("Error fetching user roles:", roleError);
+          toast({
+            title: "Role Fetch Error",
+            description: "Unable to fetch user roles. Please try logging in again.",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
         }
+
+        if (!rolesData || rolesData.length === 0) {
+          // User has no roles assigned, redirect to signup or login
+          toast({
+            title: "No Role Assigned",
+            description: "Please complete your registration or contact support.",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+
+        // If user has multiple roles, we can implement role switching later
+        // For now, use the first available role or prioritize admin > producer > studio > freelancer
+        const roles = rolesData.map(r => r.role);
+        let selectedRole = roles[0];
+
+        if (roles.includes('admin')) selectedRole = 'admin';
+        else if (roles.includes('producer')) selectedRole = 'producer';
+        else if (roles.includes('studio')) selectedRole = 'studio';
+        else if (roles.includes('freelancer') || roles.includes('artist')) selectedRole = 'freelancer';
+
+        setUserRole(selectedRole);
       } catch (error) {
         console.error("Auth check error:", error);
         toast({
@@ -66,6 +90,8 @@ const Dashboard = () => {
           navigate("/login");
         } else if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
+          // Refetch roles when user signs in
+          window.location.reload();
         }
       }
     );
