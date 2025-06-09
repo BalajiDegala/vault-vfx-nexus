@@ -12,6 +12,7 @@ import ProjectHeader from "@/components/projects/ProjectHeader";
 import ProjectOverview from "@/components/projects/ProjectOverview";
 import ProjectDiscussion from "@/components/projects/ProjectDiscussion";
 import ProjectFiles from "@/components/projects/ProjectFiles";
+import TeamDiscussion from "@/components/projects/TeamDiscussion";
 import { useProjectPresence } from "@/hooks/useProjectPresence";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, MessageSquare, Users, Clock } from "lucide-react";
