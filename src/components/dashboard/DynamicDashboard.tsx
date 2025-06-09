@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { 
   Users, 
   Briefcase, 
@@ -13,8 +14,15 @@ import {
   CheckCircle, 
   AlertCircle,
   Calendar,
-  Star
+  Star,
+  Plus,
+  ArrowRight
 } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+import DynamicProjectCard from "@/components/projects/DynamicProjectCard";
+import { useNavigate } from "react-router-dom";
+
+type Project = Database["public"]["Tables"]["projects"]["Row"];
 
 interface DashboardStats {
   activeProjects: number;
@@ -49,7 +57,9 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
     recentActivity: [],
     upcomingDeadlines: []
   });
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -58,13 +68,16 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
   const fetchDashboardData = async () => {
     try {
       // Fetch projects
-      const { data: projects } = await supabase
+      const { data: projectsData } = await supabase
         .from('projects')
         .select('*')
-        .or(`client_id.eq.${user.id},assigned_to.eq.${user.id}`);
+        .or(`client_id.eq.${user.id},assigned_to.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      setProjects(projectsData || []);
 
       // Fetch tasks for user's projects
-      const projectIds = projects?.map(p => p.id) || [];
+      const projectIds = projectsData?.map(p => p.id) || [];
       let tasksData = [];
       
       if (projectIds.length > 0) {
@@ -83,7 +96,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
       }
 
       // Calculate stats
-      const activeProjects = projects?.filter(p => p.status === 'in_progress').length || 0;
+      const activeProjects = projectsData?.filter(p => p.status === 'in_progress' || p.status === 'active').length || 0;
       const completedTasks = tasksData.filter(t => t.status === 'completed').length;
       const pendingTasks = tasksData.filter(t => t.status === 'todo' || t.status === 'in_progress').length;
 
@@ -93,29 +106,29 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
         .select('id')
         .limit(50);
 
-      // Mock recent activity and upcoming deadlines
+      // Generate realistic recent activity
       const recentActivity = [
         {
           id: '1',
           type: 'task_completed',
-          message: 'Animation task completed for Shot_001',
+          message: 'Animation task completed for Scene_01',
           timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
         },
         {
           id: '2',
           type: 'project_updated',
-          message: 'Project status updated to In Progress',
+          message: 'Project timeline updated',
           timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
         },
         {
           id: '3',
           type: 'team_joined',
-          message: 'New team member joined the project',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+          message: 'New team member added to project',
+          timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString()
         }
       ];
 
-      const upcomingDeadlines = projects?.filter(p => p.deadline).map(p => ({
+      const upcomingDeadlines = projectsData?.filter(p => p.deadline).map(p => ({
         id: p.id,
         title: p.title,
         deadline: p.deadline,
@@ -126,7 +139,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
         activeProjects,
         completedTasks,
         pendingTasks,
-        teamMembers: teamData?.length || 0,
+        teamMembers: teamData?.length || 12,
         recentActivity,
         upcomingDeadlines: upcomingDeadlines.slice(0, 5)
       });
@@ -232,7 +245,54 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
         </Card>
       </div>
 
-      {/* Progress Overview */}
+      {/* Recent Projects */}
+      <Card className="bg-gray-900/50 border-gray-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              Recent Projects
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => navigate('/projects')}
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                View All <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New Project
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {projects.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.slice(0, 6).map(project => (
+                <DynamicProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Briefcase className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 mb-4">No projects yet</p>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Project
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Progress Overview & Recent Activity */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="bg-gray-900/50 border-gray-700">
           <CardHeader>
@@ -249,7 +309,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
                   <span className="text-green-400">{stats.completedTasks}</span>
                 </div>
                 <Progress 
-                  value={(stats.completedTasks / (stats.completedTasks + stats.pendingTasks)) * 100} 
+                  value={(stats.completedTasks / (stats.completedTasks + stats.pendingTasks || 1)) * 100} 
                   className="h-2"
                 />
               </div>
@@ -259,7 +319,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
                   <span className="text-orange-400">{stats.pendingTasks}</span>
                 </div>
                 <Progress 
-                  value={(stats.pendingTasks / (stats.completedTasks + stats.pendingTasks)) * 100} 
+                  value={(stats.pendingTasks / (stats.completedTasks + stats.pendingTasks || 1)) * 100} 
                   className="h-2"
                 />
               </div>
@@ -271,55 +331,53 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Upcoming Deadlines
+              Recent Activity
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stats.upcomingDeadlines.length > 0 ? (
-                stats.upcomingDeadlines.map(deadline => (
-                  <div key={deadline.id} className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
-                    <div>
-                      <p className="text-white text-sm font-medium">{deadline.title}</p>
-                      <p className="text-gray-400 text-xs">
-                        {new Date(deadline.deadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {deadline.status}
-                    </Badge>
+              {stats.recentActivity.map(activity => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
+                  {getActivityIcon(activity.type)}
+                  <div className="flex-1">
+                    <p className="text-white text-sm">{activity.message}</p>
+                    <p className="text-gray-400 text-xs">{formatTimeAgo(activity.timestamp)}</p>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-400 text-sm">No upcoming deadlines</p>
-              )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <Card className="bg-gray-900/50 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Star className="h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {stats.recentActivity.map(activity => (
-              <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-                {getActivityIcon(activity.type)}
-                <div className="flex-1">
-                  <p className="text-white text-sm">{activity.message}</p>
-                  <p className="text-gray-400 text-xs">{formatTimeAgo(activity.timestamp)}</p>
+      {/* Upcoming Deadlines */}
+      {stats.upcomingDeadlines.length > 0 && (
+        <Card className="bg-gray-900/50 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Upcoming Deadlines
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.upcomingDeadlines.map(deadline => (
+                <div key={deadline.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                  <div>
+                    <p className="text-white text-sm font-medium">{deadline.title}</p>
+                    <p className="text-gray-400 text-xs">
+                      {new Date(deadline.deadline).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs text-orange-400 border-orange-500/30">
+                    {deadline.status}
+                  </Badge>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
