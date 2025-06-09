@@ -13,7 +13,7 @@ interface SequenceWithShots extends Sequence {
 }
 
 interface ShotWithTasks extends Shot {
-  tasks: Task[];
+  tasks: TaskWithProfile[];
   assigned_profile?: {
     first_name: string;
     last_name: string;
