@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -201,7 +200,7 @@ const ProjectDetail = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {project.skills_required?.map((skill, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge key={index} variant="secondary" className="bg-blue-900/30 text-blue-300 border-blue-600">
                         {skill}
                       </Badge>
                     )) || <p className="text-gray-400">No specific skills required</p>}
@@ -228,6 +227,24 @@ const ProjectDetail = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Data Layers Section */}
+            {project.data_layers && project.data_layers.length > 0 && (
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Data Layers Required</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {project.data_layers.map((layer, index) => (
+                      <Badge key={index} variant="outline" className="bg-purple-900/30 text-purple-300 border-purple-600">
+                        {layer}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Project Content Area */}
             <Card className="bg-gray-900/50 border-gray-700">
@@ -279,10 +296,33 @@ const ProjectDetail = () => {
             <div className="space-y-6">
               <Card className="bg-gray-900/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-white">Team Discussion</CardTitle>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Team Discussion
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400">Use the floating chat button to communicate with your team in real-time.</p>
+                  <div className="space-y-4">
+                    <p className="text-gray-300">
+                      Collaborate with your team using real-time messaging. Share updates, ask questions, and coordinate work.
+                    </p>
+                    <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                      <h4 className="text-white font-medium mb-2">Quick Actions</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Send Update
+                        </Button>
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <Users className="h-4 w-4 mr-2" />
+                          @Mention Team
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      Use the floating chat button in the bottom right to start real-time conversations.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -292,15 +332,73 @@ const ProjectDetail = () => {
             <div className="space-y-6">
               <Card className="bg-gray-900/50 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-white">Project Files</CardTitle>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Project Files & Assets
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400">File sharing and management coming soon...</p>
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                        <h4 className="text-white font-medium mb-2">Deliverables</h4>
+                        <p className="text-gray-400 text-sm mb-3">Final renders, compositions, and approved assets</p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <upload className="h-4 w-4 mr-2" />
+                          Upload Files
+                        </Button>
+                      </div>
+                      
+                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                        <h4 className="text-white font-medium mb-2">Work in Progress</h4>
+                        <p className="text-gray-400 text-sm mb-3">Draft versions, previews, and work files</p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <upload className="h-4 w-4 mr-2" />
+                          Upload Files
+                        </Button>
+                      </div>
+
+                      <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                        <h4 className="text-white font-medium mb-2">References</h4>
+                        <p className="text-gray-400 text-sm mb-3">Concept art, references, and source materials</p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <upload className="h-4 w-4 mr-2" />
+                          Upload Files
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-700 pt-4">
+                      <h4 className="text-white font-medium mb-3">Recent Files</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700">
+                          <div className="flex items-center gap-3">
+                            <file className="h-5 w-5 text-blue-400" />
+                            <div>
+                              <p className="text-white text-sm">project_v1.blend</p>
+                              <p className="text-gray-400 text-xs">Uploaded 2 hours ago</p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">Download</Button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700">
+                          <div className="flex items-center gap-3">
+                            <file className="h-5 w-5 text-green-400" />
+                            <div>
+                              <p className="text-white text-sm">render_test.mp4</p>
+                              <p className="text-gray-400 text-xs">Uploaded 1 day ago</p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">Download</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
-        </Tabs>
       </div>
 
       {/* Real-time Chat */}

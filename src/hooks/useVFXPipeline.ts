@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -204,6 +203,102 @@ export const useVFXPipeline = (projectId: string) => {
     }
   };
 
+  const updateSequence = async (sequenceId: string, data: { name?: string; description?: string; status?: string }) => {
+    try {
+      const { error } = await supabase
+        .from('sequences')
+        .update(data)
+        .eq('id', sequenceId);
+
+      if (error) throw error;
+
+      setSequences(prev => prev.map(seq => 
+        seq.id === sequenceId ? { ...seq, ...data } : seq
+      ));
+      
+      toast({ title: "Sequence updated successfully" });
+    } catch (error) {
+      console.error('Error updating sequence:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update sequence",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateShot = async (shotId: string, data: { 
+    name?: string; 
+    description?: string; 
+    frame_start?: number; 
+    frame_end?: number; 
+    status?: string;
+    assigned_to?: string;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from('shots')
+        .update(data)
+        .eq('id', shotId);
+
+      if (error) throw error;
+
+      setSequences(prev => prev.map(seq => ({
+        ...seq,
+        shots: seq.shots.map(shot => 
+          shot.id === shotId ? { ...shot, ...data } : shot
+        )
+      })));
+      
+      toast({ title: "Shot updated successfully" });
+    } catch (error) {
+      console.error('Error updating shot:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update shot",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateTask = async (taskId: string, data: { 
+    name?: string; 
+    description?: string; 
+    task_type?: string; 
+    priority?: string; 
+    estimated_hours?: number;
+    actual_hours?: number;
+    assigned_to?: string;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update(data)
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setSequences(prev => prev.map(seq => ({
+        ...seq,
+        shots: seq.shots.map(shot => ({
+          ...shot,
+          tasks: shot.tasks.map(task => 
+            task.id === taskId ? { ...task, ...data } : task
+          )
+        }))
+      })));
+      
+      toast({ title: "Task updated successfully" });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update task",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateTaskStatus = async (taskId: string, status: string) => {
     try {
       const { error } = await supabase
@@ -240,6 +335,9 @@ export const useVFXPipeline = (projectId: string) => {
     createSequence,
     createShot,
     createTask,
+    updateSequence,
+    updateShot,
+    updateTask,
     updateTaskStatus,
     refetch: fetchPipelineData,
   };
