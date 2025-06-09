@@ -53,8 +53,9 @@ const Projects = () => {
       }
 
       setUser(session.user);
+      console.log("User authenticated:", session.user.id);
 
-      // Get user role with better error handling
+      // Get user role
       try {
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
@@ -63,53 +64,62 @@ const Projects = () => {
           .single();
 
         if (roleError) {
-          console.error("Role fetch error:", roleError);
-          // Set a default role if none found
+          console.log("No role found, setting default:", roleError.message);
           setUserRole('studio');
         } else if (roleData) {
+          console.log("User role found:", roleData.role);
           setUserRole(roleData.role);
         } else {
           setUserRole('studio');
         }
       } catch (roleError) {
-        console.error("Role fetch failed:", roleError);
+        console.log("Role fetch error, using default:", roleError);
         setUserRole('studio');
       }
 
-      // Fetch projects with the role (or default)
-      await fetchProjects(userRole || 'studio');
+      // Always fetch projects regardless of role
+      await fetchProjects();
     } catch (error) {
       console.error("Auth check error:", error);
-      // Don't redirect on error, just set default values
-      setUserRole('studio');
-      setProjects([]);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to verify authentication",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProjects = async (role: AppRole) => {
+  const fetchProjects = async () => {
     try {
-      console.log("Fetching projects for role:", role);
+      console.log("Fetching projects...");
       
-      // For now, let's try a simple query without complex filters to avoid RLS issues
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50); // Limit to avoid too much data
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching projects:", error);
-        // Don't show error toast for now, just log it
+        toast({
+          title: "Error",
+          description: "Failed to load projects: " + error.message,
+          variant: "destructive",
+        });
         setProjects([]);
         return;
       }
 
-      console.log("Fetched projects:", data?.length || 0);
+      console.log("Projects fetched successfully:", data?.length || 0, "projects");
       setProjects(data || []);
     } catch (error) {
-      console.error("Error in fetchProjects:", error);
+      console.error("Unexpected error in fetchProjects:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading projects",
+        variant: "destructive",
+      });
       setProjects([]);
     }
   };
@@ -137,9 +147,22 @@ const Projects = () => {
   };
 
   const refreshProjects = async () => {
-    if (userRole) {
-      await fetchProjects(userRole);
-    }
+    console.log("Refreshing projects...");
+    await fetchProjects();
+  };
+
+  const handleCreateSuccess = async () => {
+    console.log("Project created successfully, refreshing list...");
+    setShowCreateModal(false);
+    
+    // Add a small delay to ensure the database has been updated
+    setTimeout(async () => {
+      await refreshProjects();
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+    }, 500);
   };
 
   if (loading) {
@@ -157,7 +180,6 @@ const Projects = () => {
     return null;
   }
 
-  // Don't redirect artists, let them see the projects page
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <DashboardNavbar user={user} userRole={userRole || 'studio'} />
@@ -337,10 +359,7 @@ const Projects = () => {
       <CreateProjectModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={() => {
-          setShowCreateModal(false);
-          refreshProjects();
-        }}
+        onSuccess={handleCreateSuccess}
         userId={user.id}
       />
 
