@@ -9,14 +9,13 @@ interface ProjectNotification {
   user_id: string;
   type: 'message' | 'status_change' | 'assignment' | 'deadline' | 'file_upload';
   title: string;
-  content: string;
+  content: string | null;
   read: boolean;
   created_at: string;
 }
 
 export const useProjectNotifications = (userId: string) => {
   const [notifications, setNotifications] = useState<ProjectNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -35,10 +34,20 @@ export const useProjectNotifications = (userId: string) => {
 
         if (error) throw error;
 
-        setNotifications(data || []);
-        setUnreadCount(data?.filter(n => !n.read).length || 0);
+        // Type cast the data to ensure proper typing
+        const typedNotifications: ProjectNotification[] = (data || []).map(notification => ({
+          ...notification,
+          type: notification.type as 'message' | 'status_change' | 'assignment' | 'deadline' | 'file_upload'
+        }));
+
+        setNotifications(typedNotifications);
       } catch (error) {
         console.error('Error fetching notifications:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load notifications",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -59,15 +68,17 @@ export const useProjectNotifications = (userId: string) => {
         },
         (payload) => {
           console.log('New notification:', payload);
-          const newNotification = payload.new as ProjectNotification;
+          const typedNotification: ProjectNotification = {
+            ...payload.new,
+            type: payload.new.type as 'message' | 'status_change' | 'assignment' | 'deadline' | 'file_upload'
+          } as ProjectNotification;
           
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-
+          setNotifications(prev => [typedNotification, ...prev]);
+          
           // Show toast for new notification
           toast({
-            title: newNotification.title,
-            description: newNotification.content,
+            title: typedNotification.title,
+            description: typedNotification.content || '',
           });
         }
       )
@@ -83,45 +94,29 @@ export const useProjectNotifications = (userId: string) => {
       const { error } = await supabase
         .from('project_notifications')
         .update({ read: true })
-        .eq('id', notificationId);
+        .eq('id', notificationId)
+        .eq('user_id', userId);
 
       if (error) throw error;
 
       setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, read: true } : n
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: true }
+            : notification
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      const { error } = await supabase
-        .from('project_notifications')
-        .update({ read: true })
-        .eq('user_id', userId)
-        .eq('read', false);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, read: true }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return {
     notifications,
-    unreadCount,
     loading,
+    unreadCount,
     markAsRead,
-    markAllAsRead,
   };
 };

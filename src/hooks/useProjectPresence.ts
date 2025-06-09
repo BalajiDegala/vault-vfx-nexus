@@ -59,7 +59,13 @@ export const useProjectPresence = (projectId: string, userId: string) => {
 
         if (error) throw error;
 
-        setPresenceUsers(data || []);
+        // Type cast the data to ensure proper typing
+        const typedPresence: UserPresence[] = (data || []).map(presence => ({
+          ...presence,
+          status: presence.status as 'online' | 'away' | 'offline'
+        }));
+
+        setPresenceUsers(typedPresence);
       } catch (error) {
         console.error('Error fetching presence:', error);
       } finally {

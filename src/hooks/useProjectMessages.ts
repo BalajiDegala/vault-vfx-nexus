@@ -45,7 +45,13 @@ export const useProjectMessages = (projectId: string) => {
 
         if (error) throw error;
 
-        setMessages(data || []);
+        // Type cast the data to ensure proper typing
+        const typedMessages: ProjectMessage[] = (data || []).map(msg => ({
+          ...msg,
+          message_type: msg.message_type as 'text' | 'system' | 'file_upload' | 'status_update'
+        }));
+
+        setMessages(typedMessages);
       } catch (error) {
         console.error('Error fetching messages:', error);
         toast({
@@ -89,7 +95,11 @@ export const useProjectMessages = (projectId: string) => {
             .single();
 
           if (!error && data) {
-            setMessages(prev => [...prev, data]);
+            const typedMessage: ProjectMessage = {
+              ...data,
+              message_type: data.message_type as 'text' | 'system' | 'file_upload' | 'status_update'
+            };
+            setMessages(prev => [...prev, typedMessage]);
           }
         }
       )
