@@ -87,7 +87,10 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setSharedTasks(data || []);
+      
+      // Type assertion to ensure the data matches our interface
+      const typedData = (data || []) as SharedTask[];
+      setSharedTasks(typedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);
       toast({

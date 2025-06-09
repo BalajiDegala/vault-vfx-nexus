@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,7 +63,7 @@ const Projects = () => {
 
       if (roleData) {
         setUserRole(roleData.role);
-        fetchProjects(roleData.role);
+        await fetchProjects(roleData.role);
       }
     } catch (error) {
       console.error("Auth check error:", error);
@@ -134,6 +135,12 @@ const Projects = () => {
     activeProjects: projects.filter(p => p.status === "in_progress").length,
     completedProjects: projects.filter(p => p.status === "completed").length,
     openOpportunities: projects.filter(p => p.status === "open").length,
+  };
+
+  const refreshProjects = async () => {
+    if (userRole) {
+      await fetchProjects(userRole);
+    }
   };
 
   if (loading) {
@@ -325,7 +332,7 @@ const Projects = () => {
                 project={project}
                 userRole={userRole}
                 userId={user.id}
-                onUpdate={fetchProjects}
+                onUpdate={refreshProjects}
               />
             ))}
           </div>
@@ -338,7 +345,7 @@ const Projects = () => {
         onClose={() => setShowCreateModal(false)}
         onSuccess={() => {
           setShowCreateModal(false);
-          fetchProjects();
+          refreshProjects();
         }}
         userId={user.id}
       />
