@@ -2,6 +2,9 @@
 import { User } from "@supabase/supabase-js";
 import DashboardNavbar from "./DashboardNavbar";
 import DynamicDashboard from "./DynamicDashboard";
+import StudioTaskSharing from "@/components/studio/StudioTaskSharing";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart3, Share2 } from "lucide-react";
 
 interface StudioDashboardProps {
   user: User;
@@ -17,10 +20,29 @@ const StudioDashboard = ({ user }: StudioDashboardProps) => {
           <h1 className="text-3xl font-bold text-white mb-2">
             Studio Dashboard
           </h1>
-          <p className="text-gray-400">Manage your studio operations and talent network with real-time insights.</p>
+          <p className="text-gray-400">Manage your studio operations, talent network, and task sharing with real-time insights.</p>
         </div>
 
-        <DynamicDashboard user={user} userRole="studio" />
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-900/50">
+            <TabsTrigger value="overview">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Dashboard Overview
+            </TabsTrigger>
+            <TabsTrigger value="task-sharing">
+              <Share2 className="h-4 w-4 mr-2" />
+              Task Sharing
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <DynamicDashboard user={user} userRole="studio" />
+          </TabsContent>
+
+          <TabsContent value="task-sharing">
+            <StudioTaskSharing userId={user.id} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

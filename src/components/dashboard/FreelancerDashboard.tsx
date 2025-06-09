@@ -1,7 +1,7 @@
 
 import { User } from "@supabase/supabase-js";
 import DashboardNavbar from "./DashboardNavbar";
-import DynamicDashboard from "./DynamicDashboard";
+import ArtistTasksView from "@/components/artist/ArtistTasksView";
 
 interface FreelancerDashboardProps {
   user: User;
@@ -17,10 +17,10 @@ const FreelancerDashboard = ({ user }: FreelancerDashboardProps) => {
           <h1 className="text-3xl font-bold text-white mb-2">
             Artist Dashboard
           </h1>
-          <p className="text-gray-400">Track your projects, tasks, and progress in real-time.</p>
+          <p className="text-gray-400">View your assigned tasks and collaborate with studios on VFX projects.</p>
         </div>
 
-        <DynamicDashboard user={user} userRole="artist" />
+        <ArtistTasksView userId={user.id} />
       </div>
     </div>
   );

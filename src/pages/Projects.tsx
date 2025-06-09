@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +62,7 @@ const Projects = () => {
 
       if (roleData) {
         setUserRole(roleData.role);
-        fetchProjects();
+        fetchProjects(roleData.role);
       }
     } catch (error) {
       console.error("Auth check error:", error);
@@ -73,12 +72,30 @@ const Projects = () => {
     }
   };
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (role: AppRole) => {
     try {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("projects").select("*");
+
+      // Role-based filtering
+      if (role === 'studio') {
+        query = query
+          .eq('project_type', 'studio')
+          .order("created_at", { ascending: false });
+      } else if (role === 'producer') {
+        query = query
+          .eq('project_type', 'producer')
+          .order("created_at", { ascending: false });
+      } else if (role === 'artist') {
+        // Artists shouldn't see the main projects page
+        // Redirect them to their task view
+        navigate("/dashboard");
+        return;
+      } else {
+        // Admin or other roles see all projects
+        query = query.order("created_at", { ascending: false });
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching projects:", error);
@@ -134,6 +151,12 @@ const Projects = () => {
     return null;
   }
 
+  // Redirect artists to their dashboard
+  if (userRole === 'artist') {
+    navigate("/dashboard");
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <DashboardNavbar user={user} userRole={userRole} />
@@ -144,11 +167,11 @@ const Projects = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
-                VFX Project Hub
+                {userRole === 'producer' ? "Producer's Project Hub" : "VFX Project Hub"}
               </h1>
               <p className="text-gray-400">
-                {userRole === "artist" 
-                  ? "Discover exciting VFX projects and showcase your skills" 
+                {userRole === 'producer' 
+                  ? "Manage your shows and productions with advanced workflow tools"
                   : "Manage projects with advanced production tools and templates"}
               </p>
             </div>

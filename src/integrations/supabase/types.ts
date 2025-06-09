@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      artist_task_access: {
+        Row: {
+          artist_id: string
+          artist_notes: string | null
+          files_accessed: Json | null
+          id: string
+          last_accessed: string | null
+          progress_status: string | null
+          shared_task_id: string
+        }
+        Insert: {
+          artist_id: string
+          artist_notes?: string | null
+          files_accessed?: Json | null
+          id?: string
+          last_accessed?: string | null
+          progress_status?: string | null
+          shared_task_id: string
+        }
+        Update: {
+          artist_id?: string
+          artist_notes?: string | null
+          files_accessed?: Json | null
+          id?: string
+          last_accessed?: string | null
+          progress_status?: string | null
+          shared_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_task_access_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artist_task_access_shared_task_id_fkey"
+            columns: ["shared_task_id"]
+            isOneToOne: false
+            referencedRelation: "shared_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_post_comments: {
         Row: {
           author_id: string
@@ -407,6 +452,58 @@ export type Database = {
         }
         Relationships: []
       }
+      project_access: {
+        Row: {
+          access_level: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_access_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_bids: {
         Row: {
           amount: number
@@ -600,6 +697,9 @@ export type Database = {
           description: string | null
           id: string
           milestones: Json | null
+          parent_project_id: string | null
+          project_code: string | null
+          project_type: string | null
           security_level: string | null
           skills_required: string[] | null
           status: Database["public"]["Enums"]["project_status"] | null
@@ -619,6 +719,9 @@ export type Database = {
           description?: string | null
           id?: string
           milestones?: Json | null
+          parent_project_id?: string | null
+          project_code?: string | null
+          project_type?: string | null
           security_level?: string | null
           skills_required?: string[] | null
           status?: Database["public"]["Enums"]["project_status"] | null
@@ -638,13 +741,24 @@ export type Database = {
           description?: string | null
           id?: string
           milestones?: Json | null
+          parent_project_id?: string | null
+          project_code?: string | null
+          project_type?: string | null
           security_level?: string | null
           skills_required?: string[] | null
           status?: Database["public"]["Enums"]["project_status"] | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_parent_project_id_fkey"
+            columns: ["parent_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sequences: {
         Row: {
@@ -683,6 +797,74 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_tasks: {
+        Row: {
+          access_level: string
+          approved_at: string | null
+          approved_by: string | null
+          artist_id: string
+          id: string
+          notes: string | null
+          shared_at: string
+          status: string
+          studio_id: string
+          task_id: string
+        }
+        Insert: {
+          access_level?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          artist_id: string
+          id?: string
+          notes?: string | null
+          shared_at?: string
+          status?: string
+          studio_id: string
+          task_id: string
+        }
+        Update: {
+          access_level?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          artist_id?: string
+          id?: string
+          notes?: string | null
+          shared_at?: string
+          status?: string
+          studio_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_tasks_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_tasks_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_tasks_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
