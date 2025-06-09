@@ -82,24 +82,46 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        // Don't throw error, just set empty array and continue
+        setSharedTasks([]);
+        return;
+      }
 
-      // Fetch studio profiles separately
-      const studioIds = (data || []).map(item => item.studio_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .in('id', studioIds);
+      if (!data) {
+        setSharedTasks([]);
+        return;
+      }
 
-      if (profilesError) throw profilesError;
+      // Get unique studio IDs for profile lookup
+      const studioIds = [...new Set(data.map(item => item.studio_id))].filter(Boolean);
+      
+      let profiles: any[] = [];
+      if (studioIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', studioIds);
+        
+        profiles = profilesData || [];
+      }
 
       // Transform the data to match our interface
-      const transformedData: SharedTask[] = (data || []).map(item => {
-        const studioProfile = profiles?.find(p => p.id === item.studio_id);
+      const transformedData: SharedTask[] = data.map(item => {
+        const studioProfile = profiles.find(p => p.id === item.studio_id);
         return {
-          ...item,
-          status: item.status as 'pending' | 'approved' | 'rejected',
-          access_level: item.access_level as 'view' | 'edit' | 'comment',
+          id: item.id,
+          task_id: item.task_id,
+          studio_id: item.studio_id,
+          artist_id: item.artist_id,
+          status: (item.status as 'pending' | 'approved' | 'rejected') || 'pending',
+          shared_at: item.shared_at,
+          approved_at: item.approved_at,
+          approved_by: item.approved_by,
+          notes: item.notes,
+          access_level: (item.access_level as 'view' | 'edit' | 'comment') || 'view',
+          tasks: item.tasks,
           profiles: studioProfile ? {
             first_name: studioProfile.first_name || '',
             last_name: studioProfile.last_name || ''
@@ -110,11 +132,8 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       setSharedTasks(transformedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load shared tasks",
-        variant: "destructive",
-      });
+      // Don't show error toast for missing tables/data
+      setSharedTasks([]);
     } finally {
       setLoading(false);
     }

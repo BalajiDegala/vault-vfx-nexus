@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Zap, Clock, Users, Star } from "lucide-react";
+import { FileText, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProjectTemplate {
@@ -20,10 +20,7 @@ interface ProjectTemplate {
     }[];
   }[];
   estimated_duration: string;
-  team_size: number;
   difficulty: "beginner" | "intermediate" | "advanced" | "expert";
-  rating: number;
-  uses: number;
 }
 
 interface ProjectTemplatesProps {
@@ -65,10 +62,7 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
         }
       ],
       estimated_duration: "2-3 weeks",
-      team_size: 3,
-      difficulty: "beginner",
-      rating: 4.5,
-      uses: 245
+      difficulty: "beginner"
     },
     {
       id: "feature-action",
@@ -99,10 +93,7 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
         }
       ],
       estimated_duration: "3-4 months",
-      team_size: 15,
-      difficulty: "expert",
-      rating: 4.8,
-      uses: 89
+      difficulty: "expert"
     },
     {
       id: "series-episode",
@@ -131,10 +122,7 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
         }
       ],
       estimated_duration: "4-6 weeks",
-      team_size: 8,
-      difficulty: "intermediate",
-      rating: 4.3,
-      uses: 156
+      difficulty: "intermediate"
     },
     {
       id: "music-video",
@@ -163,10 +151,7 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
         }
       ],
       estimated_duration: "3-4 weeks",
-      team_size: 5,
-      difficulty: "intermediate",
-      rating: 4.1,
-      uses: 203
+      difficulty: "intermediate"
     },
     {
       id: "game-cinematic",
@@ -195,10 +180,7 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
         }
       ],
       estimated_duration: "2-3 months",
-      team_size: 12,
-      difficulty: "advanced",
-      rating: 4.7,
-      uses: 134
+      difficulty: "advanced"
     }
   ];
 
@@ -278,14 +260,6 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
                         <Clock className="h-3 w-3" />
                         {template.estimated_duration}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {template.team_size} people
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 text-yellow-400" />
-                        {template.rating}
-                      </div>
                     </div>
                   </div>
                   
@@ -296,34 +270,11 @@ const ProjectTemplates = ({ onSelectTemplate, open, onClose }: ProjectTemplatesP
                     >
                       {template.difficulty}
                     </Badge>
-                    <p className="text-xs text-gray-500">{template.uses} uses</p>
                   </div>
                 </div>
               </CardHeader>
               
               <CardContent>
-                <div className="space-y-3 mb-4">
-                  <h4 className="text-white font-medium text-sm">Structure Preview:</h4>
-                  {template.sequences.slice(0, 2).map((sequence, idx) => (
-                    <div key={idx} className="bg-gray-700/30 rounded p-2">
-                      <p className="text-blue-400 text-sm font-medium mb-1">{sequence.name}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {sequence.shots.slice(0, 2).map((shot, shotIdx) => (
-                          <div key={shotIdx} className="text-xs">
-                            <p className="text-gray-300">{shot.name}</p>
-                            <p className="text-gray-500">{shot.tasks.slice(0, 2).join(", ")}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {template.sequences.length > 2 && (
-                    <p className="text-gray-500 text-xs text-center">
-                      +{template.sequences.length - 2} more sequences
-                    </p>
-                  )}
-                </div>
-                
                 <Button 
                   onClick={() => handleSelectTemplate(template)}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
