@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,9 +22,18 @@ export const useProjectMessages = (projectId: string) => {
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   useEffect(() => {
     if (!projectId) return;
+
+    // Cleanup existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
 
     // Fetch initial messages
     const fetchMessages = async () => {
@@ -68,49 +77,67 @@ export const useProjectMessages = (projectId: string) => {
       }
     };
 
-    fetchMessages();
+    const initializeMessages = async () => {
+      await fetchMessages();
 
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`project-messages-${projectId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'project_messages',
-          filter: `project_id=eq.${projectId}`,
-        },
-        async (payload) => {
-          console.log('New message received:', payload);
-          
-          // Fetch the complete message with profile data
-          const { data, error } = await supabase
-            .from('project_messages')
-            .select(`
-              *,
-              profiles:sender_id (
-                first_name,
-                last_name,
-                avatar_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single();
+      // Create new channel with unique identifier
+      const channelName = `project-messages-${projectId}-${Date.now()}`;
+      channelRef.current = supabase.channel(channelName);
 
-          if (!error && data) {
-            const typedMessage: ProjectMessage = {
-              ...data,
-              message_type: data.message_type as 'text' | 'system' | 'file_upload' | 'status_update'
-            };
-            setMessages(prev => [...prev, typedMessage]);
-          }
-        }
-      )
-      .subscribe();
+      // Only subscribe if not already subscribed
+      if (!isSubscribedRef.current) {
+        channelRef.current
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'project_messages',
+              filter: `project_id=eq.${projectId}`,
+            },
+            async (payload) => {
+              console.log('New message received:', payload);
+              
+              // Fetch the complete message with profile data
+              const { data, error } = await supabase
+                .from('project_messages')
+                .select(`
+                  *,
+                  profiles:sender_id (
+                    first_name,
+                    last_name,
+                    avatar_url
+                  )
+                `)
+                .eq('id', payload.new.id)
+                .single();
+
+              if (!error && data) {
+                const typedMessage: ProjectMessage = {
+                  ...data,
+                  message_type: data.message_type as 'text' | 'system' | 'file_upload' | 'status_update'
+                };
+                setMessages(prev => [...prev, typedMessage]);
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('Messages subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              isSubscribedRef.current = true;
+            }
+          });
+      }
+    };
+
+    initializeMessages();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, [projectId, toast]);
 

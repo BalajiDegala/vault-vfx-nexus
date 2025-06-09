@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,9 +21,18 @@ export const useProjectPresence = (projectId: string, userId: string) => {
   const [presenceUsers, setPresenceUsers] = useState<UserPresence[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   useEffect(() => {
     if (!projectId || !userId) return;
+
+    // Cleanup existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
 
     // Update user's presence when they join
     const updatePresence = async () => {
@@ -73,26 +82,40 @@ export const useProjectPresence = (projectId: string, userId: string) => {
       }
     };
 
-    updatePresence();
-    fetchPresence();
+    const initializePresence = async () => {
+      await updatePresence();
+      await fetchPresence();
 
-    // Subscribe to presence changes
-    const channel = supabase
-      .channel(`project-presence-${projectId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'project_presence',
-          filter: `project_id=eq.${projectId}`,
-        },
-        (payload) => {
-          console.log('Presence change:', payload);
-          fetchPresence(); // Refetch to get updated data
-        }
-      )
-      .subscribe();
+      // Create new channel with unique identifier
+      const channelName = `project-presence-${projectId}-${Date.now()}`;
+      channelRef.current = supabase.channel(channelName);
+      
+      // Only subscribe if not already subscribed
+      if (!isSubscribedRef.current) {
+        channelRef.current
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'project_presence',
+              filter: `project_id=eq.${projectId}`,
+            },
+            (payload) => {
+              console.log('Presence change:', payload);
+              fetchPresence(); // Refetch to get updated data
+            }
+          )
+          .subscribe((status) => {
+            console.log('Presence subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              isSubscribedRef.current = true;
+            }
+          });
+      }
+    };
+
+    initializePresence();
 
     // Update presence on page visibility change
     const handleVisibilityChange = () => {
@@ -116,7 +139,12 @@ export const useProjectPresence = (projectId: string, userId: string) => {
         .eq('user_id', userId);
 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      supabase.removeChannel(channel);
+      
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, [projectId, userId]);
 
