@@ -159,6 +159,8 @@ const Projects = () => {
     try {
       console.log("=== Fetching projects ===");
       
+      // With the new simplified RLS policies, this query will only return projects
+      // where auth.uid() = client_id, so users only see their own projects
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -167,8 +169,8 @@ const Projects = () => {
       if (error) {
         console.error("Error fetching projects:", error);
         toast({
-          title: "Database Error",
-          description: `Failed to load projects: ${error.message}`,
+          title: "Error Loading Projects",
+          description: `Unable to load projects: ${error.message}`,
           variant: "destructive",
         });
         setProjects([]);
@@ -216,7 +218,7 @@ const Projects = () => {
     
     toast({
       title: "Success!",
-      description: "Project created successfully. Refreshing list...",
+      description: "Project created successfully.",
     });
 
     // Refresh the projects list
