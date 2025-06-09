@@ -29,6 +29,7 @@ export const useProjectMessages = (projectId: string) => {
     // Fetch initial messages
     const fetchMessages = async () => {
       try {
+        console.log('Fetching messages for project:', projectId);
         const { data, error } = await supabase
           .from('project_messages')
           .select(`
@@ -43,9 +44,12 @@ export const useProjectMessages = (projectId: string) => {
           .order('created_at', { ascending: true })
           .limit(50);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching messages:', error);
+          throw error;
+        }
 
-        // Type cast the data to ensure proper typing
+        console.log('Fetched messages:', data);
         const typedMessages: ProjectMessage[] = (data || []).map(msg => ({
           ...msg,
           message_type: msg.message_type as 'text' | 'system' | 'file_upload' | 'status_update'
@@ -78,7 +82,7 @@ export const useProjectMessages = (projectId: string) => {
           filter: `project_id=eq.${projectId}`,
         },
         async (payload) => {
-          console.log('New message:', payload);
+          console.log('New message received:', payload);
           
           // Fetch the complete message with profile data
           const { data, error } = await supabase
@@ -112,26 +116,59 @@ export const useProjectMessages = (projectId: string) => {
 
   const sendMessage = async (content: string, messageType: 'text' | 'system' | 'file_upload' | 'status_update' = 'text', metadata: any = {}) => {
     try {
+      console.log('Attempting to send message:', { content, messageType, projectId });
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        console.error('No authenticated user found');
+        throw new Error('Not authenticated');
+      }
 
-      const { error } = await supabase
+      console.log('Authenticated user:', user.id);
+
+      // Check if user has access to this project
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('id, client_id, assigned_to')
+        .eq('id', projectId)
+        .single();
+
+      if (projectError) {
+        console.error('Error checking project access:', projectError);
+        throw new Error('Cannot access project');
+      }
+
+      console.log('Project data:', projectData);
+      console.log('User has access:', projectData.client_id === user.id || projectData.assigned_to === user.id);
+
+      const messageData = {
+        project_id: projectId,
+        sender_id: user.id,
+        content,
+        message_type: messageType,
+        metadata,
+      };
+
+      console.log('Inserting message:', messageData);
+
+      const { data, error } = await supabase
         .from('project_messages')
-        .insert({
-          project_id: projectId,
-          sender_id: user.id,
-          content,
-          message_type: messageType,
-          metadata,
-        });
+        .insert(messageData)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting message:', error);
+        throw error;
+      }
+
+      console.log('Message inserted successfully:', data);
 
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: `Failed to send message: ${error.message}`,
         variant: "destructive",
       });
     }

@@ -8,11 +8,13 @@ import { Database } from "@/integrations/supabase/types";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import PresenceIndicator from "@/components/collaboration/PresenceIndicator";
 import ProjectChat from "@/components/collaboration/ProjectChat";
+import ProjectHierarchy from "@/components/projects/ProjectHierarchy";
 import { useProjectPresence } from "@/hooks/useProjectPresence";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Users, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, DollarSign, Users, Clock, FileText, MessageSquare } from "lucide-react";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -144,70 +146,90 @@ const ProjectDetail = () => {
           </div>
         </div>
 
-        {/* Project Details Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-400" />
-                Budget
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {project.budget_min && project.budget_max && (
-                  <p className="text-gray-300">
-                    {project.currency || 'V3C'} {project.budget_min} - {project.budget_max}
-                  </p>
-                )}
-                {!project.budget_min && !project.budget_max && (
-                  <p className="text-gray-400">Budget not specified</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Project Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-900/50">
+            <TabsTrigger value="overview" onClick={() => updateSection('overview')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="structure" onClick={() => updateSection('structure')}>
+              <Users className="h-4 w-4 mr-2" />
+              Structure
+            </TabsTrigger>
+            <TabsTrigger value="chat" onClick={() => updateSection('chat')}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Discussion
+            </TabsTrigger>
+            <TabsTrigger value="files" onClick={() => updateSection('files')}>
+              <Clock className="h-4 w-4 mr-2" />
+              Files
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-400" />
-                Skills Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {project.skills_required?.map((skill, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {skill}
-                  </Badge>
-                )) || <p className="text-gray-400">No specific skills required</p>}
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview" className="space-y-6">
+            {/* Project Details Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-green-400" />
+                    Budget
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {project.budget_min && project.budget_max && (
+                      <p className="text-gray-300">
+                        {project.currency || 'V3C'} {project.budget_min} - {project.budget_max}
+                      </p>
+                    )}
+                    {!project.budget_min && !project.budget_max && (
+                      <p className="text-gray-400">Budget not specified</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Clock className="h-5 w-5 text-purple-400" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-gray-300">
-                  Created: {new Date(project.created_at).toLocaleDateString()}
-                </p>
-                <p className="text-gray-300">
-                  Updated: {new Date(project.updated_at).toLocaleDateString()}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" />
+                    Skills Required
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {project.skills_required?.map((skill, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    )) || <p className="text-gray-400">No specific skills required</p>}
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Project Content Area */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-purple-400" />
+                    Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-gray-300">
+                      Created: {new Date(project.created_at).toLocaleDateString()}
+                    </p>
+                    <p className="text-gray-300">
+                      Updated: {new Date(project.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Project Content Area */}
             <Card className="bg-gray-900/50 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">Project Overview</CardTitle>
@@ -223,7 +245,6 @@ const ProjectDetail = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-white mb-2">Milestones</h3>
                       <div className="space-y-2">
-                        {/* Render milestones if they exist */}
                         <p className="text-gray-400">Milestone tracking coming soon...</p>
                       </div>
                     </div>
@@ -244,40 +265,42 @@ const ProjectDetail = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
 
-          <div>
-            <Card className="bg-gray-900/50 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Team Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {presenceUsers.length > 0 ? (
-                    presenceUsers.map((user) => {
-                      const fullName = `${user.profile?.first_name || ''} ${user.profile?.last_name || ''}`.trim();
-                      return (
-                        <div key={user.user_id} className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            user.status === 'online' ? 'bg-green-400' : 'bg-yellow-400'
-                          }`} />
-                          <div>
-                            <p className="text-white text-sm">{fullName}</p>
-                            <p className="text-gray-400 text-xs">
-                              {user.status} • {user.current_section}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-gray-400">No team members online</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          <TabsContent value="structure">
+            <ProjectHierarchy 
+              project={project} 
+              userRole={userRole} 
+              userId={user.id} 
+            />
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <div className="space-y-6">
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Team Discussion</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-400">Use the floating chat button to communicate with your team in real-time.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="files">
+            <div className="space-y-6">
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Project Files</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-400">File sharing and management coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Real-time Chat */}
