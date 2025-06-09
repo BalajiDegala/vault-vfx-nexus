@@ -27,7 +27,6 @@ const Projects = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,13 +56,13 @@ const Projects = () => {
       setUser(session.user);
       console.log("User authenticated:", session.user.id);
 
-      // First, ensure user has a profile
+      // Ensure user has a profile
       await ensureUserProfile(session.user);
 
       // Get or create user role
       await ensureUserRole(session.user.id);
 
-      // Finally, fetch projects
+      // Fetch projects
       await fetchProjects();
     } catch (error) {
       console.error("Auth check error:", error);
@@ -84,10 +83,14 @@ const Projects = () => {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, create it
+      if (error) {
+        console.error("Error checking profile:", error);
+        return;
+      }
+
+      if (!profile) {
         console.log("Creating user profile...");
         const { error: insertError } = await supabase
           .from("profiles")
@@ -104,7 +107,7 @@ const Projects = () => {
         } else {
           console.log("Profile created successfully");
         }
-      } else if (profile) {
+      } else {
         console.log("Profile exists:", profile.id);
       }
     } catch (error) {
@@ -119,10 +122,15 @@ const Projects = () => {
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
-      if (roleError && roleError.code === 'PGRST116') {
-        // No role found, create default role
+      if (roleError) {
+        console.error("Error checking role:", roleError);
+        setUserRole('studio');
+        return;
+      }
+
+      if (!roleData) {
         console.log("Creating default role for user...");
         const { error: insertError } = await supabase
           .from("user_roles")
@@ -133,17 +141,13 @@ const Projects = () => {
 
         if (insertError) {
           console.error("Error creating user role:", insertError);
-          setUserRole('studio'); // Fallback
         } else {
           console.log("Default role created successfully");
-          setUserRole('studio');
         }
-      } else if (roleData) {
+        setUserRole('studio');
+      } else {
         console.log("User role found:", roleData.role);
         setUserRole(roleData.role);
-      } else {
-        console.log("No role data, using default");
-        setUserRole('studio');
       }
     } catch (error) {
       console.error("Error ensuring user role:", error);
@@ -155,22 +159,13 @@ const Projects = () => {
     try {
       console.log("=== Fetching projects ===");
       
-      // Try to fetch projects with detailed logging
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from("projects")
-        .select("*", { count: 'exact' })
+        .select("*")
         .order("created_at", { ascending: false });
 
-      console.log("Query executed. Count:", count, "Error:", error);
-
       if (error) {
-        console.error("Supabase error details:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
+        console.error("Error fetching projects:", error);
         toast({
           title: "Database Error",
           description: `Failed to load projects: ${error.message}`,
@@ -180,13 +175,7 @@ const Projects = () => {
         return;
       }
 
-      console.log("Raw data received:", data);
       console.log("Projects fetched successfully:", data?.length || 0, "projects");
-      
-      if (data && data.length > 0) {
-        console.log("First project:", data[0]);
-      }
-      
       setProjects(data || []);
     } catch (error) {
       console.error("Unexpected error in fetchProjects:", error);
@@ -221,31 +210,17 @@ const Projects = () => {
     openOpportunities: projects.filter(p => p.status === "open").length,
   };
 
-  const refreshProjects = async () => {
-    console.log("=== Refreshing projects ===");
-    await fetchProjects();
-  };
-
   const handleCreateSuccess = async () => {
     console.log("=== Project creation success callback ===");
     setShowCreateModal(false);
     
-    // Wait a bit longer and add better feedback
     toast({
-      title: "Creating Project...",
-      description: "Your project is being saved.",
+      title: "Success!",
+      description: "Project created successfully. Refreshing list...",
     });
 
-    // Wait for database to process the insert
-    setTimeout(async () => {
-      console.log("Refreshing project list after creation...");
-      await refreshProjects();
-      
-      toast({
-        title: "Success!",
-        description: "Your project has been created and should appear in the list.",
-      });
-    }, 1000); // Increased delay
+    // Refresh the projects list
+    await fetchProjects();
   };
 
   if (loading) {
@@ -268,15 +243,6 @@ const Projects = () => {
       <DashboardNavbar user={user} userRole={userRole || 'studio'} />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Debug Info - Remove this later */}
-        <div className="mb-4 p-4 bg-gray-800 rounded-lg text-sm text-gray-300">
-          <p><strong>Debug Info:</strong></p>
-          <p>User ID: {user.id}</p>
-          <p>User Role: {userRole}</p>
-          <p>Total Projects: {projects.length}</p>
-          <p>Can Create Project: {canCreateProject ? 'Yes' : 'No'}</p>
-        </div>
-
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
@@ -443,7 +409,7 @@ const Projects = () => {
                 project={project}
                 userRole={userRole}
                 userId={user.id}
-                onUpdate={refreshProjects}
+                onUpdate={fetchProjects}
               />
             ))}
           </div>
