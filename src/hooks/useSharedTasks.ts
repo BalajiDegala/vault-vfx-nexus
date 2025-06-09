@@ -72,7 +72,7 @@ export const useSharedTasks = (userRole: string, userId: string) => {
             )
           )
         ),
-        profiles:studio_id (
+        studio_profile:studio_id (
           first_name,
           last_name
         )
@@ -88,9 +88,14 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
       if (error) throw error;
       
-      // Type assertion to ensure the data matches our interface
-      const typedData = (data || []) as SharedTask[];
-      setSharedTasks(typedData);
+      // Transform the data to match our interface
+      const transformedData: SharedTask[] = (data || []).map(item => ({
+        ...item,
+        profiles: item.studio_profile,
+        studio_profile: undefined // Remove the temporary field
+      }));
+      
+      setSharedTasks(transformedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);
       toast({
