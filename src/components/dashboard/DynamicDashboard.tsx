@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,18 +94,16 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
         tasksData = tasks || [];
       }
 
-      // Calculate stats
-      const activeProjects = projectsData?.filter(p => p.status === 'in_progress' || p.status === 'active').length || 0;
+      // Calculate stats - using correct status values
+      const activeProjects = projectsData?.filter(p => p.status === 'open' || p.status === 'review').length || 0;
       const completedTasks = tasksData.filter(t => t.status === 'completed').length;
       const pendingTasks = tasksData.filter(t => t.status === 'todo' || t.status === 'in_progress').length;
 
-      // Fetch team members (users who have worked on projects)
       const { data: teamData } = await supabase
         .from('profiles')
         .select('id')
         .limit(50);
 
-      // Generate realistic recent activity
       const recentActivity = [
         {
           id: '1',

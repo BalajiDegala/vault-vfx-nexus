@@ -28,10 +28,10 @@ interface ProjectHeaderProps {
 const ProjectHeader = ({ project, presenceUsers }: ProjectHeaderProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-      case 'in_progress':
+      case 'open':
+      case 'review':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'pending':
+      case 'draft':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'completed':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
@@ -58,6 +58,25 @@ const ProjectHeader = ({ project, presenceUsers }: ProjectHeaderProps) => {
     }).format(amount);
   };
 
+  // Calculate budget display value
+  const getBudgetDisplay = () => {
+    if (project.budget_min && project.budget_max) {
+      if (project.budget_min === project.budget_max) {
+        return formatCurrency(project.budget_min);
+      }
+      return `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`;
+    }
+    if (project.budget_min) {
+      return `From ${formatCurrency(project.budget_min)}`;
+    }
+    if (project.budget_max) {
+      return `Up to ${formatCurrency(project.budget_max)}`;
+    }
+    return null;
+  };
+
+  const budgetDisplay = getBudgetDisplay();
+
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-6 mb-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -78,10 +97,10 @@ const ProjectHeader = ({ project, presenceUsers }: ProjectHeaderProps) => {
                   {project.status?.replace('_', ' ')}
                 </Badge>
                 
-                {project.budget && (
+                {budgetDisplay && (
                   <div className="flex items-center gap-1 text-green-400">
                     <DollarSign className="h-4 w-4" />
-                    <span className="text-sm font-medium">{formatCurrency(project.budget)}</span>
+                    <span className="text-sm font-medium">{budgetDisplay}</span>
                   </div>
                 )}
                 

@@ -28,10 +28,10 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-      case 'in_progress':
+      case 'open':
+      case 'review':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'pending':
+      case 'draft':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'completed':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
@@ -39,21 +39,6 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
         return 'bg-red-500/20 text-red-400 border-red-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return 'text-red-400';
-      case 'high':
-        return 'text-orange-400';
-      case 'medium':
-        return 'text-yellow-400';
-      case 'low':
-        return 'text-green-400';
-      default:
-        return 'text-gray-400';
     }
   };
 
@@ -91,6 +76,25 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
     navigate(`/projects/${project.id}`);
   };
 
+  // Calculate budget display value
+  const getBudgetDisplay = () => {
+    if (project.budget_min && project.budget_max) {
+      if (project.budget_min === project.budget_max) {
+        return formatCurrency(project.budget_min);
+      }
+      return `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`;
+    }
+    if (project.budget_min) {
+      return `From ${formatCurrency(project.budget_min)}`;
+    }
+    if (project.budget_max) {
+      return `Up to ${formatCurrency(project.budget_max)}`;
+    }
+    return null;
+  };
+
+  const budgetDisplay = getBudgetDisplay();
+
   return (
     <Card className="bg-gray-900/50 border-gray-700 hover:border-gray-600 transition-all duration-200 hover:shadow-lg">
       <CardHeader className="pb-3">
@@ -105,10 +109,6 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
                 <Badge className={`${getStatusColor(project.status)} text-xs capitalize`}>
                   {project.status?.replace('_', ' ')}
                 </Badge>
-                <div className={`flex items-center gap-1 ${getPriorityColor(project.priority)}`}>
-                  <div className="w-2 h-2 rounded-full bg-current"></div>
-                  <span className="text-xs capitalize">{project.priority}</span>
-                </div>
               </div>
             </div>
           </div>
@@ -135,11 +135,11 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
         {/* Project Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
-            {project.budget ? (
+            {budgetDisplay ? (
               <>
                 <DollarSign className="h-4 w-4 text-green-400" />
                 <span className="text-green-400 text-sm font-medium">
-                  {formatCurrency(project.budget)}
+                  {budgetDisplay}
                 </span>
               </>
             ) : (

@@ -14,30 +14,15 @@ interface ProjectOverviewProps {
 const ProjectOverview = ({ project }: ProjectOverviewProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-      case 'in_progress':
+      case 'open':
+      case 'review':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'pending':
+      case 'draft':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'completed':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'cancelled':
         return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'high':
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'medium':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'low':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
@@ -74,6 +59,25 @@ const ProjectOverview = ({ project }: ProjectOverviewProps) => {
 
   const progress = calculateProgress();
 
+  // Calculate budget display value
+  const getBudgetDisplay = () => {
+    if (project.budget_min && project.budget_max) {
+      if (project.budget_min === project.budget_max) {
+        return formatCurrency(project.budget_min);
+      }
+      return `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`;
+    }
+    if (project.budget_min) {
+      return `From ${formatCurrency(project.budget_min)}`;
+    }
+    if (project.budget_max) {
+      return `Up to ${formatCurrency(project.budget_max)}`;
+    }
+    return 'Not specified';
+  };
+
+  const budgetDisplay = getBudgetDisplay();
+
   return (
     <div className="space-y-6">
       {/* Project Header Info */}
@@ -103,7 +107,7 @@ const ProjectOverview = ({ project }: ProjectOverviewProps) => {
               <div>
                 <p className="text-gray-400 text-sm">Budget</p>
                 <p className="text-white font-semibold">
-                  {project.budget ? formatCurrency(project.budget) : 'Not specified'}
+                  {budgetDisplay}
                 </p>
               </div>
             </div>
@@ -117,9 +121,9 @@ const ProjectOverview = ({ project }: ProjectOverviewProps) => {
                 <Zap className="h-5 w-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-gray-400 text-sm">Priority</p>
-                <Badge className={`${getPriorityColor(project.priority)} capitalize`}>
-                  {project.priority}
+                <p className="text-gray-400 text-sm">Currency</p>
+                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 capitalize">
+                  {project.currency || 'V3C'}
                 </Badge>
               </div>
             </div>
