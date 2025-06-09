@@ -212,93 +212,105 @@ const CreateProjectModal = ({ open, onClose, onSuccess, userId }: CreateProjectM
               <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Standard">Standard</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Enterprise">Enterprise</SelectItem>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectItem value="Standard" className="text-white hover:bg-gray-700">Standard</SelectItem>
+                <SelectItem value="High" className="text-white hover:bg-gray-700">High</SelectItem>
+                <SelectItem value="Enterprise" className="text-white hover:bg-gray-700">Enterprise</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-gray-300">Skills Required</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
+          <div className="space-y-3">
+            <Label className="text-white font-medium">Skills Required</Label>
+            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-gray-800/30 rounded-lg border border-gray-600">
               {formData.skills_required.map((skill) => (
-                <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                <Badge key={skill} className="bg-blue-600/80 text-white border-blue-500 hover:bg-blue-700/80 flex items-center gap-1">
                   {skill}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => removeSkill(skill)} />
+                  <X className="h-3 w-3 cursor-pointer hover:text-red-300" onClick={() => removeSkill(skill)} />
                 </Badge>
               ))}
+              {formData.skills_required.length === 0 && (
+                <p className="text-gray-400 text-sm">No skills selected yet</p>
+              )}
             </div>
             <div className="flex gap-2">
               <Input
                 value={newSkill}
                 onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Add skill..."
-                className="bg-gray-800/50 border-gray-600 text-white"
+                placeholder="Add custom skill..."
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkill(newSkill))}
               />
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => addSkill(newSkill)}
-                className="border-blue-500/50"
+                className="border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
               >
                 Add
               </Button>
             </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {skillSuggestions.map((skill) => (
-                <Badge
-                  key={skill}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-blue-500/20"
-                  onClick={() => addSkill(skill)}
-                >
-                  {skill}
-                </Badge>
-              ))}
+            <div className="space-y-2">
+              <p className="text-sm text-gray-400">Popular skills:</p>
+              <div className="flex flex-wrap gap-2">
+                {skillSuggestions.map((skill) => (
+                  <Badge
+                    key={skill}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-blue-500/20 border-gray-500 text-gray-300 hover:text-white hover:border-blue-400"
+                    onClick={() => addSkill(skill)}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-gray-300">Data Layers Required</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
+          <div className="space-y-3">
+            <Label className="text-white font-medium">Data Layers Required</Label>
+            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-gray-800/30 rounded-lg border border-gray-600">
               {formData.data_layers.map((layer) => (
-                <Badge key={layer} variant="secondary" className="flex items-center gap-1">
+                <Badge key={layer} className="bg-purple-600/80 text-white border-purple-500 hover:bg-purple-700/80 flex items-center gap-1">
                   {layer}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => removeDataLayer(layer)} />
+                  <X className="h-3 w-3 cursor-pointer hover:text-red-300" onClick={() => removeDataLayer(layer)} />
                 </Badge>
               ))}
+              {formData.data_layers.length === 0 && (
+                <p className="text-gray-400 text-sm">No data layers selected yet</p>
+              )}
             </div>
             <div className="flex gap-2">
               <Input
                 value={newDataLayer}
                 onChange={(e) => setNewDataLayer(e.target.value)}
-                placeholder="Add data layer..."
-                className="bg-gray-800/50 border-gray-600 text-white"
+                placeholder="Add custom data layer..."
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDataLayer(newDataLayer))}
               />
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => addDataLayer(newDataLayer)}
-                className="border-blue-500/50"
+                className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20"
               >
                 Add
               </Button>
             </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {dataLayerSuggestions.map((layer) => (
-                <Badge
-                  key={layer}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-blue-500/20"
-                  onClick={() => addDataLayer(layer)}
-                >
-                  {layer}
-                </Badge>
-              ))}
+            <div className="space-y-2">
+              <p className="text-sm text-gray-400">Common data layers:</p>
+              <div className="flex flex-wrap gap-2">
+                {dataLayerSuggestions.map((layer) => (
+                  <Badge
+                    key={layer}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-purple-500/20 border-gray-500 text-gray-300 hover:text-white hover:border-purple-400"
+                    onClick={() => addDataLayer(layer)}
+                  >
+                    {layer}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -307,7 +319,7 @@ const CreateProjectModal = ({ open, onClose, onSuccess, userId }: CreateProjectM
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-gray-600 text-gray-300"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               Cancel
             </Button>
