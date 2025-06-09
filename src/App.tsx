@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Community from "./pages/Community";
 import MachineRental from "./pages/MachineRental";
 import Profiles from "./pages/Profiles";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/community" element={<Community />} />
