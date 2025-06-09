@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, DollarSign, Users, Clock, FileText, MessageSquare } from "lucide-react";
+import { Calendar, DollarSign, Users, Clock, FileText, MessageSquare, Upload, File, Download, Send, AtSign } from "lucide-react";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -200,7 +201,7 @@ const ProjectDetail = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {project.skills_required?.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="bg-blue-900/30 text-blue-300 border-blue-600">
+                      <Badge key={index} variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/50">
                         {skill}
                       </Badge>
                     )) || <p className="text-gray-400">No specific skills required</p>}
@@ -237,7 +238,7 @@ const ProjectDetail = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {project.data_layers.map((layer, index) => (
-                      <Badge key={index} variant="outline" className="bg-purple-900/30 text-purple-300 border-purple-600">
+                      <Badge key={index} variant="outline" className="bg-purple-500/20 text-purple-300 border-purple-500/50">
                         {layer}
                       </Badge>
                     ))}
@@ -306,6 +307,48 @@ const ProjectDetail = () => {
                     <p className="text-gray-300">
                       Collaborate with your team using real-time messaging. Share updates, ask questions, and coordinate work.
                     </p>
+                    
+                    {/* Mock conversation */}
+                    <div className="space-y-4 bg-gray-800/50 rounded-lg p-4 border border-gray-700 max-h-80 overflow-y-auto">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          JD
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-medium">John Doe</span>
+                            <span className="text-gray-400 text-xs">2 hours ago</span>
+                          </div>
+                          <p className="text-gray-300 text-sm">Hey team, I've uploaded the initial concept art for sequence 01. Looking forward to your feedback!</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          SM
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-medium">Sarah Miller</span>
+                            <span className="text-gray-400 text-xs">1 hour ago</span>
+                          </div>
+                          <p className="text-gray-300 text-sm">Great work @john! The lighting direction looks perfect for the mood we're going for.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chat input */}
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="Type your message..."
+                        className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                      />
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+
                     <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                       <h4 className="text-white font-medium mb-2">Quick Actions</h4>
                       <div className="grid grid-cols-2 gap-2">
@@ -314,14 +357,11 @@ const ProjectDetail = () => {
                           Send Update
                         </Button>
                         <Button variant="outline" size="sm" className="justify-start">
-                          <Users className="h-4 w-4 mr-2" />
+                          <AtSign className="h-4 w-4 mr-2" />
                           @Mention Team
                         </Button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400">
-                      Use the floating chat button in the bottom right to start real-time conversations.
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -344,7 +384,7 @@ const ProjectDetail = () => {
                         <h4 className="text-white font-medium mb-2">Deliverables</h4>
                         <p className="text-gray-400 text-sm mb-3">Final renders, compositions, and approved assets</p>
                         <Button variant="outline" size="sm" className="w-full">
-                          <upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-4 w-4 mr-2" />
                           Upload Files
                         </Button>
                       </div>
@@ -353,7 +393,7 @@ const ProjectDetail = () => {
                         <h4 className="text-white font-medium mb-2">Work in Progress</h4>
                         <p className="text-gray-400 text-sm mb-3">Draft versions, previews, and work files</p>
                         <Button variant="outline" size="sm" className="w-full">
-                          <upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-4 w-4 mr-2" />
                           Upload Files
                         </Button>
                       </div>
@@ -362,7 +402,7 @@ const ProjectDetail = () => {
                         <h4 className="text-white font-medium mb-2">References</h4>
                         <p className="text-gray-400 text-sm mb-3">Concept art, references, and source materials</p>
                         <Button variant="outline" size="sm" className="w-full">
-                          <upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-4 w-4 mr-2" />
                           Upload Files
                         </Button>
                       </div>
@@ -373,32 +413,60 @@ const ProjectDetail = () => {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700">
                           <div className="flex items-center gap-3">
-                            <file className="h-5 w-5 text-blue-400" />
+                            <File className="h-5 w-5 text-blue-400" />
                             <div>
                               <p className="text-white text-sm">project_v1.blend</p>
-                              <p className="text-gray-400 text-xs">Uploaded 2 hours ago</p>
+                              <p className="text-gray-400 text-xs">Uploaded 2 hours ago • 24.5 MB</p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm">Download</Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
 
                         <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700">
                           <div className="flex items-center gap-3">
-                            <file className="h-5 w-5 text-green-400" />
+                            <File className="h-5 w-5 text-green-400" />
                             <div>
                               <p className="text-white text-sm">render_test.mp4</p>
-                              <p className="text-gray-400 text-xs">Uploaded 1 day ago</p>
+                              <p className="text-gray-400 text-xs">Uploaded 1 day ago • 156.2 MB</p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm">Download</Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700">
+                          <div className="flex items-center gap-3">
+                            <File className="h-5 w-5 text-purple-400" />
+                            <div>
+                              <p className="text-white text-sm">concept_art_seq01.jpg</p>
+                              <p className="text-gray-400 text-xs">Uploaded 3 days ago • 8.7 MB</p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
+                    </div>
+
+                    {/* File upload dropzone */}
+                    <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-gray-500 transition-colors">
+                      <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-white font-medium mb-2">Drop files here to upload</h4>
+                      <p className="text-gray-400 text-sm mb-4">or click to browse files</p>
+                      <Button variant="outline" size="sm">
+                        Choose Files
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
+        </Tabs>
       </div>
 
       {/* Real-time Chat */}
