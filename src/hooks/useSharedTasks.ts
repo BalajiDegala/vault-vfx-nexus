@@ -71,10 +71,6 @@ export const useSharedTasks = (userRole: string, userId: string) => {
               )
             )
           )
-        ),
-        studio_profile:studio_id (
-          first_name,
-          last_name
         )
       `);
 
@@ -87,13 +83,29 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      
+
+      // Fetch studio profiles separately
+      const studioIds = (data || []).map(item => item.studio_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', studioIds);
+
+      if (profilesError) throw profilesError;
+
       // Transform the data to match our interface
-      const transformedData: SharedTask[] = (data || []).map(item => ({
-        ...item,
-        profiles: item.studio_profile,
-        studio_profile: undefined // Remove the temporary field
-      }));
+      const transformedData: SharedTask[] = (data || []).map(item => {
+        const studioProfile = profiles?.find(p => p.id === item.studio_id);
+        return {
+          ...item,
+          status: item.status as 'pending' | 'approved' | 'rejected',
+          access_level: item.access_level as 'view' | 'edit' | 'comment',
+          profiles: studioProfile ? {
+            first_name: studioProfile.first_name || '',
+            last_name: studioProfile.last_name || ''
+          } : undefined
+        };
+      });
       
       setSharedTasks(transformedData);
     } catch (error) {
