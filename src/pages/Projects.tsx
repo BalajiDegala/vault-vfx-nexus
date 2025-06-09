@@ -45,9 +45,11 @@ const Projects = () => {
 
   const checkAuth = async () => {
     try {
+      console.log("=== Starting auth check ===");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log("No session found, redirecting to login");
         navigate("/login");
         return;
       }
@@ -55,29 +57,13 @@ const Projects = () => {
       setUser(session.user);
       console.log("User authenticated:", session.user.id);
 
-      // Get user role
-      try {
-        const { data: roleData, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+      // First, ensure user has a profile
+      await ensureUserProfile(session.user);
 
-        if (roleError) {
-          console.log("No role found, setting default:", roleError.message);
-          setUserRole('studio');
-        } else if (roleData) {
-          console.log("User role found:", roleData.role);
-          setUserRole(roleData.role);
-        } else {
-          setUserRole('studio');
-        }
-      } catch (roleError) {
-        console.log("Role fetch error, using default:", roleError);
-        setUserRole('studio');
-      }
+      // Get or create user role
+      await ensureUserRole(session.user.id);
 
-      // Always fetch projects regardless of role
+      // Finally, fetch projects
       await fetchProjects();
     } catch (error) {
       console.error("Auth check error:", error);
@@ -91,27 +77,116 @@ const Projects = () => {
     }
   };
 
+  const ensureUserProfile = async (user: User) => {
+    try {
+      console.log("Checking user profile...");
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log("Creating user profile...");
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            first_name: user.user_metadata?.first_name || '',
+            last_name: user.user_metadata?.last_name || '',
+            username: user.user_metadata?.username || user.email?.split('@')[0] || '',
+          });
+
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+        } else {
+          console.log("Profile created successfully");
+        }
+      } else if (profile) {
+        console.log("Profile exists:", profile.id);
+      }
+    } catch (error) {
+      console.error("Error ensuring user profile:", error);
+    }
+  };
+
+  const ensureUserRole = async (userId: string) => {
+    try {
+      console.log("Checking user role...");
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+
+      if (roleError && roleError.code === 'PGRST116') {
+        // No role found, create default role
+        console.log("Creating default role for user...");
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: 'studio'
+          });
+
+        if (insertError) {
+          console.error("Error creating user role:", insertError);
+          setUserRole('studio'); // Fallback
+        } else {
+          console.log("Default role created successfully");
+          setUserRole('studio');
+        }
+      } else if (roleData) {
+        console.log("User role found:", roleData.role);
+        setUserRole(roleData.role);
+      } else {
+        console.log("No role data, using default");
+        setUserRole('studio');
+      }
+    } catch (error) {
+      console.error("Error ensuring user role:", error);
+      setUserRole('studio');
+    }
+  };
+
   const fetchProjects = async () => {
     try {
-      console.log("Fetching projects...");
+      console.log("=== Fetching projects ===");
       
-      const { data, error } = await supabase
+      // Try to fetch projects with detailed logging
+      const { data, error, count } = await supabase
         .from("projects")
-        .select("*")
+        .select("*", { count: 'exact' })
         .order("created_at", { ascending: false });
 
+      console.log("Query executed. Count:", count, "Error:", error);
+
       if (error) {
-        console.error("Error fetching projects:", error);
+        console.error("Supabase error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
         toast({
-          title: "Error",
-          description: "Failed to load projects: " + error.message,
+          title: "Database Error",
+          description: `Failed to load projects: ${error.message}`,
           variant: "destructive",
         });
         setProjects([]);
         return;
       }
 
+      console.log("Raw data received:", data);
       console.log("Projects fetched successfully:", data?.length || 0, "projects");
+      
+      if (data && data.length > 0) {
+        console.log("First project:", data[0]);
+      }
+      
       setProjects(data || []);
     } catch (error) {
       console.error("Unexpected error in fetchProjects:", error);
@@ -147,22 +222,30 @@ const Projects = () => {
   };
 
   const refreshProjects = async () => {
-    console.log("Refreshing projects...");
+    console.log("=== Refreshing projects ===");
     await fetchProjects();
   };
 
   const handleCreateSuccess = async () => {
-    console.log("Project created successfully, refreshing list...");
+    console.log("=== Project creation success callback ===");
     setShowCreateModal(false);
     
-    // Add a small delay to ensure the database has been updated
+    // Wait a bit longer and add better feedback
+    toast({
+      title: "Creating Project...",
+      description: "Your project is being saved.",
+    });
+
+    // Wait for database to process the insert
     setTimeout(async () => {
+      console.log("Refreshing project list after creation...");
       await refreshProjects();
+      
       toast({
-        title: "Success",
-        description: "Project created successfully!",
+        title: "Success!",
+        description: "Your project has been created and should appear in the list.",
       });
-    }, 500);
+    }, 1000); // Increased delay
   };
 
   if (loading) {
@@ -185,6 +268,15 @@ const Projects = () => {
       <DashboardNavbar user={user} userRole={userRole || 'studio'} />
       
       <div className="container mx-auto px-4 py-8">
+        {/* Debug Info - Remove this later */}
+        <div className="mb-4 p-4 bg-gray-800 rounded-lg text-sm text-gray-300">
+          <p><strong>Debug Info:</strong></p>
+          <p>User ID: {user.id}</p>
+          <p>User Role: {userRole}</p>
+          <p>Total Projects: {projects.length}</p>
+          <p>Can Create Project: {canCreateProject ? 'Yes' : 'No'}</p>
+        </div>
+
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
@@ -211,7 +303,10 @@ const Projects = () => {
                     Use Template
                   </Button>
                   <Button
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={() => {
+                      console.log("Create project button clicked");
+                      setShowCreateModal(true);
+                    }}
                     className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
                   >
                     <Plus className="h-4 w-4 mr-2" />
