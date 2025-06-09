@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,14 +150,22 @@ const Marketplace = () => {
         return;
       }
 
-      // Update download count
-      const { error: updateError } = await supabase
+      // Update download count by fetching current value and incrementing
+      const { data: currentItem, error: fetchError } = await supabase
         .from("marketplace_items")
-        .update({ downloads: supabase.sql`downloads + 1` })
-        .eq("id", itemId);
+        .select("downloads")
+        .eq("id", itemId)
+        .single();
 
-      if (updateError) {
-        console.error("Error updating download count:", updateError);
+      if (!fetchError && currentItem) {
+        const { error: updateError } = await supabase
+          .from("marketplace_items")
+          .update({ downloads: (currentItem.downloads || 0) + 1 })
+          .eq("id", itemId);
+
+        if (updateError) {
+          console.error("Error updating download count:", updateError);
+        }
       }
 
       toast({
