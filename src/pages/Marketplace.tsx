@@ -105,7 +105,7 @@ const Marketplace = () => {
         .order("created_at", { ascending: false });
 
       if (selectedCategory !== "all") {
-        query = query.eq("category", selectedCategory);
+        query = query.eq("category", selectedCategory as MarketplaceCategory);
       }
 
       const { data, error } = await query;
@@ -154,7 +154,7 @@ const Marketplace = () => {
       // Update download count
       const { error: updateError } = await supabase
         .from("marketplace_items")
-        .update({ downloads: supabase.raw('downloads + 1') })
+        .update({ downloads: supabase.sql`downloads + 1` })
         .eq("id", itemId);
 
       if (updateError) {
@@ -273,7 +273,7 @@ const Marketplace = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-blue-400">${item.price}</div>
-                    {item.rating > 0 && (
+                    {item.rating && item.rating > 0 && (
                       <div className="flex items-center text-sm text-yellow-400">
                         <Star className="h-3 w-3 mr-1" />
                         {item.rating.toFixed(1)} ({item.total_ratings})
