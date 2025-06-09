@@ -134,27 +134,27 @@ const ProjectFiles = () => {
       case 'audio': return <Music className="h-5 w-5 text-purple-400" />;
       case 'archive': return <Archive className="h-5 w-5 text-orange-400" />;
       case 'code': return <FileCode className="h-5 w-5 text-blue-400" />;
-      default: return <File className="h-5 w-5 text-gray-400" />;
+      default: return <File className="h-5 w-5 text-gray-300" />;
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'deliverables': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'wip': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-      case 'references': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      case 'assets': return 'bg-purple-500/20 text-purple-400 border-purple-500/50';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      case 'deliverables': return 'bg-green-500/20 text-green-300 border-green-500/50';
+      case 'wip': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50';
+      case 'references': return 'bg-blue-500/20 text-blue-300 border-blue-500/50';
+      case 'assets': return 'bg-purple-500/20 text-purple-300 border-purple-500/50';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-500/20 text-green-400';
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400';
-      case 'revision': return 'bg-red-500/20 text-red-400';
-      case 'archived': return 'bg-gray-500/20 text-gray-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      case 'approved': return 'bg-green-500/20 text-green-300';
+      case 'pending': return 'bg-yellow-500/20 text-yellow-300';
+      case 'revision': return 'bg-red-500/20 text-red-300';
+      case 'archived': return 'bg-gray-500/20 text-gray-300';
+      default: return 'bg-gray-500/20 text-gray-300';
     }
   };
 
@@ -269,7 +269,7 @@ const ProjectFiles = () => {
           <CardTitle className="text-white flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Project Files & Assets
-            <Badge variant="outline" className="ml-auto text-xs">
+            <Badge variant="outline" className="ml-auto text-xs text-gray-300 border-gray-600">
               {files.length} files • {uploadTasks.length} uploading
             </Badge>
           </CardTitle>
@@ -284,59 +284,59 @@ const ProjectFiles = () => {
                   placeholder="Search files, tags, or users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-800/50 border-gray-600 text-white"
+                  className="pl-10 bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-40 bg-gray-800 border-gray-600 text-white">
+                  <SelectTrigger className="w-40 bg-gray-800 border-gray-600 text-gray-200">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="deliverables">Deliverables</SelectItem>
-                    <SelectItem value="wip">Work in Progress</SelectItem>
-                    <SelectItem value="references">References</SelectItem>
-                    <SelectItem value="assets">Assets</SelectItem>
+                    <SelectItem value="all" className="text-gray-200">All Categories</SelectItem>
+                    <SelectItem value="deliverables" className="text-gray-200">Deliverables</SelectItem>
+                    <SelectItem value="wip" className="text-gray-200">Work in Progress</SelectItem>
+                    <SelectItem value="references" className="text-gray-200">References</SelectItem>
+                    <SelectItem value="assets" className="text-gray-200">Assets</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={selectedFileType} onValueChange={setSelectedFileType}>
-                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-white">
+                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-gray-200">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="image">Images</SelectItem>
-                    <SelectItem value="video">Videos</SelectItem>
-                    <SelectItem value="audio">Audio</SelectItem>
-                    <SelectItem value="archive">Archives</SelectItem>
-                    <SelectItem value="code">Code/Scenes</SelectItem>
+                    <SelectItem value="all" className="text-gray-200">All Types</SelectItem>
+                    <SelectItem value="image" className="text-gray-200">Images</SelectItem>
+                    <SelectItem value="video" className="text-gray-200">Videos</SelectItem>
+                    <SelectItem value="audio" className="text-gray-200">Audio</SelectItem>
+                    <SelectItem value="archive" className="text-gray-200">Archives</SelectItem>
+                    <SelectItem value="code" className="text-gray-200">Code/Scenes</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-white">
+                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-gray-200">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="revision">Needs Revision</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="all" className="text-gray-200">All Status</SelectItem>
+                    <SelectItem value="approved" className="text-gray-200">Approved</SelectItem>
+                    <SelectItem value="pending" className="text-gray-200">Pending</SelectItem>
+                    <SelectItem value="revision" className="text-gray-200">Needs Revision</SelectItem>
+                    <SelectItem value="archived" className="text-gray-200">Archived</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-white">
+                  <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-gray-200">
                     <SelectValue placeholder="Sort" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="recent">Recent</SelectItem>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="size">Size</SelectItem>
-                    <SelectItem value="downloads">Downloads</SelectItem>
+                    <SelectItem value="recent" className="text-gray-200">Recent</SelectItem>
+                    <SelectItem value="name" className="text-gray-200">Name</SelectItem>
+                    <SelectItem value="size" className="text-gray-200">Size</SelectItem>
+                    <SelectItem value="downloads" className="text-gray-200">Downloads</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -345,19 +345,19 @@ const ProjectFiles = () => {
             {/* Upload Areas */}
             <Tabs defaultValue="deliverables" className="space-y-4">
               <TabsList className="grid w-full grid-cols-4 bg-gray-800/50">
-                <TabsTrigger value="deliverables" className="data-[state=active]:bg-green-500/20">
+                <TabsTrigger value="deliverables" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300">
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Deliverables
                 </TabsTrigger>
-                <TabsTrigger value="wip" className="data-[state=active]:bg-yellow-500/20">
+                <TabsTrigger value="wip" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300">
                   <Clock className="h-4 w-4 mr-2" />
                   Work in Progress
                 </TabsTrigger>
-                <TabsTrigger value="references" className="data-[state=active]:bg-blue-500/20">
+                <TabsTrigger value="references" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300">
                   <Image className="h-4 w-4 mr-2" />
                   References
                 </TabsTrigger>
-                <TabsTrigger value="assets" className="data-[state=active]:bg-purple-500/20">
+                <TabsTrigger value="assets" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
                   <Archive className="h-4 w-4 mr-2" />
                   Assets
                 </TabsTrigger>
@@ -366,8 +366,8 @@ const ProjectFiles = () => {
               <TabsContent value="deliverables">
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6">
                   <h3 className="text-green-300 font-medium mb-2">Final Deliverables</h3>
-                  <p className="text-gray-400 text-sm mb-4">Approved final renders, compositions, and client-ready assets</p>
-                  <Button onClick={() => handleFileUpload('deliverables')} className="bg-green-600 hover:bg-green-700">
+                  <p className="text-gray-300 text-sm mb-4">Approved final renders, compositions, and client-ready assets</p>
+                  <Button onClick={() => handleFileUpload('deliverables')} className="bg-green-600 hover:bg-green-700 text-white">
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Deliverables
                   </Button>
@@ -377,8 +377,8 @@ const ProjectFiles = () => {
               <TabsContent value="wip">
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-6">
                   <h3 className="text-yellow-300 font-medium mb-2">Work in Progress</h3>
-                  <p className="text-gray-400 text-sm mb-4">Draft versions, tests, and files under development</p>
-                  <Button onClick={() => handleFileUpload('wip')} className="bg-yellow-600 hover:bg-yellow-700">
+                  <p className="text-gray-300 text-sm mb-4">Draft versions, tests, and files under development</p>
+                  <Button onClick={() => handleFileUpload('wip')} className="bg-yellow-600 hover:bg-yellow-700 text-white">
                     <Upload className="h-4 w-4 mr-2" />
                     Upload WIP Files
                   </Button>
@@ -388,8 +388,8 @@ const ProjectFiles = () => {
               <TabsContent value="references">
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
                   <h3 className="text-blue-300 font-medium mb-2">Reference Materials</h3>
-                  <p className="text-gray-400 text-sm mb-4">Concept art, references, mood boards, and inspiration</p>
-                  <Button onClick={() => handleFileUpload('references')} className="bg-blue-600 hover:bg-blue-700">
+                  <p className="text-gray-300 text-sm mb-4">Concept art, references, mood boards, and inspiration</p>
+                  <Button onClick={() => handleFileUpload('references')} className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Upload className="h-4 w-4 mr-2" />
                     Upload References
                   </Button>
@@ -399,8 +399,8 @@ const ProjectFiles = () => {
               <TabsContent value="assets">
                 <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6">
                   <h3 className="text-purple-300 font-medium mb-2">Project Assets</h3>
-                  <p className="text-gray-400 text-sm mb-4">Models, textures, libraries, and reusable components</p>
-                  <Button onClick={() => handleFileUpload('assets')} className="bg-purple-600 hover:bg-purple-700">
+                  <p className="text-gray-300 text-sm mb-4">Models, textures, libraries, and reusable components</p>
+                  <Button onClick={() => handleFileUpload('assets')} className="bg-purple-600 hover:bg-purple-700 text-white">
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Assets
                   </Button>
@@ -418,7 +418,7 @@ const ProjectFiles = () => {
                       <span className="text-blue-300 font-medium">{task.name}</span>
                       <div className="flex items-center gap-2">
                         {task.status === 'uploading' && (
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-300">
                             <Pause className="h-3 w-3" />
                           </Button>
                         )}
@@ -426,7 +426,7 @@ const ProjectFiles = () => {
                       </div>
                     </div>
                     <Progress value={task.progress} className="h-2 mb-2" />
-                    <div className="flex justify-between text-xs text-gray-400">
+                    <div className="flex justify-between text-xs text-gray-300">
                       <span>{task.speed}</span>
                       <span>ETA: {task.eta}</span>
                     </div>
@@ -444,6 +444,7 @@ const ProjectFiles = () => {
                     variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('list')}
+                    className="text-gray-200"
                   >
                     List
                   </Button>
@@ -451,6 +452,7 @@ const ProjectFiles = () => {
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('grid')}
+                    className="text-gray-200"
                   >
                     Grid
                   </Button>
@@ -473,33 +475,33 @@ const ProjectFiles = () => {
                             {getFileIcon(file.type)}
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100">
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-gray-300">
                                   <MoreVertical className="h-3 w-3" />
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-48 bg-gray-800 border-gray-600" align="end">
                                 <div className="space-y-1">
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white">
                                     <Eye className="h-3 w-3 mr-2" />
                                     Preview
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300" onClick={() => downloadFile(file)}>
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white" onClick={() => downloadFile(file)}>
                                     <Download className="h-3 w-3 mr-2" />
                                     Download
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white">
                                     <Share2 className="h-3 w-3 mr-2" />
                                     Share
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white">
                                     <Edit3 className="h-3 w-3 mr-2" />
                                     Rename
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white">
                                     <Move className="h-3 w-3 mr-2" />
                                     Move
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-red-400">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-red-400 hover:text-red-300">
                                     <Trash2 className="h-3 w-3 mr-2" />
                                     Delete
                                   </Button>
@@ -522,7 +524,7 @@ const ProjectFiles = () => {
                                 <span className="ml-1">{file.status}</span>
                               </Badge>
                             </div>
-                            <div className="text-xs text-gray-400 space-y-1">
+                            <div className="text-xs text-gray-300 space-y-1">
                               <p>By {file.uploadedBy} • {file.uploadedAt}</p>
                               <p>{file.size} • {file.downloadCount} downloads</p>
                               <p>{file.version} • {file.comments} comments</p>
@@ -531,7 +533,7 @@ const ProjectFiles = () => {
                           
                           <div className="flex flex-wrap gap-1">
                             {file.tags.map(tag => (
-                              <Badge key={tag} variant="secondary" className="text-xs bg-gray-700/50">
+                              <Badge key={tag} variant="secondary" className="text-xs bg-gray-700/50 text-gray-300">
                                 #{tag}
                               </Badge>
                             ))}
@@ -553,7 +555,7 @@ const ProjectFiles = () => {
                                   <span className="ml-1">{file.status}</span>
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-4 text-xs text-gray-400">
+                              <div className="flex items-center gap-4 text-xs text-gray-300">
                                 <span>By {file.uploadedBy}</span>
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
@@ -569,7 +571,7 @@ const ProjectFiles = () => {
                               </div>
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {file.tags.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-xs bg-gray-700/50">
+                                  <Badge key={tag} variant="secondary" className="text-xs bg-gray-700/50 text-gray-300">
                                     #{tag}
                                   </Badge>
                                 ))}
@@ -578,24 +580,24 @@ const ProjectFiles = () => {
                           </div>
                           
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-300 hover:text-white">
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 text-gray-300 hover:text-white"
                               onClick={() => toggleStar(file.id)}
                             >
-                              <Star className={`h-4 w-4 ${file.isStarred ? 'text-yellow-400 fill-current' : 'text-gray-400'}`} />
+                              <Star className={`h-4 w-4 ${file.isStarred ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-300 hover:text-white">
                               <Share2 className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 text-gray-300 hover:text-white"
                               onClick={() => downloadFile(file)}
                             >
                               <Download className="h-4 w-4" />
@@ -603,7 +605,7 @@ const ProjectFiles = () => {
                             
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-300 hover:text-white">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </PopoverTrigger>
@@ -613,7 +615,7 @@ const ProjectFiles = () => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="w-full justify-start text-green-400"
+                                    className="w-full justify-start text-green-400 hover:text-green-300"
                                     onClick={() => changeFileStatus(file.id, 'approved')}
                                   >
                                     <CheckCircle className="h-3 w-3 mr-2" />
@@ -622,7 +624,7 @@ const ProjectFiles = () => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="w-full justify-start text-red-400"
+                                    className="w-full justify-start text-red-400 hover:text-red-300"
                                     onClick={() => changeFileStatus(file.id, 'revision')}
                                   >
                                     <RotateCcw className="h-3 w-3 mr-2" />
@@ -631,14 +633,14 @@ const ProjectFiles = () => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="w-full justify-start text-gray-400"
+                                    className="w-full justify-start text-gray-300 hover:text-white"
                                     onClick={() => changeFileStatus(file.id, 'archived')}
                                   >
                                     <Archive className="h-3 w-3 mr-2" />
                                     Archive
                                   </Button>
                                   <div className="border-t border-gray-600 my-1"></div>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-red-400">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-red-400 hover:text-red-300">
                                     <Trash2 className="h-3 w-3 mr-2" />
                                     Delete
                                   </Button>
@@ -662,37 +664,37 @@ const ProjectFiles = () => {
                   <p className="text-2xl font-bold text-green-400">
                     {files.filter(f => f.category === 'deliverables').length}
                   </p>
-                  <p className="text-gray-400 text-xs">Deliverables</p>
+                  <p className="text-gray-300 text-xs">Deliverables</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-yellow-400">
                     {files.filter(f => f.category === 'wip').length}
                   </p>
-                  <p className="text-gray-400 text-xs">WIP Files</p>
+                  <p className="text-gray-300 text-xs">WIP Files</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-blue-400">
                     {files.filter(f => f.category === 'references').length}
                   </p>
-                  <p className="text-gray-400 text-xs">References</p>
+                  <p className="text-gray-300 text-xs">References</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-purple-400">
                     {files.filter(f => f.category === 'assets').length}
                   </p>
-                  <p className="text-gray-400 text-xs">Assets</p>
+                  <p className="text-gray-300 text-xs">Assets</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-orange-400">
                     {files.reduce((acc, f) => acc + f.downloadCount, 0)}
                   </p>
-                  <p className="text-gray-400 text-xs">Downloads</p>
+                  <p className="text-gray-300 text-xs">Downloads</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-pink-400">
                     {files.filter(f => f.status === 'approved').length}
                   </p>
-                  <p className="text-gray-400 text-xs">Approved</p>
+                  <p className="text-gray-300 text-xs">Approved</p>
                 </div>
               </div>
             </div>
