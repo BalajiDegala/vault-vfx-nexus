@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -220,96 +220,128 @@ const CreateProjectModal = ({ open, onClose, onSuccess, userId }: CreateProjectM
             </Select>
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-white font-medium">Skills Required</Label>
-            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-gray-800/30 rounded-lg border border-gray-600">
-              {formData.skills_required.map((skill) => (
-                <Badge key={skill} className="bg-blue-600/80 text-white border-blue-500 hover:bg-blue-700/80 flex items-center gap-1">
-                  {skill}
-                  <X className="h-3 w-3 cursor-pointer hover:text-red-300" onClick={() => removeSkill(skill)} />
-                </Badge>
-              ))}
-              {formData.skills_required.length === 0 && (
-                <p className="text-gray-400 text-sm">No skills selected yet</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Add custom skill..."
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkill(newSkill))}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addSkill(newSkill)}
-                className="border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
-              >
-                Add
-              </Button>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-400">Popular skills:</p>
-              <div className="flex flex-wrap gap-2">
-                {skillSuggestions.map((skill) => (
-                  <Badge
-                    key={skill}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-blue-500/20 border-gray-500 text-gray-300 hover:text-white hover:border-blue-400"
-                    onClick={() => addSkill(skill)}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
+          {/* Enhanced Skills Required Section */}
+          <div className="space-y-4 p-4 bg-blue-950/30 border border-blue-500/30 rounded-lg">
+            <Label className="text-blue-200 font-semibold text-lg flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+              Skills Required
+            </Label>
+            
+            <div className="space-y-3">
+              <div className="min-h-[60px] p-3 bg-gray-800/50 rounded-lg border border-blue-500/20">
+                <div className="flex flex-wrap gap-2">
+                  {formData.skills_required.length === 0 ? (
+                    <p className="text-gray-400 text-sm italic">No skills selected yet - click suggestions below to add</p>
+                  ) : (
+                    formData.skills_required.map((skill) => (
+                      <Badge key={skill} className="bg-blue-600 text-white border-blue-500 hover:bg-blue-700 flex items-center gap-1 px-3 py-1">
+                        {skill}
+                        <X 
+                          className="h-3 w-3 cursor-pointer hover:text-red-300 transition-colors" 
+                          onClick={() => removeSkill(skill)} 
+                        />
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  placeholder="Add custom skill..."
+                  className="bg-gray-800/70 border-blue-500/30 text-white placeholder-gray-400"
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkill(newSkill))}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSkill(newSkill)}
+                  className="border-blue-500/50 text-blue-300 hover:bg-blue-500/20 whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-blue-300 font-medium">Popular skills:</p>
+                <div className="flex flex-wrap gap-2">
+                  {skillSuggestions.map((skill) => (
+                    <Badge
+                      key={skill}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-blue-500/30 border-blue-400/50 text-blue-200 hover:text-white hover:border-blue-300 transition-all"
+                      onClick={() => addSkill(skill)}
+                    >
+                      + {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-white font-medium">Data Layers Required</Label>
-            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-gray-800/30 rounded-lg border border-gray-600">
-              {formData.data_layers.map((layer) => (
-                <Badge key={layer} className="bg-purple-600/80 text-white border-purple-500 hover:bg-purple-700/80 flex items-center gap-1">
-                  {layer}
-                  <X className="h-3 w-3 cursor-pointer hover:text-red-300" onClick={() => removeDataLayer(layer)} />
-                </Badge>
-              ))}
-              {formData.data_layers.length === 0 && (
-                <p className="text-gray-400 text-sm">No data layers selected yet</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newDataLayer}
-                onChange={(e) => setNewDataLayer(e.target.value)}
-                placeholder="Add custom data layer..."
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDataLayer(newDataLayer))}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addDataLayer(newDataLayer)}
-                className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20"
-              >
-                Add
-              </Button>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-400">Common data layers:</p>
-              <div className="flex flex-wrap gap-2">
-                {dataLayerSuggestions.map((layer) => (
-                  <Badge
-                    key={layer}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-purple-500/20 border-gray-500 text-gray-300 hover:text-white hover:border-purple-400"
-                    onClick={() => addDataLayer(layer)}
-                  >
-                    {layer}
-                  </Badge>
-                ))}
+          {/* Enhanced Data Layers Required Section */}
+          <div className="space-y-4 p-4 bg-purple-950/30 border border-purple-500/30 rounded-lg">
+            <Label className="text-purple-200 font-semibold text-lg flex items-center gap-2">
+              <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+              Data Layers Required
+            </Label>
+            
+            <div className="space-y-3">
+              <div className="min-h-[60px] p-3 bg-gray-800/50 rounded-lg border border-purple-500/20">
+                <div className="flex flex-wrap gap-2">
+                  {formData.data_layers.length === 0 ? (
+                    <p className="text-gray-400 text-sm italic">No data layers selected yet - click suggestions below to add</p>
+                  ) : (
+                    formData.data_layers.map((layer) => (
+                      <Badge key={layer} className="bg-purple-600 text-white border-purple-500 hover:bg-purple-700 flex items-center gap-1 px-3 py-1">
+                        {layer}
+                        <X 
+                          className="h-3 w-3 cursor-pointer hover:text-red-300 transition-colors" 
+                          onClick={() => removeDataLayer(layer)} 
+                        />
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  value={newDataLayer}
+                  onChange={(e) => setNewDataLayer(e.target.value)}
+                  placeholder="Add custom data layer..."
+                  className="bg-gray-800/70 border-purple-500/30 text-white placeholder-gray-400"
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDataLayer(newDataLayer))}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addDataLayer(newDataLayer)}
+                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-purple-300 font-medium">Common data layers:</p>
+                <div className="flex flex-wrap gap-2">
+                  {dataLayerSuggestions.map((layer) => (
+                    <Badge
+                      key={layer}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-purple-500/30 border-purple-400/50 text-purple-200 hover:text-white hover:border-purple-300 transition-all"
+                      onClick={() => addDataLayer(layer)}
+                    >
+                      + {layer}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

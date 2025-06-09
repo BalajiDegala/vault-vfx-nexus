@@ -147,7 +147,7 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="chat">
-            <ProjectDiscussion projectId={id} userId={user.id} />
+            <TeamDiscussion projectId={id} userId={user.id} />
           </TabsContent>
 
           <TabsContent value="files">
