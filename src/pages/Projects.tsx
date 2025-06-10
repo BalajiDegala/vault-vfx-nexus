@@ -25,7 +25,8 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [activeTab, setActiveTab] = useState("browse"); // Always start with browse tab
+  const [activeTab, setActiveTab] = useState("browse");
+  const [hasSetInitialTab, setHasSetInitialTab] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,17 +34,18 @@ const Projects = () => {
     checkAuth();
   }, []);
 
-  // Set the correct default tab once user role is loaded
+  // Set the correct default tab only once when user role is first loaded
   useEffect(() => {
-    if (userRole) {
-      console.log("Setting default tab based on user role:", userRole);
+    if (userRole && !hasSetInitialTab) {
+      console.log("Setting initial default tab based on user role:", userRole);
       if (userRole === 'artist') {
         setActiveTab('browse');
       } else {
         setActiveTab('mywork');
       }
+      setHasSetInitialTab(true);
     }
-  }, [userRole]);
+  }, [userRole, hasSetInitialTab]);
 
   const checkAuth = async () => {
     try {
