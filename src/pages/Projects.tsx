@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,13 +25,25 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [activeTab, setActiveTab] = useState("browse");
+  const [activeTab, setActiveTab] = useState("browse"); // Always start with browse tab
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Set the correct default tab once user role is loaded
+  useEffect(() => {
+    if (userRole) {
+      console.log("Setting default tab based on user role:", userRole);
+      if (userRole === 'artist') {
+        setActiveTab('browse');
+      } else {
+        setActiveTab('mywork');
+      }
+    }
+  }, [userRole]);
 
   const checkAuth = async () => {
     try {
@@ -140,13 +151,7 @@ const Projects = () => {
       } else {
         console.log("User role found:", roleData.role);
         setUserRole(roleData.role);
-        
-        // Set default tab based on role
-        if (roleData.role === 'artist') {
-          setActiveTab('browse');
-        } else {
-          setActiveTab('mywork');
-        }
+        // Don't set active tab here - let the useEffect handle it
       }
     } catch (error) {
       console.error("Error ensuring user role:", error);
