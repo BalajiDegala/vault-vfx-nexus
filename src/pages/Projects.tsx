@@ -6,14 +6,15 @@ import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import EnhancedProjectCard from "@/components/projects/EnhancedProjectCard";
+import ProjectsNavigation from "@/components/projects/ProjectsNavigation";
+import BrowseProjectsTab from "@/components/projects/BrowseProjectsTab";
+import MyWorkTab from "@/components/projects/MyWorkTab";
 import CreateProjectModal from "@/components/projects/CreateProjectModal";
 import ProjectTemplates from "@/components/projects/ProjectTemplates";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Filter, FileText, BarChart3, TrendingUp, Users } from "lucide-react";
+import { Plus, FileText, BarChart3, TrendingUp, Users, Briefcase } from "lucide-react";
+import { TabsContent } from "@/components/ui/tabs";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -25,18 +26,9 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState("browse");
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const statusOptions = [
-    { value: "all", label: "All Projects", count: projects.length },
-    { value: "open", label: "Open", count: projects.filter(p => p.status === "open").length },
-    { value: "in_progress", label: "In Progress", count: projects.filter(p => p.status === "in_progress").length },
-    { value: "completed", label: "Completed", count: projects.filter(p => p.status === "completed").length },
-    { value: "review", label: "Review", count: projects.filter(p => p.status === "review").length },
-  ];
 
   useEffect(() => {
     checkAuth();
@@ -148,6 +140,13 @@ const Projects = () => {
       } else {
         console.log("User role found:", roleData.role);
         setUserRole(roleData.role);
+        
+        // Set default tab based on role
+        if (roleData.role === 'artist') {
+          setActiveTab('browse');
+        } else {
+          setActiveTab('mywork');
+        }
       }
     } catch (error) {
       console.error("Error ensuring user role:", error);
@@ -159,8 +158,7 @@ const Projects = () => {
     try {
       console.log("=== Fetching projects ===");
       
-      // With the new simplified RLS policies, this query will only return projects
-      // where auth.uid() = client_id, so users only see their own projects
+      // Fetch all projects - filtering will be done in components based on context
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -190,13 +188,6 @@ const Projects = () => {
     }
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const canCreateProject = userRole && ["studio", "producer", "admin"].includes(userRole);
 
   const handleTemplateSelect = (template: any) => {
@@ -205,11 +196,18 @@ const Projects = () => {
   };
 
   // Calculate statistics
+  const openProjects = projects.filter(p => p.status === "open");
+  const myWorkProjects = projects.filter(p => 
+    userRole === 'artist' 
+      ? p.assigned_to === user?.id 
+      : p.client_id === user?.id && p.status !== 'open'
+  );
+
   const stats = {
     totalProjects: projects.length,
+    openProjects: openProjects.length,
+    myWorkCount: myWorkProjects.length,
     activeProjects: projects.filter(p => p.status === "in_progress").length,
-    completedProjects: projects.filter(p => p.status === "completed").length,
-    openOpportunities: projects.filter(p => p.status === "open").length,
   };
 
   const handleCreateSuccess = async () => {
@@ -250,39 +248,34 @@ const Projects = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
-                {userRole === 'producer' ? "Producer's Project Hub" : "VFX Project Hub"}
+                {userRole === 'artist' ? "VFX Artist Hub" : "Project Management Hub"}
               </h1>
               <p className="text-gray-400">
-                {userRole === 'producer' 
-                  ? "Manage your shows and productions with advanced workflow tools"
-                  : "Manage projects with advanced production tools and templates"}
+                {userRole === 'artist' 
+                  ? "Browse opportunities and manage your work"
+                  : "Create and manage your VFX projects"}
               </p>
             </div>
             
-            <div className="flex gap-3">
-              {canCreateProject && (
-                <>
-                  <Button
-                    onClick={() => setShowTemplates(true)}
-                    variant="outline"
-                    className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Use Template
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.log("Create project button clicked");
-                      setShowCreateModal(true);
-                    }}
-                    className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Project
-                  </Button>
-                </>
-              )}
-            </div>
+            {canCreateProject && (
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowTemplates(true)}
+                  variant="outline"
+                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Use Template
+                </Button>
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Project
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Statistics Cards */}
@@ -291,8 +284,8 @@ const Projects = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Total Projects</p>
-                    <p className="text-2xl font-bold text-blue-400">{stats.totalProjects}</p>
+                    <p className="text-gray-400 text-sm">Open Projects</p>
+                    <p className="text-2xl font-bold text-blue-400">{stats.openProjects}</p>
                   </div>
                   <BarChart3 className="h-8 w-8 text-blue-400" />
                 </div>
@@ -303,10 +296,10 @@ const Projects = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Active Projects</p>
-                    <p className="text-2xl font-bold text-green-400">{stats.activeProjects}</p>
+                    <p className="text-gray-400 text-sm">My Work</p>
+                    <p className="text-2xl font-bold text-green-400">{stats.myWorkCount}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-green-400" />
+                  <Briefcase className="h-8 w-8 text-green-400" />
                 </div>
               </CardContent>
             </Card>
@@ -315,10 +308,10 @@ const Projects = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Completed</p>
-                    <p className="text-2xl font-bold text-purple-400">{stats.completedProjects}</p>
+                    <p className="text-gray-400 text-sm">Active Projects</p>
+                    <p className="text-2xl font-bold text-purple-400">{stats.activeProjects}</p>
                   </div>
-                  <Users className="h-8 w-8 text-purple-400" />
+                  <TrendingUp className="h-8 w-8 text-purple-400" />
                 </div>
               </CardContent>
             </Card>
@@ -327,95 +320,40 @@ const Projects = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Open Opportunities</p>
-                    <p className="text-2xl font-bold text-orange-400">{stats.openOpportunities}</p>
+                    <p className="text-gray-400 text-sm">Total Projects</p>
+                    <p className="text-2xl font-bold text-orange-400">{stats.totalProjects}</p>
                   </div>
-                  <Plus className="h-8 w-8 text-orange-400" />
+                  <Users className="h-8 w-8 text-orange-400" />
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-gray-900/50 rounded-lg p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search projects by title, description, or skills..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-800/50 border-gray-600 text-white"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <div className="flex gap-2 flex-wrap">
-                {statusOptions.map((option) => (
-                  <Badge
-                    key={option.value}
-                    variant={statusFilter === option.value ? "default" : "outline"}
-                    className={`cursor-pointer transition-colors ${
-                      statusFilter === option.value 
-                        ? "bg-blue-600 text-white" 
-                        : "border-gray-600 text-gray-300 hover:bg-gray-700"
-                    }`}
-                    onClick={() => setStatusFilter(option.value)}
-                  >
-                    {option.label} ({option.count})
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Projects Navigation and Content */}
+        <ProjectsNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          openProjectsCount={stats.openProjects}
+          myWorkCount={stats.myWorkCount}
+        >
+          <TabsContent value="browse">
+            <BrowseProjectsTab
+              projects={projects}
+              userRole={userRole}
+              onUpdate={fetchProjects}
+            />
+          </TabsContent>
 
-        {/* Projects Grid */}
-        {filteredProjects.length === 0 ? (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {searchQuery || statusFilter !== "all" ? "No Projects Found" : "No Projects Yet"}
-            </h2>
-            <p className="text-gray-400 mb-6">
-              {searchQuery || statusFilter !== "all" 
-                ? "Try adjusting your search criteria or filters" 
-                : "Start your VFX journey by creating your first project!"}
-            </p>
-            {canCreateProject && (
-              <div className="flex gap-4 justify-center">
-                <Button
-                  onClick={() => setShowTemplates(true)}
-                  variant="outline"
-                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Browse Templates
-                </Button>
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Project
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <EnhancedProjectCard
-                key={project.id}
-                project={project}
-                userRole={userRole}
-                userId={user.id}
-                onUpdate={fetchProjects}
-              />
-            ))}
-          </div>
-        )}
+          <TabsContent value="mywork">
+            <MyWorkTab
+              projects={projects}
+              userRole={userRole}
+              userId={user.id}
+              onUpdate={fetchProjects}
+            />
+          </TabsContent>
+        </ProjectsNavigation>
       </div>
 
       {/* Modals */}
