@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Enhanced Design System with Luxury Effects */
 
 @layer base {
   :root {
@@ -85,64 +85,84 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Artist Theme - Dark Purple with Sci-Fi Neon Glow */
+  /* LUXURY ARTIST THEME - Cosmic Purple with Electric Neon */
   .theme-artist {
-    --theme-primary: 270 100% 70%;      /* Bright Electric Purple */
-    --theme-secondary: 315 100% 65%;    /* Bright Magenta */
-    --theme-accent: 180 100% 60%;       /* Cyan Neon */
-    --theme-background: 260 25% 8%;     /* Deep Purple Dark */
-    --theme-surface: 260 20% 12%;       /* Purple Card Background */
-    --theme-text: 300 40% 95%;          /* Light Purple Text */
-    --theme-text-muted: 280 30% 70%;    /* Muted Purple Text */
-    --theme-border: 270 40% 25%;        /* Purple Border */
-    --theme-success: 150 100% 60%;      /* Neon Green */
-    --theme-warning: 45 100% 65%;       /* Neon Orange */
-    --theme-error: 0 100% 65%;          /* Neon Red */
+    --theme-primary: 280 100% 75%;      /* Electric Violet */
+    --theme-secondary: 315 100% 70%;    /* Cosmic Magenta */
+    --theme-accent: 180 100% 65%;       /* Neon Cyan */
+    --theme-background: 260 30% 6%;     /* Deep Cosmic Purple */
+    --theme-surface: 265 25% 10%;       /* Rich Purple Surface */
+    --theme-text: 300 50% 95%;          /* Bright Purple-White */
+    --theme-text-muted: 285 40% 75%;    /* Glowing Purple */
+    --theme-border: 275 60% 20%;        /* Vibrant Purple Border */
+    --theme-success: 150 100% 65%;      /* Electric Green */
+    --theme-warning: 45 100% 70%;       /* Neon Orange */
+    --theme-error: 0 100% 70%;          /* Bright Red */
+    
+    /* Luxury gradients */
+    --theme-gradient-primary: linear-gradient(135deg, hsl(280 100% 75%) 0%, hsl(315 100% 70%) 50%, hsl(180 100% 65%) 100%);
+    --theme-gradient-surface: linear-gradient(135deg, hsl(265 25% 10%) 0%, hsl(275 20% 8%) 100%);
+    --theme-gradient-glow: radial-gradient(circle at center, hsl(280 100% 75% / 0.3) 0%, transparent 70%);
   }
 
-  /* Studio Theme - Dark Blue with Modern Professional */
+  /* LUXURY STUDIO THEME - Professional Midnight Blue with Platinum */
   .theme-studio {
-    --theme-primary: 210 100% 65%;      /* Bright Blue */
-    --theme-secondary: 195 100% 60%;    /* Cyan Blue */
-    --theme-accent: 240 100% 70%;       /* Electric Blue */
-    --theme-background: 220 25% 8%;     /* Deep Blue Dark */
-    --theme-surface: 215 20% 12%;       /* Blue Card Background */
-    --theme-text: 210 40% 95%;          /* Light Blue Text */
-    --theme-text-muted: 200 30% 70%;    /* Muted Blue Text */
-    --theme-border: 210 40% 25%;        /* Blue Border */
-    --theme-success: 150 100% 60%;      /* Success Green */
-    --theme-warning: 45 100% 65%;       /* Warning Orange */
-    --theme-error: 0 100% 65%;          /* Error Red */
+    --theme-primary: 210 100% 70%;      /* Bright Professional Blue */
+    --theme-secondary: 195 100% 65%;    /* Platinum Cyan */
+    --theme-accent: 240 100% 75%;       /* Electric Blue */
+    --theme-background: 220 30% 6%;     /* Deep Professional Blue */
+    --theme-surface: 215 25% 10%;       /* Rich Blue Surface */
+    --theme-text: 210 50% 95%;          /* Bright Blue-White */
+    --theme-text-muted: 200 40% 75%;    /* Platinum Blue */
+    --theme-border: 210 60% 20%;        /* Professional Border */
+    --theme-success: 150 100% 65%;      /* Success Green */
+    --theme-warning: 45 100% 70%;       /* Professional Orange */
+    --theme-error: 0 100% 70%;          /* Alert Red */
+    
+    /* Luxury gradients */
+    --theme-gradient-primary: linear-gradient(135deg, hsl(210 100% 70%) 0%, hsl(195 100% 65%) 50%, hsl(240 100% 75%) 100%);
+    --theme-gradient-surface: linear-gradient(135deg, hsl(215 25% 10%) 0%, hsl(225 20% 8%) 100%);
+    --theme-gradient-glow: radial-gradient(circle at center, hsl(210 100% 70% / 0.3) 0%, transparent 70%);
   }
 
-  /* Producer Theme - Dark Golden with Luxury Premium */
+  /* LUXURY PRODUCER THEME - Golden Amber with Rose Gold */
   .theme-producer {
-    --theme-primary: 45 100% 65%;       /* Bright Gold */
-    --theme-secondary: 35 100% 60%;     /* Rich Orange Gold */
-    --theme-accent: 60 100% 70%;        /* Light Gold */
-    --theme-background: 40 25% 8%;      /* Deep Golden Dark */
-    --theme-surface: 38 20% 12%;        /* Golden Card Background */
-    --theme-text: 50 40% 95%;           /* Light Golden Text */
-    --theme-text-muted: 45 30% 70%;     /* Muted Golden Text */
-    --theme-border: 45 40% 25%;         /* Golden Border */
-    --theme-success: 150 100% 60%;      /* Success Green */
-    --theme-warning: 25 100% 65%;       /* Warning Orange */
-    --theme-error: 0 100% 65%;          /* Error Red */
+    --theme-primary: 45 100% 70%;       /* Rich Gold */
+    --theme-secondary: 35 100% 65%;     /* Warm Amber */
+    --theme-accent: 25 100% 75%;        /* Rose Gold */
+    --theme-background: 40 30% 6%;      /* Deep Golden Dark */
+    --theme-surface: 38 25% 10%;        /* Luxurious Gold Surface */
+    --theme-text: 50 50% 95%;           /* Golden White */
+    --theme-text-muted: 45 40% 75%;     /* Warm Gold */
+    --theme-border: 45 60% 20%;         /* Golden Border */
+    --theme-success: 150 100% 65%;      /* Luxury Green */
+    --theme-warning: 25 100% 70%;       /* Amber Warning */
+    --theme-error: 0 100% 70%;          /* Elegant Red */
+    
+    /* Luxury gradients */
+    --theme-gradient-primary: linear-gradient(135deg, hsl(45 100% 70%) 0%, hsl(35 100% 65%) 50%, hsl(25 100% 75%) 100%);
+    --theme-gradient-surface: linear-gradient(135deg, hsl(38 25% 10%) 0%, hsl(42 20% 8%) 100%);
+    --theme-gradient-glow: radial-gradient(circle at center, hsl(45 100% 70% / 0.3) 0%, transparent 70%);
   }
 
-  /* Admin Theme - Dark with Multi-color Accents */
+  /* LUXURY ADMIN THEME - Multi-chromatic with Rainbow Shifts */
   .theme-admin {
-    --theme-primary: 270 100% 70%;      /* Purple */
-    --theme-secondary: 210 100% 65%;    /* Blue */
-    --theme-accent: 150 100% 60%;       /* Green */
-    --theme-background: 240 25% 8%;     /* Deep Dark */
-    --theme-surface: 240 20% 12%;       /* Dark Surface */
-    --theme-text: 240 40% 95%;          /* Light Text */
-    --theme-text-muted: 240 30% 70%;    /* Muted Text */
-    --theme-border: 240 40% 25%;        /* Dark Border */
-    --theme-success: 150 100% 60%;      /* Green */
-    --theme-warning: 45 100% 65%;       /* Orange */
-    --theme-error: 0 100% 65%;          /* Red */
+    --theme-primary: 270 100% 75%;      /* Cosmic Purple */
+    --theme-secondary: 210 100% 70%;    /* Electric Blue */
+    --theme-accent: 150 100% 65%;       /* Neon Green */
+    --theme-background: 240 30% 6%;     /* Deep Space Dark */
+    --theme-surface: 245 25% 10%;       /* Multi-dimensional Surface */
+    --theme-text: 240 50% 95%;          /* Prismatic White */
+    --theme-text-muted: 250 40% 75%;    /* Multi-tonal */
+    --theme-border: 250 60% 20%;        /* Prismatic Border */
+    --theme-success: 150 100% 65%;      /* Admin Green */
+    --theme-warning: 45 100% 70%;       /* System Orange */
+    --theme-error: 0 100% 70%;          /* Alert Red */
+    
+    /* Luxury gradients */
+    --theme-gradient-primary: linear-gradient(135deg, hsl(270 100% 75%) 0%, hsl(210 100% 70%) 33%, hsl(150 100% 65%) 66%, hsl(45 100% 70%) 100%);
+    --theme-gradient-surface: linear-gradient(135deg, hsl(245 25% 10%) 0%, hsl(255 20% 8%) 100%);
+    --theme-gradient-glow: radial-gradient(circle at center, hsl(270 100% 75% / 0.3) 0%, transparent 70%);
   }
 }
 
@@ -155,44 +175,210 @@
     @apply bg-background text-foreground;
   }
 
-  /* Role-specific body backgrounds with subtle gradients */
+  /* Enhanced Luxury Body Backgrounds with Animated Gradients */
   body.theme-artist {
-    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(260 30% 6%) 50%, hsl(280 25% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(270 35% 8%) 25%, hsl(285 30% 6%) 50%, hsl(265 25% 10%) 75%, hsl(280 20% 8%) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 20s ease infinite;
   }
 
   body.theme-studio {
-    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(220 30% 6%) 50%, hsl(200 25% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(210 35% 8%) 25%, hsl(225 30% 6%) 50%, hsl(205 25% 10%) 75%, hsl(220 20% 8%) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 25s ease infinite;
   }
 
   body.theme-producer {
-    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(40 30% 6%) 50%, hsl(50 25% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(40 35% 8%) 25%, hsl(50 30% 6%) 50%, hsl(35 25% 10%) 75%, hsl(45 20% 8%) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 22s ease infinite;
   }
 
   body.theme-admin {
-    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(240 30% 6%) 50%, hsl(260 25% 8%) 100%);
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(250 35% 8%) 25%, hsl(265 30% 6%) 50%, hsl(235 25% 10%) 75%, hsl(255 20% 8%) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 18s ease infinite;
+  }
+
+  /* Animated gradient keyframes */
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
   }
 }
 
-/* Theme-specific utility classes with modern effects */
+/* Enhanced Luxury Utility Classes */
 @layer utilities {
-  /* Gradient Utilities */
-  .theme-gradient-artist {
-    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  /* Premium Glass Morphism Effects */
+  .luxury-glass {
+    background: hsl(var(--theme-surface) / 0.1);
+    backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid hsl(var(--theme-border) / 0.3);
+    box-shadow: 
+      0 8px 32px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.2),
+      inset 0 -1px 0 hsl(var(--theme-primary) / 0.1);
   }
 
-  .theme-gradient-studio {
-    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  .luxury-glass:hover {
+    background: hsl(var(--theme-surface) / 0.15);
+    border-color: hsl(var(--theme-primary) / 0.5);
+    box-shadow: 
+      0 16px 64px hsl(var(--theme-primary) / 0.2),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.3),
+      inset 0 -1px 0 hsl(var(--theme-primary) / 0.2);
+    transform: translateY(-4px);
   }
 
-  .theme-gradient-producer {
-    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  /* Enhanced Gradient Utilities */
+  .luxury-gradient-primary {
+    background: var(--theme-gradient-primary);
   }
 
-  .theme-gradient-admin {
-    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  .luxury-gradient-surface {
+    background: var(--theme-gradient-surface);
   }
 
-  /* Text Utilities */
+  /* Premium Text Effects */
+  .luxury-text {
+    color: hsl(var(--theme-text));
+    text-shadow: 0 0 20px hsl(var(--theme-primary) / 0.3);
+  }
+
+  .luxury-text-glow {
+    color: hsl(var(--theme-primary));
+    text-shadow: 
+      0 0 10px hsl(var(--theme-primary) / 0.8),
+      0 0 20px hsl(var(--theme-primary) / 0.6),
+      0 0 40px hsl(var(--theme-primary) / 0.4),
+      0 0 80px hsl(var(--theme-primary) / 0.2);
+  }
+
+  /* Luxurious Background Utilities */
+  .luxury-bg-surface {
+    background: hsl(var(--theme-surface));
+    box-shadow: 
+      0 4px 20px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.1);
+  }
+
+  /* Premium Border Effects */
+  .luxury-border {
+    border: 1px solid hsl(var(--theme-border));
+    box-shadow: 
+      0 0 20px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.1);
+  }
+
+  .luxury-border-glow {
+    border: 2px solid hsl(var(--theme-primary) / 0.5);
+    box-shadow: 
+      0 0 30px hsl(var(--theme-primary) / 0.3),
+      inset 0 0 20px hsl(var(--theme-primary) / 0.1);
+  }
+
+  /* Advanced Neon Glow Effects */
+  .luxury-neon-glow {
+    box-shadow: 
+      0 0 5px hsl(var(--theme-primary) / 0.8),
+      0 0 10px hsl(var(--theme-primary) / 0.6),
+      0 0 20px hsl(var(--theme-primary) / 0.4),
+      0 0 40px hsl(var(--theme-primary) / 0.2),
+      0 0 80px hsl(var(--theme-primary) / 0.1);
+    animation: pulseGlow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulseGlow {
+    from {
+      box-shadow: 
+        0 0 5px hsl(var(--theme-primary) / 0.8),
+        0 0 10px hsl(var(--theme-primary) / 0.6),
+        0 0 20px hsl(var(--theme-primary) / 0.4),
+        0 0 40px hsl(var(--theme-primary) / 0.2),
+        0 0 80px hsl(var(--theme-primary) / 0.1);
+    }
+    to {
+      box-shadow: 
+        0 0 10px hsl(var(--theme-primary) / 1),
+        0 0 20px hsl(var(--theme-primary) / 0.8),
+        0 0 40px hsl(var(--theme-primary) / 0.6),
+        0 0 80px hsl(var(--theme-primary) / 0.4),
+        0 0 160px hsl(var(--theme-primary) / 0.2);
+    }
+  }
+
+  /* Luxury Card Enhancements */
+  .luxury-card {
+    background: var(--theme-gradient-surface);
+    border: 1px solid hsl(var(--theme-border) / 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 8px 32px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.1);
+  }
+
+  .luxury-card:hover {
+    border-color: hsl(var(--theme-primary) / 0.6);
+    box-shadow: 
+      0 16px 64px hsl(var(--theme-primary) / 0.2),
+      0 0 40px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.2);
+    transform: translateY(-8px) scale(1.02);
+  }
+
+  /* Premium Button Enhancements */
+  .luxury-button-primary {
+    background: var(--theme-gradient-primary);
+    color: white;
+    border: none;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 4px 20px hsl(var(--theme-primary) / 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .luxury-button-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .luxury-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 40px hsl(var(--theme-primary) / 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .luxury-button-primary:hover::before {
+    left: 100%;
+  }
+
+  /* Advanced Glass Morphism */
+  .ultra-glass {
+    background: linear-gradient(135deg, 
+      hsl(var(--theme-surface) / 0.1) 0%, 
+      hsl(var(--theme-surface) / 0.05) 100%);
+    backdrop-filter: blur(20px) saturate(180%) brightness(120%);
+    border: 1px solid hsl(var(--theme-border) / 0.2);
+    box-shadow: 
+      0 12px 40px hsl(var(--theme-primary) / 0.1),
+      inset 0 1px 0 hsl(var(--theme-primary) / 0.2),
+      inset 0 -1px 0 hsl(var(--theme-primary) / 0.1),
+      0 0 0 1px hsl(var(--theme-primary) / 0.05);
+  }
+
+  /* Theme-specific text utilities */
   .theme-text {
     color: hsl(var(--theme-text));
   }
@@ -201,96 +387,38 @@
     color: hsl(var(--theme-text-muted));
   }
 
-  /* Background Utilities */
   .theme-bg-surface {
     background-color: hsl(var(--theme-surface));
   }
 
-  .theme-bg-surface-hover {
-    background-color: hsl(var(--theme-surface));
-    transition: all 0.3s ease;
-  }
-
-  .theme-bg-surface-hover:hover {
-    background-color: hsl(var(--theme-surface) / 0.8);
-    box-shadow: 0 4px 20px hsl(var(--theme-primary) / 0.1);
-  }
-
-  /* Border Utilities */
   .theme-border {
     border-color: hsl(var(--theme-border));
   }
-
-  .theme-border-glow {
-    border-color: hsl(var(--theme-primary) / 0.3);
-    box-shadow: 0 0 10px hsl(var(--theme-primary) / 0.1);
-  }
-
-  /* Neon Glow Effects */
-  .neon-glow {
-    box-shadow: 
-      0 0 5px hsl(var(--theme-primary) / 0.5),
-      0 0 10px hsl(var(--theme-primary) / 0.3),
-      0 0 20px hsl(var(--theme-primary) / 0.1);
-  }
-
-  .neon-text {
-    text-shadow: 
-      0 0 5px hsl(var(--theme-primary) / 0.8),
-      0 0 10px hsl(var(--theme-primary) / 0.6),
-      0 0 20px hsl(var(--theme-primary) / 0.4);
-  }
-
-  /* Card Enhancements */
-  .theme-card {
-    background: hsl(var(--theme-surface));
-    border: 1px solid hsl(var(--theme-border));
-    transition: all 0.3s ease;
-  }
-
-  .theme-card:hover {
-    border-color: hsl(var(--theme-primary) / 0.5);
-    box-shadow: 0 8px 32px hsl(var(--theme-primary) / 0.1);
-    transform: translateY(-2px);
-  }
-
-  /* Button Enhancements */
-  .theme-button-primary {
-    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
-    color: white;
-    border: none;
-    transition: all 0.3s ease;
-  }
-
-  .theme-button-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px hsl(var(--theme-primary) / 0.3);
-  }
-
-  /* Glass Morphism Effect */
-  .glass-morphism {
-    background: hsl(var(--theme-surface) / 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid hsl(var(--theme-border) / 0.2);
-  }
 }
 
-/* Scrollbar Styling */
+/* Enhanced Scrollbar Styling */
 @layer utilities {
-  .themed-scrollbar::-webkit-scrollbar {
-    width: 6px;
+  .luxury-scrollbar::-webkit-scrollbar {
+    width: 8px;
   }
 
-  .themed-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--theme-surface));
+  .luxury-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--theme-surface) / 0.3);
+    border-radius: 4px;
   }
 
-  .themed-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--theme-primary) / 0.5);
-    border-radius: 3px;
+  .luxury-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, 
+      hsl(var(--theme-primary) / 0.6) 0%, 
+      hsl(var(--theme-secondary) / 0.6) 100%);
+    border-radius: 4px;
+    box-shadow: 0 0 10px hsl(var(--theme-primary) / 0.3);
   }
 
-  .themed-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--theme-primary) / 0.7);
+  .luxury-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, 
+      hsl(var(--theme-primary) / 0.8) 0%, 
+      hsl(var(--theme-secondary) / 0.8) 100%);
+    box-shadow: 0 0 20px hsl(var(--theme-primary) / 0.5);
   }
 }

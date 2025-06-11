@@ -17,7 +17,7 @@ export const useTheme = (userRole: AppRole | null) => {
     document.body.classList.add(themeClass);
     document.documentElement.classList.add(themeClass);
 
-    console.log(`Applied theme: ${themeClass}`);
+    console.log(`Applied luxury theme: ${themeClass}`);
 
     // Cleanup function
     return () => {
@@ -34,9 +34,13 @@ export const useTheme = (userRole: AppRole | null) => {
           secondary: 'from-cyan-400 via-blue-500 to-purple-600',
           accent: 'from-purple-500 to-pink-500',
           background: 'from-purple-950 via-slate-900 to-gray-950',
-          text: 'text-purple-100',
-          surface: 'bg-purple-950/50 backdrop-blur-sm',
-          glow: 'shadow-purple-500/20',
+          text: 'luxury-text',
+          surface: 'luxury-bg-surface',
+          glow: 'luxury-neon-glow',
+          glass: 'luxury-glass',
+          card: 'luxury-card',
+          button: 'luxury-button-primary',
+          gradient: 'luxury-gradient-primary',
         };
       case 'studio':
         return {
@@ -44,9 +48,13 @@ export const useTheme = (userRole: AppRole | null) => {
           secondary: 'from-cyan-400 via-blue-500 to-indigo-600',
           accent: 'from-blue-500 to-cyan-500',
           background: 'from-blue-950 via-slate-900 to-gray-950',
-          text: 'text-blue-100',
-          surface: 'bg-blue-950/50 backdrop-blur-sm',
-          glow: 'shadow-blue-500/20',
+          text: 'luxury-text',
+          surface: 'luxury-bg-surface',
+          glow: 'luxury-neon-glow',
+          glass: 'luxury-glass',
+          card: 'luxury-card',
+          button: 'luxury-button-primary',
+          gradient: 'luxury-gradient-primary',
         };
       case 'producer':
         return {
@@ -54,9 +62,13 @@ export const useTheme = (userRole: AppRole | null) => {
           secondary: 'from-orange-400 via-yellow-500 to-amber-600',
           accent: 'from-yellow-500 to-orange-500',
           background: 'from-amber-950 via-yellow-900 to-orange-950',
-          text: 'text-amber-100',
-          surface: 'bg-amber-950/50 backdrop-blur-sm',
-          glow: 'shadow-amber-500/20',
+          text: 'luxury-text',
+          surface: 'luxury-bg-surface',
+          glow: 'luxury-neon-glow',
+          glass: 'luxury-glass',
+          card: 'luxury-card',
+          button: 'luxury-button-primary',
+          gradient: 'luxury-gradient-primary',
         };
       case 'admin':
         return {
@@ -64,9 +76,13 @@ export const useTheme = (userRole: AppRole | null) => {
           secondary: 'from-blue-400 via-purple-500 to-pink-600',
           accent: 'from-green-400 to-blue-500',
           background: 'from-slate-950 via-gray-900 to-black',
-          text: 'text-slate-100',
-          surface: 'bg-slate-950/50 backdrop-blur-sm',
-          glow: 'shadow-purple-500/20',
+          text: 'luxury-text',
+          surface: 'luxury-bg-surface',
+          glow: 'luxury-neon-glow',
+          glass: 'luxury-glass',
+          card: 'luxury-card',
+          button: 'luxury-button-primary',
+          gradient: 'luxury-gradient-primary',
         };
       default:
         return {
@@ -77,9 +93,27 @@ export const useTheme = (userRole: AppRole | null) => {
           text: 'text-gray-800',
           surface: 'bg-white/90',
           glow: 'shadow-gray-500/20',
+          glass: 'bg-white/10',
+          card: 'bg-white',
+          button: 'bg-blue-500',
+          gradient: 'bg-blue-500',
         };
     }
   };
 
-  return { getThemeColors };
+  const getLuxuryEffects = (role: AppRole | null) => {
+    return {
+      glassEffect: 'luxury-glass',
+      ultraGlass: 'ultra-glass',
+      neonGlow: 'luxury-neon-glow',
+      textGlow: 'luxury-text-glow',
+      cardHover: 'luxury-card',
+      borderGlow: 'luxury-border-glow',
+      gradientPrimary: 'luxury-gradient-primary',
+      gradientSurface: 'luxury-gradient-surface',
+      scrollbar: 'luxury-scrollbar',
+    };
+  };
+
+  return { getThemeColors, getLuxuryEffects };
 };
