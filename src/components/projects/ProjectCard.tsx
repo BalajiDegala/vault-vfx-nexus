@@ -1,149 +1,127 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Calendar, MapPin, Briefcase } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
-import BidModal from "./BidModal";
-
-type Project = Database["public"]["Tables"]["projects"]["Row"];
-type AppRole = Database["public"]["Enums"]["app_role"];
+import { 
+  Calendar, 
+  DollarSign, 
+  Users, 
+  Heart, 
+  ExternalLink,
+  Clock,
+  Star
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ProjectCardProps {
-  project: Project;
-  userRole: AppRole;
-  onUpdate: () => void;
+  project: {
+    id: string;
+    title: string;
+    description: string;
+    budget: string;
+    deadline: string;
+    client: string;
+    skills: string[];
+    status: string;
+    applications: number;
+    image: string;
+  };
 }
 
-const ProjectCard = ({ project, userRole, onUpdate }: ProjectCardProps) => {
-  const [showBidModal, setShowBidModal] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
+const ProjectCard = ({ project }: ProjectCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "open": return "bg-green-500";
-      case "in_progress": return "bg-blue-500";
-      case "completed": return "bg-purple-500";
-      case "cancelled": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "Open":
+        return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "In Progress":
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "Completed":
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
-  const canBid = userRole === "artist" && project.status === "open";
-
   return (
-    <>
-      <Card className="bg-gray-900/80 border-blue-500/20 hover:border-blue-400/40 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start mb-2">
-            <CardTitle className="text-lg font-bold text-white line-clamp-2">
-              {project.title}
-            </CardTitle>
-            <Badge className={`${getStatusColor(project.status || "")} text-white`}>
+    <Card className="bg-gray-800/50 border-gray-600 hover:border-blue-500/50 transition-all duration-300 group">
+      <CardHeader className="p-0">
+        <div className="relative overflow-hidden rounded-t-lg">
+          <img 
+            src={project.image} 
+            alt={project.title}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div className="absolute top-4 left-4">
+            <Badge className={`${getStatusColor(project.status)} border`}>
               {project.status}
             </Badge>
           </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <p className="text-gray-300 text-sm line-clamp-3">
+          <div className="absolute top-4 right-4">
+            <Button size="sm" variant="ghost" className="bg-black/50 hover:bg-black/70 text-white">
+              <Heart className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-6 space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+            {project.title}
+          </h3>
+          <p className="text-gray-400 text-sm line-clamp-2">
             {project.description}
           </p>
+        </div>
 
-          {/* Budget Range */}
-          <div className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 font-semibold">
-              {project.budget_min?.toLocaleString()} - {project.budget_max?.toLocaleString()} {project.currency}
-            </span>
+        <div className="space-y-3">
+          <div className="flex items-center text-sm text-gray-300">
+            <DollarSign className="h-4 w-4 mr-2 text-green-400" />
+            {project.budget}
           </div>
-
-          {/* Deadline */}
-          {project.deadline && (
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-orange-400" />
-              <span className="text-orange-400 text-sm">
-                Due: {formatDate(project.deadline)}
-              </span>
-            </div>
-          )}
-
-          {/* Skills Required */}
-          {project.skills_required && project.skills_required.length > 0 && (
-            <div>
-              <div className="flex items-center space-x-2 mb-2">
-                <Briefcase className="h-4 w-4 text-purple-400" />
-                <span className="text-purple-400 text-sm font-medium">Skills Required:</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {project.skills_required.slice(0, 3).map((skill, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {skill}
-                  </Badge>
-                ))}
-                {project.skills_required.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{project.skills_required.length - 3} more
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Security Level */}
-          {project.security_level && (
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-blue-400" />
-              <span className="text-blue-400 text-sm">
-                Security: {project.security_level}
-              </span>
-            </div>
-          )}
-
-          {/* Posted Date */}
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-400 text-sm">
-              Posted: {formatDate(project.created_at)}
-            </span>
+          
+          <div className="flex items-center text-sm text-gray-300">
+            <Calendar className="h-4 w-4 mr-2 text-orange-400" />
+            Due: {new Date(project.deadline).toLocaleDateString()}
           </div>
+          
+          <div className="flex items-center text-sm text-gray-300">
+            <Users className="h-4 w-4 mr-2 text-purple-400" />
+            {project.applications} applications
+          </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-2 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-            >
-              View Details
-            </Button>
-            {canBid && (
-              <Button
-                size="sm"
-                className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                onClick={() => setShowBidModal(true)}
-              >
-                Place Bid
-              </Button>
+        <div>
+          <p className="text-sm text-gray-400 mb-2">Client:</p>
+          <p className="text-white font-medium">{project.client}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-400 mb-2">Required Skills:</p>
+          <div className="flex flex-wrap gap-1">
+            {project.skills.slice(0, 3).map((skill, index) => (
+              <Badge key={index} variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">
+                {skill}
+              </Badge>
+            ))}
+            {project.skills.length > 3 && (
+              <Badge variant="secondary" className="text-xs bg-gray-500/20 text-gray-400">
+                +{project.skills.length - 3} more
+              </Badge>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <BidModal
-        open={showBidModal}
-        onClose={() => setShowBidModal(false)}
-        project={project}
-        onSuccess={() => {
-          setShowBidModal(false);
-          onUpdate();
-        }}
-      />
-    </>
+        <div className="flex gap-2 pt-4">
+          <Link to={`/projects/${project.id}`} className="flex-1">
+            <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+              View Details
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

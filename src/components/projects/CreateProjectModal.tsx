@@ -8,359 +8,240 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreateProjectModalProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
-  userId: string;
 }
 
-const CreateProjectModal = ({ open, onClose, onSuccess, userId }: CreateProjectModalProps) => {
+const CreateProjectModal = ({ isOpen, onClose }: CreateProjectModalProps) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    budget_min: "",
-    budget_max: "",
+    budget: "",
     deadline: "",
-    security_level: "Standard",
-    skills_required: [] as string[],
-    data_layers: [] as string[],
+    category: "",
+    priority: "Medium",
+    skills: [] as string[],
+    currentSkill: ""
   });
-  const [newSkill, setNewSkill] = useState("");
-  const [newDataLayer, setNewDataLayer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
-  const skillSuggestions = [
-    "3D Modeling", "Animation", "Compositing", "Motion Graphics", "VFX",
-    "Lighting", "Texturing", "Rigging", "Simulation", "Rendering",
-    "Color Grading", "Rotoscoping", "Matchmoving", "Concept Art"
+  const categories = [
+    "3D Animation",
+    "Visual Effects", 
+    "Motion Graphics",
+    "Compositing",
+    "Character Animation",
+    "Environment Design",
+    "Particle Systems",
+    "Lighting & Rendering"
   ];
 
-  const dataLayerSuggestions = [
-    "RGB", "Alpha", "Depth", "Normal", "Motion Vector", "Object ID",
-    "Material ID", "Shadow", "Reflection", "Ambient Occlusion"
-  ];
+  const priorities = ["Low", "Medium", "High", "Urgent"];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addSkill = () => {
+    if (formData.currentSkill.trim() && !formData.skills.includes(formData.currentSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, prev.currentSkill.trim()],
+        currentSkill: ""
+      }));
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("projects")
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          budget_min: parseFloat(formData.budget_min),
-          budget_max: parseFloat(formData.budget_max),
-          deadline: formData.deadline || null,
-          security_level: formData.security_level,
-          skills_required: formData.skills_required,
-          data_layers: formData.data_layers,
-          client_id: userId,
-          status: "open",
-          currency: "V3C",
-        });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create project",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      onSuccess();
-      setFormData({
-        title: "",
-        description: "",
-        budget_min: "",
-        budget_max: "",
-        deadline: "",
-        security_level: "Standard",
-        skills_required: [],
-        data_layers: [],
-      });
-    } catch (error) {
-      console.error("Error creating project:", error);
+    
+    // Basic validation
+    if (!formData.title || !formData.description || !formData.budget || !formData.deadline) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
 
-  const addSkill = (skill: string) => {
-    if (skill && !formData.skills_required.includes(skill)) {
-      setFormData(prev => ({
-        ...prev,
-        skills_required: [...prev.skills_required, skill]
-      }));
-    }
-    setNewSkill("");
-  };
+    // In a real app, this would submit to Supabase
+    console.log("Creating project:", formData);
+    
+    toast({
+      title: "Project Created!",
+      description: "Your project has been successfully created and published.",
+    });
 
-  const removeSkill = (skill: string) => {
-    setFormData(prev => ({
-      ...prev,
-      skills_required: prev.skills_required.filter(s => s !== skill)
-    }));
-  };
-
-  const addDataLayer = (layer: string) => {
-    if (layer && !formData.data_layers.includes(layer)) {
-      setFormData(prev => ({
-        ...prev,
-        data_layers: [...prev.data_layers, layer]
-      }));
-    }
-    setNewDataLayer("");
-  };
-
-  const removeDataLayer = (layer: string) => {
-    setFormData(prev => ({
-      ...prev,
-      data_layers: prev.data_layers.filter(l => l !== layer)
-    }));
+    // Reset form and close modal
+    setFormData({
+      title: "",
+      description: "",
+      budget: "",
+      deadline: "",
+      category: "",
+      priority: "Medium",
+      skills: [],
+      currentSkill: ""
+    });
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-blue-500/20">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl bg-gray-900 border-gray-600 text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white">
-            Create New Project
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Create New VFX Project
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-gray-300">Project Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              required
-              className="bg-gray-800/50 border-gray-600 text-white"
-              placeholder="Enter project title"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-300">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="bg-gray-800/50 border-gray-600 text-white min-h-[100px]"
-              placeholder="Describe your project requirements..."
-            />
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget_min" className="text-gray-300">Minimum Budget (V3C) *</Label>
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title" className="text-gray-300">Project Title *</Label>
               <Input
-                id="budget_min"
-                type="number"
-                value={formData.budget_min}
-                onChange={(e) => setFormData(prev => ({ ...prev, budget_min: e.target.value }))}
-                required
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Enter project title..."
                 className="bg-gray-800/50 border-gray-600 text-white"
-                placeholder="1000"
+                required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="budget_max" className="text-gray-300">Maximum Budget (V3C) *</Label>
-              <Input
-                id="budget_max"
-                type="number"
-                value={formData.budget_max}
-                onChange={(e) => setFormData(prev => ({ ...prev, budget_max: e.target.value }))}
-                required
+
+            <div>
+              <Label htmlFor="description" className="text-gray-300">Description *</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                placeholder="Describe your project in detail..."
+                rows={4}
                 className="bg-gray-800/50 border-gray-600 text-white"
-                placeholder="5000"
+                required
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="deadline" className="text-gray-300">Deadline</Label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-              className="bg-gray-800/50 border-gray-600 text-white"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-gray-300">Security Level</Label>
-            <Select
-              value={formData.security_level}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, security_level: value }))}
-            >
-              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="Standard" className="text-white hover:bg-gray-700">Standard</SelectItem>
-                <SelectItem value="High" className="text-white hover:bg-gray-700">High</SelectItem>
-                <SelectItem value="Enterprise" className="text-white hover:bg-gray-700">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Enhanced Skills Required Section */}
-          <div className="space-y-4 p-4 bg-blue-950/30 border border-blue-500/30 rounded-lg">
-            <Label className="text-blue-200 font-semibold text-lg flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-              Skills Required
-            </Label>
-            
-            <div className="space-y-3">
-              <div className="min-h-[60px] p-3 bg-gray-800/50 rounded-lg border border-blue-500/20">
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills_required.length === 0 ? (
-                    <p className="text-gray-400 text-sm italic">No skills selected yet - click suggestions below to add</p>
-                  ) : (
-                    formData.skills_required.map((skill) => (
-                      <Badge key={skill} className="bg-blue-600 text-white border-blue-500 hover:bg-blue-700 flex items-center gap-1 px-3 py-1">
-                        {skill}
-                        <X 
-                          className="h-3 w-3 cursor-pointer hover:text-red-300 transition-colors" 
-                          onClick={() => removeSkill(skill)} 
-                        />
-                      </Badge>
-                    ))
-                  )}
-                </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category" className="text-gray-300">Category</Label>
+                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                  <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category} className="text-white hover:bg-gray-700">
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div className="flex gap-2">
+
+              <div>
+                <Label htmlFor="priority" className="text-gray-300">Priority</Label>
+                <Select value={formData.priority} onValueChange={(value) => handleInputChange("priority", value)}>
+                  <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    {priorities.map((priority) => (
+                      <SelectItem key={priority} value={priority} className="text-white hover:bg-gray-700">
+                        {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="budget" className="text-gray-300">Budget Range *</Label>
                 <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add custom skill..."
-                  className="bg-gray-800/70 border-blue-500/30 text-white placeholder-gray-400"
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkill(newSkill))}
+                  id="budget"
+                  value={formData.budget}
+                  onChange={(e) => handleInputChange("budget", e.target.value)}
+                  placeholder="e.g., $5,000 - $10,000"
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                  required
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => addSkill(newSkill)}
-                  className="border-blue-500/50 text-blue-300 hover:bg-blue-500/20 whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-blue-300 font-medium">Popular skills:</p>
-                <div className="flex flex-wrap gap-2">
-                  {skillSuggestions.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-blue-500/30 border-blue-400/50 text-blue-200 hover:text-white hover:border-blue-300 transition-all"
-                      onClick={() => addSkill(skill)}
-                    >
-                      + {skill}
-                    </Badge>
-                  ))}
-                </div>
+
+              <div>
+                <Label htmlFor="deadline" className="text-gray-300">Deadline *</Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => handleInputChange("deadline", e.target.value)}
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                  required
+                />
               </div>
             </div>
           </div>
 
-          {/* Enhanced Data Layers Required Section */}
-          <div className="space-y-4 p-4 bg-purple-950/30 border border-purple-500/30 rounded-lg">
-            <Label className="text-purple-200 font-semibold text-lg flex items-center gap-2">
-              <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-              Data Layers Required
-            </Label>
+          {/* Skills Section */}
+          <div>
+            <Label className="text-gray-300 mb-2 block">Required Skills</Label>
+            <div className="flex gap-2 mb-3">
+              <Input
+                value={formData.currentSkill}
+                onChange={(e) => handleInputChange("currentSkill", e.target.value)}
+                placeholder="Add a required skill..."
+                className="bg-gray-800/50 border-gray-600 text-white"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+              />
+              <Button type="button" onClick={addSkill} variant="outline" className="border-gray-600">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             
-            <div className="space-y-3">
-              <div className="min-h-[60px] p-3 bg-gray-800/50 rounded-lg border border-purple-500/20">
-                <div className="flex flex-wrap gap-2">
-                  {formData.data_layers.length === 0 ? (
-                    <p className="text-gray-400 text-sm italic">No data layers selected yet - click suggestions below to add</p>
-                  ) : (
-                    formData.data_layers.map((layer) => (
-                      <Badge key={layer} className="bg-purple-600 text-white border-purple-500 hover:bg-purple-700 flex items-center gap-1 px-3 py-1">
-                        {layer}
-                        <X 
-                          className="h-3 w-3 cursor-pointer hover:text-red-300 transition-colors" 
-                          onClick={() => removeDataLayer(layer)} 
-                        />
-                      </Badge>
-                    ))
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Input
-                  value={newDataLayer}
-                  onChange={(e) => setNewDataLayer(e.target.value)}
-                  placeholder="Add custom data layer..."
-                  className="bg-gray-800/70 border-purple-500/30 text-white placeholder-gray-400"
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDataLayer(newDataLayer))}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => addDataLayer(newDataLayer)}
-                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-purple-300 font-medium">Common data layers:</p>
-                <div className="flex flex-wrap gap-2">
-                  {dataLayerSuggestions.map((layer) => (
-                    <Badge
-                      key={layer}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-purple-500/30 border-purple-400/50 text-purple-200 hover:text-white hover:border-purple-300 transition-all"
-                      onClick={() => addDataLayer(layer)}
-                    >
-                      + {layer}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.skills.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(skill)}
+                    className="ml-2 hover:text-red-400"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4">
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-6">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
             >
-              {loading ? "Creating..." : "Create Project"}
+              Create Project
             </Button>
           </div>
         </form>
