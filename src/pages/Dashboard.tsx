@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/hooks/useTheme";
 import FreelancerDashboard from "@/components/dashboard/FreelancerDashboard";
 import StudioDashboard from "@/components/dashboard/StudioDashboard";
 import ProducerDashboard from "@/components/dashboard/ProducerDashboard";
@@ -18,6 +18,9 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Apply theme based on user role
+  useTheme(userRole);
 
   useEffect(() => {
     const checkAuth = async () => {

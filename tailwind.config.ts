@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
@@ -62,7 +63,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Theme-specific colors
+				'theme-primary': 'hsl(var(--theme-primary))',
+				'theme-secondary': 'hsl(var(--theme-secondary))',
+				'theme-accent': 'hsl(var(--theme-accent))',
+				'theme-background': 'hsl(var(--theme-background))',
+				'theme-surface': 'hsl(var(--theme-surface))',
+				'theme-text': 'hsl(var(--theme-text))',
+				'theme-text-muted': 'hsl(var(--theme-text-muted))',
+				'theme-border': 'hsl(var(--theme-border))',
+				'theme-success': 'hsl(var(--theme-success))',
+				'theme-warning': 'hsl(var(--theme-warning))',
+				'theme-error': 'hsl(var(--theme-error))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, FileText, BarChart3, TrendingUp, Users, Briefcase } from "lucide-react";
 import { TabsContent } from "@/components/ui/tabs";
+import { useTheme } from "@/hooks/useTheme";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -230,12 +231,16 @@ const Projects = () => {
     await fetchProjects();
   };
 
+  // Apply theme based on user role
+  const { getThemeColors } = useTheme(userRole);
+  const themeColors = getThemeColors(userRole);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading projects...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary mx-auto mb-4"></div>
+          <p className="theme-text-muted">Loading projects...</p>
         </div>
       </div>
     );
@@ -246,7 +251,7 @@ const Projects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
+    <div className={`min-h-screen bg-gradient-to-br ${themeColors.background}`}>
       <DashboardNavbar user={user} userRole={userRole || 'studio'} />
       
       <div className="container mx-auto px-4 py-8">
@@ -254,12 +259,16 @@ const Projects = () => {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
-                {userRole === 'artist' ? "VFX Artist Hub" : "Project Management Hub"}
+              <h1 className={`text-3xl font-bold bg-gradient-to-r ${themeColors.primary} bg-clip-text text-transparent mb-2`}>
+                {userRole === 'artist' ? "VFX Artist Hub" : 
+                 userRole === 'producer' ? "Producer's Command Center" :
+                 "Project Management Hub"}
               </h1>
-              <p className="text-gray-400">
+              <p className="theme-text-muted">
                 {userRole === 'artist' 
-                  ? "Browse opportunities and manage your work"
+                  ? "Browse opportunities and manage your creative work"
+                  : userRole === 'producer'
+                  ? "Oversee productions and manage high-level project workflows"
                   : "Create and manage your VFX projects"}
               </p>
             </div>
@@ -269,14 +278,14 @@ const Projects = () => {
                 <Button
                   onClick={() => setShowTemplates(true)}
                   variant="outline"
-                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                  className="border-theme-primary/50 text-theme-primary hover:bg-theme-primary/10"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Use Template
                 </Button>
                 <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                  className={`bg-gradient-to-r ${themeColors.secondary} hover:opacity-90 transition-opacity`}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Project
@@ -287,50 +296,50 @@ const Projects = () => {
 
           {/* Statistics Cards */}
           <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-gray-900/50 border-blue-500/20">
+            <Card className={`${themeColors.surface} theme-border border-theme-primary/20`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Open Projects</p>
-                    <p className="text-2xl font-bold text-blue-400">{stats.openProjects}</p>
+                    <p className="theme-text-muted text-sm">Open Projects</p>
+                    <p className="text-2xl font-bold text-theme-primary">{stats.openProjects}</p>
                   </div>
-                  <BarChart3 className="h-8 w-8 text-blue-400" />
+                  <BarChart3 className="h-8 w-8 text-theme-primary" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/50 border-green-500/20">
+            <Card className={`${themeColors.surface} theme-border border-theme-secondary/20`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">My Work</p>
-                    <p className="text-2xl font-bold text-green-400">{stats.myWorkCount}</p>
+                    <p className="theme-text-muted text-sm">My Work</p>
+                    <p className="text-2xl font-bold text-theme-secondary">{stats.myWorkCount}</p>
                   </div>
-                  <Briefcase className="h-8 w-8 text-green-400" />
+                  <Briefcase className="h-8 w-8 text-theme-secondary" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/50 border-purple-500/20">
+            <Card className={`${themeColors.surface} theme-border border-theme-accent/20`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Active Projects</p>
-                    <p className="text-2xl font-bold text-purple-400">{stats.activeProjects}</p>
+                    <p className="theme-text-muted text-sm">Active Projects</p>
+                    <p className="text-2xl font-bold text-theme-accent">{stats.activeProjects}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-purple-400" />
+                  <TrendingUp className="h-8 w-8 text-theme-accent" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/50 border-orange-500/20">
+            <Card className={`${themeColors.surface} theme-border border-theme-warning/20`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Total Projects</p>
-                    <p className="text-2xl font-bold text-orange-400">{stats.totalProjects}</p>
+                    <p className="theme-text-muted text-sm">Total Projects</p>
+                    <p className="text-2xl font-bold text-theme-warning">{stats.totalProjects}</p>
                   </div>
-                  <Users className="h-8 w-8 text-orange-400" />
+                  <Users className="h-8 w-8 text-theme-warning" />
                 </div>
               </CardContent>
             </Card>

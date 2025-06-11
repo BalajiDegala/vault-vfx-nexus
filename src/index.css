@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,19 +38,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -90,6 +84,66 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  /* Artist Theme - Bright & Creative */
+  .theme-artist {
+    --theme-primary: 220 91% 55%;  /* Bright Blue */
+    --theme-secondary: 271 81% 56%; /* Bright Purple */
+    --theme-accent: 178 100% 50%;   /* Cyan */
+    --theme-background: 240 5% 96%; /* Light Gray */
+    --theme-surface: 0 0% 100%;     /* White */
+    --theme-text: 220 9% 20%;       /* Dark Gray */
+    --theme-text-muted: 220 9% 46%; /* Medium Gray */
+    --theme-border: 220 13% 91%;    /* Light Border */
+    --theme-success: 142 71% 45%;   /* Green */
+    --theme-warning: 38 92% 50%;    /* Orange */
+    --theme-error: 0 84% 60%;       /* Red */
+  }
+
+  /* Studio Theme - Dark & Professional */
+  .theme-studio {
+    --theme-primary: 217 91% 60%;   /* Professional Blue */
+    --theme-secondary: 142 71% 45%; /* Green Accent */
+    --theme-accent: 271 81% 56%;    /* Purple Accent */
+    --theme-background: 222 84% 5%; /* Very Dark */
+    --theme-surface: 217 33% 17%;   /* Dark Surface */
+    --theme-text: 210 40% 98%;      /* Light Text */
+    --theme-text-muted: 215 20% 65%; /* Muted Text */
+    --theme-border: 217 33% 17%;    /* Dark Border */
+    --theme-success: 142 71% 45%;   /* Green */
+    --theme-warning: 38 92% 50%;    /* Orange */
+    --theme-error: 0 84% 60%;       /* Red */
+  }
+
+  /* Producer Theme - Golden & Premium */
+  .theme-producer {
+    --theme-primary: 43 96% 56%;    /* Gold */
+    --theme-secondary: 25 95% 53%;  /* Orange Gold */
+    --theme-accent: 45 93% 47%;     /* Deep Gold */
+    --theme-background: 44 100% 98%; /* Cream */
+    --theme-surface: 50 100% 96%;   /* Light Cream */
+    --theme-text: 30 41% 20%;       /* Dark Brown */
+    --theme-text-muted: 30 25% 45%; /* Medium Brown */
+    --theme-border: 43 30% 85%;     /* Light Gold Border */
+    --theme-success: 142 71% 45%;   /* Green */
+    --theme-warning: 38 92% 50%;    /* Orange */
+    --theme-error: 0 84% 60%;       /* Red */
+  }
+
+  /* Admin Theme - Default Dark */
+  .theme-admin {
+    --theme-primary: 271 81% 56%;   /* Purple */
+    --theme-secondary: 217 91% 60%; /* Blue */
+    --theme-accent: 142 71% 45%;    /* Green */
+    --theme-background: 222 84% 5%; /* Dark */
+    --theme-surface: 217 33% 17%;   /* Dark Surface */
+    --theme-text: 210 40% 98%;      /* Light Text */
+    --theme-text-muted: 215 20% 65%; /* Muted Text */
+    --theme-border: 217 33% 17%;    /* Dark Border */
+    --theme-success: 142 71% 45%;   /* Green */
+    --theme-warning: 38 92% 50%;    /* Orange */
+    --theme-error: 0 84% 60%;       /* Red */
+  }
 }
 
 @layer base {
@@ -99,5 +153,57 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Role-specific body backgrounds */
+  body.theme-artist {
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(220 100% 99%) 100%);
+  }
+
+  body.theme-studio {
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(222 84% 3%) 100%);
+  }
+
+  body.theme-producer {
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(48 100% 95%) 100%);
+  }
+
+  body.theme-admin {
+    background: linear-gradient(135deg, hsl(var(--theme-background)) 0%, hsl(222 84% 3%) 100%);
+  }
+}
+
+/* Theme-specific utility classes */
+@layer utilities {
+  .theme-gradient-artist {
+    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  }
+
+  .theme-gradient-studio {
+    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  }
+
+  .theme-gradient-producer {
+    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  }
+
+  .theme-gradient-admin {
+    background: linear-gradient(135deg, hsl(var(--theme-primary)) 0%, hsl(var(--theme-secondary)) 100%);
+  }
+
+  .theme-text {
+    color: hsl(var(--theme-text));
+  }
+
+  .theme-text-muted {
+    color: hsl(var(--theme-text-muted));
+  }
+
+  .theme-bg-surface {
+    background-color: hsl(var(--theme-surface));
+  }
+
+  .theme-border {
+    border-color: hsl(var(--theme-border));
   }
 }
