@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardNavbarProps {
-  user: User;
+  user: User | null;
   userRole: string;
 }
 
@@ -55,6 +55,24 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
     { label: "Community", href: "/community", icon: MessageSquare },
   ];
 
+  // Show loading state if user is null
+  if (!user) {
+    return (
+      <nav className="bg-black/90 backdrop-blur-md border-b border-blue-500/20 sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              V3
+            </Link>
+            <div className="text-gray-300">Loading...</div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  const displayName = user.user_metadata?.first_name || user.email || "User";
+
   return (
     <nav className="bg-black/90 backdrop-blur-md border-b border-blue-500/20 sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -86,7 +104,7 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
             <div className="hidden md:flex items-center space-x-3">
               <div className="text-right">
                 <p className="text-sm font-medium text-white">
-                  {user.user_metadata?.first_name || user.email}
+                  {displayName}
                 </p>
                 <p className="text-xs text-gray-400 capitalize">{userRole}</p>
               </div>
@@ -150,7 +168,7 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">
-                      {user.user_metadata?.first_name || user.email}
+                      {displayName}
                     </p>
                     <p className="text-xs text-gray-400 capitalize">{userRole}</p>
                   </div>
