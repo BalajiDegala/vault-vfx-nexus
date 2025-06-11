@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { 
@@ -13,61 +13,133 @@ import {
   Users, 
   Star,
   Calendar,
-  DollarSign
+  DollarSign,
+  Loader2
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import CreateProjectModal from "./CreateProjectModal";
-import ProjectCard from "./ProjectCard";
+import BrowseProjectsTab from "./BrowseProjectsTab";
+import MyWorkTab from "./MyWorkTab";
 
-const ProjectsHub = () => {
+type Project = Database["public"]["Tables"]["projects"]["Row"];
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+interface ProjectsHubProps {
+  userRole?: AppRole | null;
+  userId?: string;
+}
+
+const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    openProjects: 0,
+    avgBudget: 0,
+    activeArtists: 0
+  });
+  const { toast } = useToast();
 
-  // Mock data for now - this will come from Supabase later
-  const mockProjects = [
-    {
-      id: "1",
-      title: "Sci-Fi Battle Sequence",
-      description: "Creating epic space battle VFX for upcoming blockbuster film",
-      budget: "$50,000 - $75,000",
-      deadline: "2024-02-15",
-      client: "Marvel Studios",
-      skills: ["3D Animation", "Compositing", "Particle Systems"],
-      status: "Open",
-      applications: 12,
-      image: "/placeholder.svg"
-    },
-    {
-      id: "2", 
-      title: "Dragon Animation Project",
-      description: "High-quality dragon character animation for fantasy series",
-      budget: "$25,000 - $40,000",
-      deadline: "2024-01-30",
-      client: "HBO",
-      skills: ["Character Animation", "Rigging", "Texturing"],
-      status: "In Progress",
-      applications: 8,
-      image: "/placeholder.svg"
-    },
-    {
-      id: "3",
-      title: "Car Chase Destruction",
-      description: "Realistic vehicle destruction and environmental effects",
-      budget: "$30,000 - $50,000", 
-      deadline: "2024-03-10",
-      client: "Universal Pictures",
-      skills: ["Destruction Simulation", "Compositing", "Motion Graphics"],
-      status: "Open",
-      applications: 15,
-      image: "/placeholder.svg"
+  useEffect(() => {
+    fetchProjects();
+    fetchStats();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error: any) {
+      console.error("Error fetching projects:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredProjects = mockProjects.filter(project =>
+  const fetchStats = async () => {
+    try {
+      // Get total projects count
+      const { count: totalProjects } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true });
+
+      // Get open projects count
+      const { count: openProjects } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open");
+
+      // Get average budget
+      const { data: budgetData } = await supabase
+        .from("projects")
+        .select("budget_min, budget_max")
+        .not("budget_min", "is", null)
+        .not("budget_max", "is", null);
+
+      let avgBudget = 0;
+      if (budgetData && budgetData.length > 0) {
+        const totalBudget = budgetData.reduce((sum, project) => {
+          return sum + ((project.budget_min || 0) + (project.budget_max || 0)) / 2;
+        }, 0);
+        avgBudget = totalBudget / budgetData.length;
+      }
+
+      // Get active artists count (users with artist role)
+      const { count: activeArtists } = await supabase
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "artist");
+
+      setStats({
+        totalProjects: totalProjects || 0,
+        openProjects: openProjects || 0,
+        avgBudget: Math.round(avgBudget),
+        activeArtists: activeArtists || 0
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const handleProjectUpdate = () => {
+    fetchProjects();
+    fetchStats();
+  };
+
+  const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()))
+    project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.skills_required?.some(skill => 
+      skill.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-400">Loading projects...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -77,15 +149,17 @@ const ProjectsHub = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
             VFX Projects Hub
           </h1>
-          <p className="text-gray-400">Discover and manage amazing VFX projects</p>
+          <p className="text-gray-400">Discover and manage VFX projects</p>
         </div>
-        <Button 
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4 md:mt-0"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Project
-        </Button>
+        {(userRole === "studio" || userRole === "admin") && (
+          <Button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4 md:mt-0"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Project
+          </Button>
+        )}
       </div>
 
       {/* Search and Filters */}
@@ -105,6 +179,30 @@ const ProjectsHub = () => {
         </Button>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <StatsCard 
+          icon={<Briefcase />} 
+          label="Total Projects" 
+          value={stats.totalProjects.toString()} 
+        />
+        <StatsCard 
+          icon={<Clock />} 
+          label="Open Projects" 
+          value={stats.openProjects.toString()} 
+        />
+        <StatsCard 
+          icon={<DollarSign />} 
+          label="Avg Budget" 
+          value={stats.avgBudget > 0 ? `$${stats.avgBudget.toLocaleString()}` : "N/A"} 
+        />
+        <StatsCard 
+          icon={<Users />} 
+          label="Active Artists" 
+          value={stats.activeArtists.toString()} 
+        />
+      </div>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-gray-800/50 border-gray-600">
@@ -112,9 +210,9 @@ const ProjectsHub = () => {
             <Briefcase className="h-4 w-4 mr-2" />
             Browse Projects
           </TabsTrigger>
-          <TabsTrigger value="my-projects" className="data-[state=active]:bg-blue-600">
+          <TabsTrigger value="my-work" className="data-[state=active]:bg-blue-600">
             <Users className="h-4 w-4 mr-2" />
-            My Projects
+            My Work
           </TabsTrigger>
           <TabsTrigger value="saved" className="data-[state=active]:bg-blue-600">
             <Star className="h-4 w-4 mr-2" />
@@ -123,43 +221,20 @@ const ProjectsHub = () => {
         </TabsList>
 
         <TabsContent value="browse" className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <StatsCard icon={<Briefcase />} label="Active Projects" value="247" />
-            <StatsCard icon={<Clock />} label="Avg. Timeline" value="6 weeks" />
-            <StatsCard icon={<DollarSign />} label="Total Budget" value="$2.5M" />
-            <StatsCard icon={<Users />} label="Active Artists" value="1,200+" />
-          </div>
-
-          {/* Projects Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-
-          {filteredProjects.length === 0 && (
-            <div className="text-center py-12">
-              <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">No projects found</h3>
-              <p className="text-gray-400">Try adjusting your search criteria</p>
-            </div>
-          )}
+          <BrowseProjectsTab 
+            projects={filteredProjects}
+            userRole={userRole}
+            onUpdate={handleProjectUpdate}
+          />
         </TabsContent>
 
-        <TabsContent value="my-projects">
-          <div className="text-center py-12">
-            <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-300 mb-2">No projects yet</h3>
-            <p className="text-gray-400 mb-6">Create your first project to get started</p>
-            <Button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-gradient-to-r from-blue-500 to-purple-600"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Project
-            </Button>
-          </div>
+        <TabsContent value="my-work">
+          <MyWorkTab 
+            projects={filteredProjects}
+            userRole={userRole}
+            userId={userId}
+            onUpdate={handleProjectUpdate}
+          />
         </TabsContent>
 
         <TabsContent value="saved">
@@ -175,6 +250,7 @@ const ProjectsHub = () => {
       <CreateProjectModal 
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleProjectUpdate}
       />
     </div>
   );

@@ -6,10 +6,13 @@ import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectsHub from "@/components/projects/ProjectsHub";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const Projects = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<string>("");
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -69,8 +72,8 @@ const Projects = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
-      <DashboardNavbar user={user} userRole={userRole} />
-      <ProjectsHub />
+      <DashboardNavbar user={user} userRole={userRole || "artist"} />
+      <ProjectsHub userRole={userRole} userId={user.id} />
     </div>
   );
 };
