@@ -1,67 +1,72 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import ProjectChat from "@/components/collaboration/ProjectChat";
-import ProjectHierarchy from "@/components/projects/ProjectHierarchy";
 import ProjectHeader from "@/components/projects/ProjectHeader";
 import ProjectOverview from "@/components/projects/ProjectOverview";
+import ProjectHierarchy from "@/components/projects/ProjectHierarchy";
 import ProjectDiscussion from "@/components/projects/ProjectDiscussion";
 import ProjectFiles from "@/components/projects/ProjectFiles";
-import TeamDiscussion from "@/components/projects/TeamDiscussion";
-import { useProjectPresence } from "@/hooks/useProjectPresence";
+import BidModal from "@/components/projects/BidModal";
+import PresenceIndicator from "@/components/collaboration/PresenceIndicator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, MessageSquare, Users, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useProjectPresence } from "@/hooks/useProjectPresence";
+import { Loader2, Users, MessageSquare, FolderOpen, Files, DollarSign } from "lucide-react";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 const ProjectDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showBidModal, setShowBidModal] = useState(false);
   const { toast } = useToast();
 
-  const { presenceUsers, updateSection } = useProjectPresence(id || '', user?.id || '');
+  const { presenceUsers, updatePresence } = useProjectPresence(id || '', user?.id || '');
 
   useEffect(() => {
-    checkAuth();
-  }, [id]);
+    checkUser();
+  }, []);
 
-  const checkAuth = async () => {
+  useEffect(() => {
+    if (id && user) {
+      fetchProject();
+      updatePresence(activeTab);
+    }
+  }, [id, user, activeTab]);
+
+  const checkUser = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (!session?.user) {
         navigate("/login");
         return;
       }
 
       setUser(session.user);
 
-      // Get user role
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", session.user.id)
         .single();
 
-      if (roleData) {
-        setUserRole(roleData.role);
-        fetchProject();
-      }
+      setUserRole(roleData?.role || "artist");
     } catch (error) {
-      console.error("Auth check error:", error);
+      console.error("Auth error:", error);
       navigate("/login");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -69,96 +74,149 @@ const ProjectDetail = () => {
     if (!id) return;
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("projects")
-        .select("*")
+        .select(`
+          *,
+          client:client_id (
+            first_name,
+            last_name,
+            avatar_url
+          ),
+          assigned:assigned_to (
+            first_name,
+            last_name,
+            avatar_url
+          )
+        `)
         .eq("id", id)
         .single();
 
-      if (error) {
-        console.error("Error fetching project:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load project",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      if (error) throw error;
       setProject(data);
-      updateSection('overview');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load project details",
+        variant: "destructive"
+      });
+      navigate("/projects");
+    } finally {
+      setLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading project...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
+        <DashboardNavbar user={user} userRole={userRole || "artist"} />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-400">Loading project...</span>
         </div>
       </div>
     );
   }
 
-  if (!user || !userRole || !project) {
+  if (!project || !user) {
     return null;
   }
 
+  const canBid = userRole === "artist" || userRole === "studio";
+  const isOwner = project.client_id === user.id;
+  const isAssigned = project.assigned_to === user.id;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
-      <DashboardNavbar user={user} userRole={userRole} />
+      <DashboardNavbar user={user} userRole={userRole || "artist"} />
       
       <div className="container mx-auto px-4 py-8">
-        <ProjectHeader project={project} presenceUsers={presenceUsers} />
+        {/* Project Header with Presence */}
+        <div className="mb-6">
+          <ProjectHeader project={project} />
+          
+          <div className="flex items-center justify-between mt-4">
+            <PresenceIndicator users={presenceUsers} />
+            
+            <div className="flex gap-2">
+              {!isOwner && !isAssigned && canBid && project.status === "open" && (
+                <Button 
+                  onClick={() => setShowBidModal(true)}
+                  className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Place Bid
+                </Button>
+              )}
+              
+              <Badge 
+                className={
+                  project.status === "open" ? "bg-green-500/20 text-green-400" :
+                  project.status === "in_progress" ? "bg-blue-500/20 text-blue-400" :
+                  "bg-gray-500/20 text-gray-400"
+                }
+              >
+                {project.status.replace('_', ' ').toUpperCase()}
+              </Badge>
+            </div>
+          </div>
+        </div>
 
-        {/* Project Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-900/50">
-            <TabsTrigger value="overview" onClick={() => updateSection('overview')}>
-              <FileText className="h-4 w-4 mr-2" />
+        {/* Project Navigation Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-gray-800/50 border-gray-600 w-full justify-start">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600">
+              <FolderOpen className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="structure" onClick={() => updateSection('structure')}>
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600">
               <Users className="h-4 w-4 mr-2" />
-              Structure
+              Tasks & Pipeline
             </TabsTrigger>
-            <TabsTrigger value="chat" onClick={() => updateSection('chat')}>
+            <TabsTrigger value="discussion" className="data-[state=active]:bg-blue-600">
               <MessageSquare className="h-4 w-4 mr-2" />
               Discussion
             </TabsTrigger>
-            <TabsTrigger value="files" onClick={() => updateSection('files')}>
-              <Clock className="h-4 w-4 mr-2" />
+            <TabsTrigger value="files" className="data-[state=active]:bg-blue-600">
+              <Files className="h-4 w-4 mr-2" />
               Files
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <ProjectOverview project={project} />
+          <TabsContent value="overview">
+            <ProjectOverview project={project} userRole={userRole} />
           </TabsContent>
 
-          <TabsContent value="structure">
+          <TabsContent value="tasks">
             <ProjectHierarchy 
               project={project} 
-              userRole={userRole} 
+              userRole={userRole || "artist"} 
               userId={user.id} 
             />
           </TabsContent>
 
-          <TabsContent value="chat">
-            <TeamDiscussion projectId={id} userId={user.id} />
+          <TabsContent value="discussion">
+            <ProjectDiscussion projectId={project.id} currentUser={user} />
           </TabsContent>
 
           <TabsContent value="files">
-            <ProjectFiles />
+            <ProjectFiles projectId={project.id} userRole={userRole} />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Real-time Chat */}
-      <ProjectChat projectId={id || ''} userId={user.id} />
+      {/* Bid Modal */}
+      <BidModal 
+        isOpen={showBidModal}
+        onClose={() => setShowBidModal(false)}
+        projectId={project.id}
+        onSuccess={() => {
+          setShowBidModal(false);
+          toast({ title: "Bid submitted successfully!" });
+        }}
+      />
     </div>
   );
 };
