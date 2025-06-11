@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,13 +37,6 @@ const ProjectDetail = () => {
   useEffect(() => {
     checkUser();
   }, []);
-
-  useEffect(() => {
-    if (id && user) {
-      fetchProject();
-      updatePresence(activeTab);
-    }
-  }, [id, user, activeTab]);
 
   const checkUser = async () => {
     try {
@@ -108,6 +100,13 @@ const ProjectDetail = () => {
     }
   };
 
+  useEffect(() => {
+    if (id && user) {
+      fetchProject();
+      updatePresence(activeTab);
+    }
+  }, [id, user, activeTab, updatePresence]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
@@ -135,7 +134,7 @@ const ProjectDetail = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Project Header with Presence */}
         <div className="mb-6">
-          <ProjectHeader project={project} />
+          <ProjectHeader project={project} presenceUsers={presenceUsers} />
           
           <div className="flex items-center justify-between mt-4">
             <PresenceIndicator users={presenceUsers} />
@@ -186,7 +185,7 @@ const ProjectDetail = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            <ProjectOverview project={project} userRole={userRole} />
+            <ProjectOverview project={project} />
           </TabsContent>
 
           <TabsContent value="tasks">
@@ -198,7 +197,7 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="discussion">
-            <ProjectDiscussion projectId={project.id} currentUser={user} />
+            <ProjectDiscussion projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="files">

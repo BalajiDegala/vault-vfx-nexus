@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -148,21 +147,25 @@ export const useProjectPresence = (projectId: string, userId: string) => {
     };
   }, [projectId, userId]);
 
-  const updateSection = async (section: string) => {
+  const updatePresence = async (section: string) => {
     try {
       await supabase
         .from('project_presence')
-        .update({ current_section: section })
+        .update({ 
+          current_section: section,
+          status: 'online'
+        })
         .eq('project_id', projectId)
         .eq('user_id', userId);
     } catch (error) {
-      console.error('Error updating section:', error);
+      console.error('Error updating presence:', error);
     }
   };
 
   return {
     presenceUsers: presenceUsers.filter(user => user.user_id !== userId), // Don't show current user
     loading,
-    updateSection,
+    updatePresence,
+    updateSection: updatePresence, // Keep both for backward compatibility
   };
 };

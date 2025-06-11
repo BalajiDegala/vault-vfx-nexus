@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, DollarSign, Settings, Share2, Star } from "lucide-react";
@@ -22,10 +21,10 @@ interface UserPresence {
 
 interface ProjectHeaderProps {
   project: Project;
-  presenceUsers: UserPresence[];
+  presenceUsers?: UserPresence[];
 }
 
-const ProjectHeader = ({ project, presenceUsers }: ProjectHeaderProps) => {
+const ProjectHeader = ({ project, presenceUsers = [] }: ProjectHeaderProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open':

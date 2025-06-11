@@ -188,12 +188,12 @@ const BrowseProjectsTab = ({ projects, userRole, onUpdate }: BrowseProjectsTabPr
       {/* Bid Modal */}
       {selectedProject && (
         <BidModal
-          open={showBidModal}
+          isOpen={showBidModal}
           onClose={() => {
             setShowBidModal(false);
             setSelectedProject(null);
           }}
-          project={selectedProject}
+          projectId={selectedProject.id}
           onSuccess={() => {
             setShowBidModal(false);
             setSelectedProject(null);
