@@ -31,46 +31,55 @@ const ProjectDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showBidModal, setShowBidModal] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
 
   const { presenceUsers, updatePresence } = useProjectPresence(id || '', user?.id || '');
 
-  useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
+  const checkUser = useCallback(async () => {
     try {
+      console.log("Checking user authentication...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
+        console.log("No session found, redirecting to login");
         navigate("/login");
         return;
       }
 
+      console.log("User authenticated:", session.user.id);
       setUser(session.user);
 
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", session.user.id)
         .single();
 
-      setUserRole(roleData?.role || "artist");
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+        setUserRole("artist"); // Default fallback
+      } else {
+        setUserRole(roleData.role);
+      }
     } catch (error) {
       console.error("Auth error:", error);
       navigate("/login");
+    } finally {
+      setAuthChecked(true);
     }
-  };
+  }, [navigate]);
 
-  const fetchProject = async () => {
-    if (!id) return;
+  const fetchProject = useCallback(async () => {
+    if (!id || !authChecked) {
+      console.log("Skipping project fetch - missing ID or auth not checked");
+      return;
+    }
 
     try {
       setLoading(true);
       console.log("Fetching project with ID:", id);
       
-      // First get the project data
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("*")
@@ -79,10 +88,24 @@ const ProjectDetail = () => {
 
       if (projectError) {
         console.error("Error fetching project:", projectError);
-        throw projectError;
+        if (projectError.code === 'PGRST116') {
+          toast({
+            title: "Project Not Found",
+            description: "The project you're looking for doesn't exist or has been deleted.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to load project details",
+            variant: "destructive"
+          });
+        }
+        navigate("/projects");
+        return;
       }
 
-      console.log("Project data fetched:", projectData);
+      console.log("Project data fetched successfully:", projectData);
       setProject(projectData);
 
     } catch (error: any) {
@@ -96,22 +119,36 @@ const ProjectDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, authChecked, navigate, toast]);
 
+  // Check authentication on mount
   useEffect(() => {
-    if (id && user) {
+    checkUser();
+  }, [checkUser]);
+
+  // Fetch project when auth is ready and ID is available
+  useEffect(() => {
+    if (authChecked && user && id) {
       fetchProject();
+    }
+  }, [authChecked, user, id, fetchProject]);
+
+  // Update presence when tab changes (only after user is loaded)
+  useEffect(() => {
+    if (user && id) {
       updatePresence(activeTab);
     }
-  }, [id, user, activeTab, updatePresence]);
+  }, [activeTab, user, id, updatePresence]);
 
-  if (loading) {
+  if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
         <DashboardNavbar user={user} userRole={userRole || "artist"} />
         <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-96">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <span className="ml-2 text-gray-400">Loading project...</span>
+          <span className="ml-2 text-gray-400">
+            {!authChecked ? "Checking authentication..." : "Loading project..."}
+          </span>
         </div>
       </div>
     );
