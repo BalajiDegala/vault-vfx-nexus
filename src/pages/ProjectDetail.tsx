@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
@@ -67,26 +68,23 @@ const ProjectDetail = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      console.log("Fetching project with ID:", id);
+      
+      // First get the project data
+      const { data: projectData, error: projectError } = await supabase
         .from("projects")
-        .select(`
-          *,
-          client:client_id (
-            first_name,
-            last_name,
-            avatar_url
-          ),
-          assigned:assigned_to (
-            first_name,
-            last_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
-      setProject(data);
+      if (projectError) {
+        console.error("Error fetching project:", projectError);
+        throw projectError;
+      }
+
+      console.log("Project data fetched:", projectData);
+      setProject(projectData);
+
     } catch (error: any) {
       console.error("Error fetching project:", error);
       toast({

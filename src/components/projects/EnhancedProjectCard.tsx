@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 import UpdateProjectModal from "./UpdateProjectModal";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -47,8 +49,12 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }
 
     try {
-      // const { error } = await supabase.from("projects").delete().eq("id", project.id);
-      // if (error) throw error;
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", project.id);
+
+      if (error) throw error;
 
       toast({
         title: "Project Deleted",
@@ -65,7 +71,12 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on dropdown or buttons
+    if ((e.target as HTMLElement).closest('[role="button"]') || 
+        (e.target as HTMLElement).closest('.dropdown-trigger')) {
+      return;
+    }
     navigate(`/projects/${project.id}`);
   };
 
@@ -76,27 +87,44 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     >
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <CardTitle className="text-xl font-bold text-white">{project.title}</CardTitle>
-            <CardDescription className="text-gray-400">{project.description}</CardDescription>
+            <CardDescription className="text-gray-400 mt-1">
+              {project.description || "No description provided"}
+            </CardDescription>
           </div>
 
           {canEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+                <Button 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 dropdown-trigger"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <span className="sr-only">Open menu</span>
                   <MoreVertical className="h-4 w-4 text-gray-500" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setShowUpdateModal(true)}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowUpdateModal(true);
+                  }}
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   <span>Edit</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:bg-red-500 focus:text-white">
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }} 
+                  className="text-red-500 focus:bg-red-500 focus:text-white"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   <span>Delete</span>
                 </DropdownMenuItem>
@@ -108,20 +136,57 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
 
       <CardContent className="text-gray-300">
         {project.skills_required && project.skills_required.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {project.skills_required.map((skill, index) => (
-              <Badge key={index} variant="secondary">
-                {skill}
-              </Badge>
-            ))}
+          <div className="space-y-2">
+            <p className="text-sm text-gray-400">Skills Required:</p>
+            <div className="flex flex-wrap gap-2">
+              {project.skills_required.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
           </div>
         ) : (
-          <p>No specific skills required.</p>
+          <p className="text-gray-500">No specific skills required.</p>
         )}
+
+        {(project.budget_min || project.budget_max) && (
+          <div className="mt-3 flex items-center gap-2 text-green-400">
+            <span className="text-sm">Budget:</span>
+            {project.budget_min && project.budget_max ? (
+              <span className="font-medium">${project.budget_min.toLocaleString()} - ${project.budget_max.toLocaleString()}</span>
+            ) : project.budget_min ? (
+              <span className="font-medium">From ${project.budget_min.toLocaleString()}</span>
+            ) : project.budget_max ? (
+              <span className="font-medium">Up to ${project.budget_max.toLocaleString()}</span>
+            ) : null}
+            <span className="text-xs text-gray-400">{project.currency}</span>
+          </div>
+        )}
+
+        <div className="mt-3">
+          <Badge 
+            className={
+              project.status === "open" ? "bg-green-500/20 text-green-400" :
+              project.status === "in_progress" ? "bg-blue-500/20 text-blue-400" :
+              project.status === "completed" ? "bg-purple-500/20 text-purple-400" :
+              "bg-gray-500/20 text-gray-400"
+            }
+          >
+            {project.status?.replace('_', ' ').toUpperCase()}
+          </Badge>
+        </div>
       </CardContent>
 
       <CardFooter className="text-sm text-gray-500">
-        Updated {new Date(project.updated_at).toLocaleDateString()}
+        <div className="flex justify-between w-full">
+          <span>Created {new Date(project.created_at).toLocaleDateString()}</span>
+          {project.deadline && (
+            <span className="text-orange-400">
+              Due {new Date(project.deadline).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       </CardFooter>
 
       {/* Update Project Modal */}
