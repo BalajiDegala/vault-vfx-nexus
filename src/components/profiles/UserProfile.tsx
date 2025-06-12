@@ -1,10 +1,9 @@
+
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -15,18 +14,14 @@ import {
   Globe, 
   DollarSign, 
   Star, 
-  Edit3, 
-  Save, 
-  X,
   Briefcase,
-  Award,
   Calendar,
   UserPlus,
   UserMinus,
-  Users
+  Users,
+  MessageCircle
 } from "lucide-react";
-import AvatarUpload from "./AvatarUpload";
-import PortfolioGrid from "./PortfolioGrid";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserFollow } from "@/hooks/useUserFollow";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -42,10 +37,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Profile>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   // Get current user ID for follow functionality
@@ -64,30 +56,6 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
     fetchUserProjects();
   }, [userId]);
 
-  // Set up real-time subscription for profile updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('profile-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${userId}`
-        },
-        (payload) => {
-          console.log('Profile updated:', payload);
-          setProfile(payload.new as Profile);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
   const fetchProfile = async () => {
     try {
       // Fetch profile
@@ -99,7 +67,6 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
 
       if (profileError) throw profileError;
       setProfile(profileData);
-      setEditData(profileData);
 
       // Fetch user role
       const { data: roleData } = await supabase
@@ -147,48 +114,13 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
     }
   };
 
-  const handleSave = async () => {
-    if (!profile) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(editData)
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      setProfile({ ...profile, ...editData });
-      setIsEditing(false);
-      
-      toast({
-        title: "Success",
-        description: "Profile updated successfully"
-      });
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditData(profile || {});
-    setIsEditing(false);
-  };
-
-  const handleAvatarUpdate = (newUrl: string) => {
-    if (profile) {
-      const updatedProfile = { ...profile, avatar_url: newUrl };
-      setProfile(updatedProfile);
-      setEditData(updatedProfile);
-    }
+  const handleMessage = () => {
+    // TODO: Implement messaging functionality
+    console.log("Start conversation with", userId);
+    toast({
+      title: "Coming Soon",
+      description: "Messaging functionality will be available soon"
+    });
   };
 
   if (loading) {
@@ -221,12 +153,12 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
       <Card className="bg-gray-900/80 border-blue-500/20 mb-8">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <AvatarUpload
-              userId={userId}
-              currentAvatarUrl={profile.avatar_url}
-              initials={initials}
-              onAvatarUpdate={handleAvatarUpdate}
-            />
+            <Avatar className="h-32 w-32 border-4 border-blue-500/30">
+              <AvatarImage src={profile.avatar_url || ""} />
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-600">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
             <div className="flex-1 space-y-4">
               <div className="flex items-center justify-between">
@@ -260,51 +192,36 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
                     </div>
                     <div className="flex items-center">
                       <Briefcase className="h-4 w-4 mr-1" />
-                      <span>{profile.portfolio_count || 0} portfolio items</span>
+                      <span>{projects.length} projects</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
                   {!isOwnProfile && currentUserId && (
-                    <Button 
-                      onClick={toggleFollow}
-                      disabled={followLoading}
-                      variant={isFollowing ? "outline" : "default"}
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserMinus className="h-4 w-4 mr-2" />
-                          Unfollow
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
-                  )}
-
-                  {isOwnProfile && (
                     <>
-                      {isEditing ? (
-                        <>
-                          <Button onClick={handleSave} disabled={saving} size="sm">
-                            <Save className="h-4 w-4 mr-2" />
-                            {saving ? "Saving..." : "Save"}
-                          </Button>
-                          <Button onClick={handleCancel} variant="outline" size="sm">
-                            <X className="h-4 w-4 mr-2" />
-                            Cancel
-                          </Button>
-                        </>
-                      ) : (
-                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      )}
+                      <Button 
+                        onClick={toggleFollow}
+                        disabled={followLoading}
+                        variant={isFollowing ? "outline" : "default"}
+                      >
+                        {isFollowing ? (
+                          <>
+                            <UserMinus className="h-4 w-4 mr-2" />
+                            Unfollow
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+
+                      <Button onClick={handleMessage} variant="secondary">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Message
+                      </Button>
                     </>
                   )}
                 </div>
@@ -356,32 +273,18 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
         </CardContent>
       </Card>
 
-      {/* Profile Tabs */}
-      <Tabs defaultValue="portfolio" className="space-y-6">
+      {/* Profile Tabs - Simplified without portfolio */}
+      <Tabs defaultValue="projects" className="space-y-6">
         <TabsList className="bg-gray-800/50 border-gray-600">
-          <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600">
-            <Briefcase className="h-4 w-4 mr-2" />
-            Portfolio
-          </TabsTrigger>
           <TabsTrigger value="projects" className="data-[state=active]:bg-blue-600">
             <Calendar className="h-4 w-4 mr-2" />
             Recent Projects
           </TabsTrigger>
-          <TabsTrigger value="reviews" className="data-[state=active]:bg-blue-600">
-            <Award className="h-4 w-4 mr-2" />
-            Reviews
+          <TabsTrigger value="about" className="data-[state=active]:bg-blue-600">
+            <User className="h-4 w-4 mr-2" />
+            About
           </TabsTrigger>
-          {isOwnProfile && (
-            <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600">
-              <User className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          )}
         </TabsList>
-
-        <TabsContent value="portfolio">
-          <PortfolioGrid userId={userId} isOwnProfile={isOwnProfile} />
-        </TabsContent>
 
         <TabsContent value="projects">
           <div className="space-y-4">
@@ -415,86 +318,64 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="reviews">
+        <TabsContent value="about">
           <Card className="bg-gray-900/80 border-gray-600">
-            <CardContent className="p-6 text-center">
-              <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400">No reviews yet</p>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3">Professional Information</h3>
+                  <div className="grid md:grid-cols-2 gap-4 text-gray-300">
+                    <div>
+                      <span className="text-gray-400">Role:</span>
+                      <span className="ml-2 capitalize">{userRole}</span>
+                    </div>
+                    {profile.location && (
+                      <div>
+                        <span className="text-gray-400">Location:</span>
+                        <span className="ml-2">{profile.location}</span>
+                      </div>
+                    )}
+                    {profile.hourly_rate && (
+                      <div>
+                        <span className="text-gray-400">Rate:</span>
+                        <span className="ml-2">${profile.hourly_rate}/hour</span>
+                      </div>
+                    )}
+                    {profile.website && (
+                      <div>
+                        <span className="text-gray-400">Website:</span>
+                        <a href={profile.website} target="_blank" rel="noopener noreferrer" 
+                           className="ml-2 text-blue-400 hover:underline">
+                          {profile.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {profile.bio && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-3">About</h3>
+                    <p className="text-gray-300">{profile.bio}</p>
+                  </div>
+                )}
+
+                {profile.skills && profile.skills.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-3">Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.skills.map((skill, index) => (
+                        <Badge key={index} variant="outline" className="border-blue-500/30 text-blue-400">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
-
-        {isOwnProfile && (
-          <TabsContent value="settings">
-            <Card className="bg-gray-900/80 border-gray-600">
-              <CardHeader>
-                <CardTitle className="text-white">Profile Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isEditing ? (
-                  <>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-gray-300 text-sm">First Name</label>
-                        <Input
-                          value={editData.first_name || ""}
-                          onChange={(e) => setEditData({...editData, first_name: e.target.value})}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Last Name</label>
-                        <Input
-                          value={editData.last_name || ""}
-                          onChange={(e) => setEditData({...editData, last_name: e.target.value})}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Bio</label>
-                      <Textarea
-                        value={editData.bio || ""}
-                        onChange={(e) => setEditData({...editData, bio: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600 text-white"
-                        rows={4}
-                      />
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-gray-300 text-sm">Location</label>
-                        <Input
-                          value={editData.location || ""}
-                          onChange={(e) => setEditData({...editData, location: e.target.value})}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Website</label>
-                        <Input
-                          value={editData.website || ""}
-                          onChange={(e) => setEditData({...editData, website: e.target.value})}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Hourly Rate ($)</label>
-                      <Input
-                        type="number"
-                        value={editData.hourly_rate || ""}
-                        onChange={(e) => setEditData({...editData, hourly_rate: parseFloat(e.target.value) || 0})}
-                        className="bg-gray-800/50 border-gray-600 text-white"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-gray-400">Click "Edit Profile" to modify your information</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );

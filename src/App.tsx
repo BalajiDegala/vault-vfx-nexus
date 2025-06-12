@@ -16,6 +16,7 @@ import Profiles from "./pages/Profiles";
 import ProfileDiscovery from "./pages/ProfileDiscovery";
 import Marketplace from "./pages/Marketplace";
 import TestUsers from "./pages/TestUsers";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/community" element={<Community />} />
           <Route path="/machine-rental" element={<MachineRental />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/test-users" element={<TestUsers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

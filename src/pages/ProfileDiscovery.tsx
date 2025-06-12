@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MapPin, Star, Users } from "lucide-react";
+import { Search, MapPin, Users, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { useUserFollow } from "@/hooks/useUserFollow";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -80,6 +81,11 @@ const ProfileDiscovery = () => {
   const filterProfiles = () => {
     let filtered = profiles;
 
+    // Filter out current user
+    if (user) {
+      filtered = filtered.filter(profile => profile.id !== user.id);
+    }
+
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(profile => 
@@ -115,7 +121,7 @@ const ProfileDiscovery = () => {
         <DashboardNavbar user={user} userRole={userRole || "artist"} />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-96">
-            <div className="text-gray-400">Loading profiles...</div>
+            <div className="text-gray-400">Loading talent...</div>
           </div>
         </div>
       </div>
@@ -128,7 +134,7 @@ const ProfileDiscovery = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-4">Discover Talent</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">Find Talent</h1>
           <p className="text-gray-400 mb-6">Connect with artists, studios, and producers in the VFX community</p>
           
           {/* Search and Filters */}
@@ -160,91 +166,155 @@ const ProfileDiscovery = () => {
         {/* Profiles Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProfiles.map((profile) => (
-            <Card 
+            <ProfileCard 
               key={profile.id} 
-              className="bg-gray-900/80 border-gray-600 hover:border-blue-500/50 transition-colors cursor-pointer"
-              onClick={() => navigate(`/profiles?user=${profile.id}`)}
-            >
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center text-center">
-                  <Avatar className="h-20 w-20 mb-4 border-2 border-blue-500/30">
-                    <AvatarImage src={profile.avatar_url || ""} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                      {getInitials(profile)}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <h3 className="text-lg font-semibold text-white mb-1">
-                    {getFullName(profile)}
-                  </h3>
-                  
-                  {(profile as any).user_roles?.role && (
-                    <Badge className="bg-blue-500/20 text-blue-400 capitalize mb-2">
-                      {(profile as any).user_roles.role}
-                    </Badge>
-                  )}
-                  
-                  {profile.bio && (
-                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                      {profile.bio}
-                    </p>
-                  )}
-                  
-                  {profile.location && (
-                    <div className="flex items-center text-gray-400 text-sm mb-2">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {profile.location}
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between w-full text-xs text-gray-400 mb-3">
-                    <div className="flex items-center">
-                      <Users className="h-3 w-3 mr-1" />
-                      {profile.followers_count || 0}
-                    </div>
-                    <div className="flex items-center">
-                      <Star className="h-3 w-3 mr-1" />
-                      4.8
-                    </div>
-                    <div>
-                      {profile.portfolio_count || 0} items
-                    </div>
-                  </div>
-                  
-                  {profile.skills && profile.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {profile.skills.slice(0, 3).map((skill, index) => (
-                        <Badge key={index} variant="outline" className="text-xs border-gray-600 text-gray-400">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {profile.skills.length > 3 && (
-                        <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
-                          +{profile.skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  
-                  {profile.online_status === 'online' && (
-                    <Badge className="bg-green-500/20 text-green-400 mt-2">
-                      Online
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              profile={profile}
+              currentUserId={user?.id || null}
+              onViewProfile={() => navigate(`/profiles?user=${profile.id}`)}
+            />
           ))}
         </div>
 
         {filteredProfiles.length === 0 && (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">No profiles found matching your criteria</p>
+            <p className="text-gray-400">No talent found matching your criteria</p>
           </div>
         )}
       </div>
     </div>
+  );
+};
+
+const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
+  profile: Profile;
+  currentUserId: string | null;
+  onViewProfile: () => void;
+}) => {
+  const { isFollowing, loading: followLoading, toggleFollow } = useUserFollow(currentUserId, profile.id);
+
+  const getFullName = (profile: Profile) => {
+    return `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Anonymous User";
+  };
+
+  const getInitials = (profile: Profile) => {
+    const name = getFullName(profile);
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
+
+  const handleMessage = () => {
+    // TODO: Implement messaging functionality
+    console.log("Start conversation with", profile.id);
+  };
+
+  return (
+    <Card className="bg-gray-900/80 border-gray-600 hover:border-blue-500/50 transition-colors">
+      <CardContent className="p-6">
+        <div className="flex flex-col items-center text-center">
+          <Avatar className="h-20 w-20 mb-4 border-2 border-blue-500/30">
+            <AvatarImage src={profile.avatar_url || ""} />
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+              {getInitials(profile)}
+            </AvatarFallback>
+          </Avatar>
+          
+          <h3 className="text-lg font-semibold text-white mb-1">
+            {getFullName(profile)}
+          </h3>
+          
+          {(profile as any).user_roles?.role && (
+            <Badge className="bg-blue-500/20 text-blue-400 capitalize mb-2">
+              {(profile as any).user_roles.role}
+            </Badge>
+          )}
+          
+          {profile.bio && (
+            <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+              {profile.bio}
+            </p>
+          )}
+          
+          {profile.location && (
+            <div className="flex items-center text-gray-400 text-sm mb-3">
+              <MapPin className="h-3 w-3 mr-1" />
+              {profile.location}
+            </div>
+          )}
+          
+          <div className="flex items-center justify-center text-xs text-gray-400 mb-4">
+            <div className="flex items-center mr-4">
+              <Users className="h-3 w-3 mr-1" />
+              {profile.followers_count || 0} followers
+            </div>
+            {profile.online_status === 'online' && (
+              <Badge className="bg-green-500/20 text-green-400">
+                Online
+              </Badge>
+            )}
+          </div>
+          
+          {profile.skills && profile.skills.length > 0 && (
+            <div className="flex flex-wrap gap-1 justify-center mb-4">
+              {profile.skills.slice(0, 3).map((skill, index) => (
+                <Badge key={index} variant="outline" className="text-xs border-gray-600 text-gray-400">
+                  {skill}
+                </Badge>
+              ))}
+              {profile.skills.length > 3 && (
+                <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
+                  +{profile.skills.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onViewProfile}
+              className="flex-1"
+            >
+              View Profile
+            </Button>
+            
+            {currentUserId && (
+              <>
+                <Button 
+                  size="sm"
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                  variant={isFollowing ? "outline" : "default"}
+                  className="flex-1"
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserMinus className="h-3 w-3 mr-1" />
+                      Unfollow
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-3 w-3 mr-1" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleMessage}
+                  className="px-3"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
