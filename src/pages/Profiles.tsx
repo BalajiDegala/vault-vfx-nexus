@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import UserProfile from "@/components/profiles/UserProfile";
 import { useToast } from "@/hooks/use-toast";
@@ -14,8 +14,12 @@ const Profiles = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Get the user ID from URL params, or use current user's ID
+  const profileUserId = searchParams.get("user");
 
   useEffect(() => {
     checkUser();
@@ -59,10 +63,13 @@ const Profiles = () => {
     return null;
   }
 
+  // Use the profileUserId from URL params, or fall back to current user's ID
+  const userIdToShow = profileUserId || user.id;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <DashboardNavbar user={user} userRole={userRole || "artist"} />
-      <UserProfile userId={user.id} currentUserRole={userRole} />
+      <UserProfile userId={userIdToShow} currentUserRole={userRole} />
     </div>
   );
 };

@@ -168,14 +168,6 @@ const ProfileDiscovery = () => {
           <h1 className="text-3xl font-bold text-white mb-4">Find Talent</h1>
           <p className="text-gray-400 mb-6">Connect with artists, studios, and producers in the VFX community</p>
           
-          {/* Debug Info */}
-          <div className="mb-4 p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-sm text-gray-400">
-              Total profiles: {profiles.length} | Filtered: {filteredProfiles.length} | 
-              Search: "{searchTerm}" | Role: {selectedRole}
-            </p>
-          </div>
-          
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
