@@ -61,16 +61,41 @@ const ProfileDiscovery = () => {
 
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      console.log("Fetching all profiles...");
+      
+      // First get all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          user_roles (role)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setProfiles(data || []);
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      console.log("Profiles fetched:", profilesData?.length || 0);
+
+      // Then get user roles separately and match them
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      if (rolesError) {
+        console.error("Error fetching roles:", rolesError);
+      }
+
+      // Combine profiles with their roles
+      const profilesWithRoles = (profilesData || []).map(profile => {
+        const userRole = rolesData?.find(role => role.user_id === profile.id);
+        return {
+          ...profile,
+          user_roles: userRole ? { role: userRole.role } : null
+        };
+      });
+
+      console.log("Profiles with roles:", profilesWithRoles);
+      setProfiles(profilesWithRoles);
     } catch (error) {
       console.error("Error fetching profiles:", error);
     } finally {
@@ -81,9 +106,12 @@ const ProfileDiscovery = () => {
   const filterProfiles = () => {
     let filtered = profiles;
 
+    console.log("Starting filter with profiles:", filtered.length);
+
     // Filter out current user
     if (user) {
       filtered = filtered.filter(profile => profile.id !== user.id);
+      console.log("After filtering out current user:", filtered.length);
     }
 
     // Search filter
@@ -94,15 +122,18 @@ const ProfileDiscovery = () => {
         profile.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         profile.skills?.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+      console.log("After search filter:", filtered.length);
     }
 
-    // Role filter
+    // Role filter - only filter if a specific role is selected
     if (selectedRole !== "all") {
       filtered = filtered.filter(profile => 
         (profile as any).user_roles?.role === selectedRole
       );
+      console.log("After role filter:", filtered.length);
     }
 
+    console.log("Final filtered profiles:", filtered.length);
     setFilteredProfiles(filtered);
   };
 
@@ -136,6 +167,14 @@ const ProfileDiscovery = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">Find Talent</h1>
           <p className="text-gray-400 mb-6">Connect with artists, studios, and producers in the VFX community</p>
+          
+          {/* Debug Info */}
+          <div className="mb-4 p-4 bg-gray-800/50 rounded-lg">
+            <p className="text-sm text-gray-400">
+              Total profiles: {profiles.length} | Filtered: {filteredProfiles.length} | 
+              Search: "{searchTerm}" | Role: {selectedRole}
+            </p>
+          </div>
           
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -175,10 +214,20 @@ const ProfileDiscovery = () => {
           ))}
         </div>
 
-        {filteredProfiles.length === 0 && (
+        {filteredProfiles.length === 0 && !loading && (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">No talent found matching your criteria</p>
+            <p className="text-gray-400">
+              {profiles.length === 0 
+                ? "No profiles found in the system" 
+                : "No talent found matching your criteria"
+              }
+            </p>
+            {profiles.length === 0 && (
+              <p className="text-gray-500 text-sm mt-2">
+                Try creating some test users or check if users have completed their profiles
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -187,7 +236,7 @@ const ProfileDiscovery = () => {
 };
 
 const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
-  profile: Profile;
+  profile: Profile & { user_roles?: { role: string } | null };
   currentUserId: string | null;
   onViewProfile: () => void;
 }) => {
@@ -203,8 +252,8 @@ const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
   };
 
   const handleMessage = () => {
-    // TODO: Implement messaging functionality
     console.log("Start conversation with", profile.id);
+    // TODO: Implement messaging functionality
   };
 
   return (
@@ -222,9 +271,9 @@ const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
             {getFullName(profile)}
           </h3>
           
-          {(profile as any).user_roles?.role && (
+          {profile.user_roles?.role && (
             <Badge className="bg-blue-500/20 text-blue-400 capitalize mb-2">
-              {(profile as any).user_roles.role}
+              {profile.user_roles.role}
             </Badge>
           )}
           
