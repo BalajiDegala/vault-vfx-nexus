@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, Trash2 } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,7 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }
 
     try {
+      console.log("Deleting project:", project.id);
       const { error } = await supabase
         .from("projects")
         .delete()
@@ -71,13 +72,30 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }
   };
 
+  const handleViewProject = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Navigating to project:", project.id);
+    navigate(`/projects/${project.id}`);
+  };
+
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't navigate if clicking on dropdown or buttons
-    if ((e.target as HTMLElement).closest('[role="button"]') || 
-        (e.target as HTMLElement).closest('.dropdown-trigger')) {
+    // Don't navigate if clicking on buttons or dropdown
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]') || 
+        target.closest('.dropdown-trigger')) {
       return;
     }
+    console.log("Card clicked, navigating to project:", project.id);
     navigate(`/projects/${project.id}`);
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency === 'V3C' ? 'USD' : currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
@@ -94,49 +112,64 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
             </CardDescription>
           </div>
 
-          {canEdit && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="h-8 w-8 p-0 dropdown-trigger"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4 text-gray-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowUpdateModal(true);
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>Edit</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                  }} 
-                  className="text-red-500 focus:bg-red-500 focus:text-white"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <div className="flex items-center gap-2">
+            {/* View Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleViewProject}
+              className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+
+            {/* Edit/Delete Dropdown for authorized users */}
+            {canEdit && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0 dropdown-trigger"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="sr-only">Open menu</span>
+                    <MoreVertical className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUpdateModal(true);
+                    }}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                    }} 
+                    className="text-red-500 focus:bg-red-500 focus:text-white"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="text-gray-300">
+        {/* Skills Required */}
         {project.skills_required && project.skills_required.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             <p className="text-sm text-gray-400">Skills Required:</p>
             <div className="flex flex-wrap gap-2">
               {project.skills_required.map((skill, index) => (
@@ -147,23 +180,29 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
             </div>
           </div>
         ) : (
-          <p className="text-gray-500">No specific skills required.</p>
+          <p className="text-gray-500 mb-4">No specific skills required.</p>
         )}
 
+        {/* Budget Information */}
         {(project.budget_min || project.budget_max) && (
-          <div className="mt-3 flex items-center gap-2 text-green-400">
+          <div className="mb-4 flex items-center gap-2 text-green-400">
             <span className="text-sm">Budget:</span>
             {project.budget_min && project.budget_max ? (
-              <span className="font-medium">${project.budget_min.toLocaleString()} - ${project.budget_max.toLocaleString()}</span>
+              <span className="font-medium">
+                {formatCurrency(project.budget_min)} - {formatCurrency(project.budget_max)}
+              </span>
             ) : project.budget_min ? (
-              <span className="font-medium">From ${project.budget_min.toLocaleString()}</span>
+              <span className="font-medium">From {formatCurrency(project.budget_min)}</span>
             ) : project.budget_max ? (
-              <span className="font-medium">Up to ${project.budget_max.toLocaleString()}</span>
+              <span className="font-medium">Up to {formatCurrency(project.budget_max)}</span>
             ) : null}
-            <span className="text-xs text-gray-400">{project.currency}</span>
+            {project.currency && project.currency !== 'USD' && (
+              <span className="text-xs text-gray-400">({project.currency})</span>
+            )}
           </div>
         )}
 
+        {/* Project Status */}
         <div className="mt-3">
           <Badge 
             className={
@@ -197,6 +236,10 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
         onSuccess={() => {
           setShowUpdateModal(false);
           onUpdate();
+          toast({
+            title: "Success",
+            description: "Project updated successfully!",
+          });
         }}
       />
     </Card>

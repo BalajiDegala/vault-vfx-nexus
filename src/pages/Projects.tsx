@@ -7,6 +7,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectsHub from "@/components/projects/ProjectsHub";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { Loader2 } from "lucide-react";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -23,13 +24,16 @@ const Projects = () => {
 
   const checkUser = async () => {
     try {
+      console.log("Projects page: Checking user authentication...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
+        console.log("Projects page: No session found, redirecting to login");
         navigate("/login");
         return;
       }
 
+      console.log("Projects page: User authenticated:", session.user.id);
       setUser(session.user);
 
       // Get user role
@@ -40,18 +44,20 @@ const Projects = () => {
         .single();
 
       if (roleError) {
-        console.error("Error fetching user role:", roleError);
+        console.error("Projects page: Error fetching user role:", roleError);
         toast({
           title: "Error",
           description: "Unable to fetch user role",
           variant: "destructive"
         });
-        return;
+        // Set default role to prevent blocking
+        setUserRole("artist");
+      } else {
+        console.log("Projects page: User role:", roleData.role);
+        setUserRole(roleData.role);
       }
-
-      setUserRole(roleData.role);
     } catch (error) {
-      console.error("Auth error:", error);
+      console.error("Projects page: Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);
@@ -60,8 +66,12 @@ const Projects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
+        <DashboardNavbar user={user} userRole={userRole || "artist"} />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-400">Loading projects...</span>
+        </div>
       </div>
     );
   }

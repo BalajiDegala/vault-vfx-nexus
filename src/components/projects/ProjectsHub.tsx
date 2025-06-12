@@ -45,20 +45,22 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchProjects();
-    fetchStats();
-  }, []);
-
   const fetchProjects = async () => {
     try {
       setLoading(true);
+      console.log("Fetching projects...");
+      
       const { data, error } = await supabase
         .from("projects")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      }
+      
+      console.log("Projects fetched successfully:", data?.length || 0);
       setProjects(data || []);
     } catch (error: any) {
       console.error("Error fetching projects:", error);
@@ -117,16 +119,34 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
     }
   };
 
+  useEffect(() => {
+    fetchProjects();
+    fetchStats();
+  }, []);
+
   const handleProjectUpdate = () => {
+    console.log("Updating projects list...");
     fetchProjects();
     fetchStats();
   };
 
   const handleCreateProject = () => {
-    console.log("Create project button clicked");
-    console.log("User role:", userRole);
-    console.log("Setting modal open to true");
+    console.log("Create project button clicked - userRole:", userRole);
+    if (!userRole || !["studio", "producer", "admin"].includes(userRole)) {
+      toast({
+        title: "Access Denied",
+        description: "Only studios, producers, and admins can create projects.",
+        variant: "destructive"
+      });
+      return;
+    }
+    console.log("Opening create project modal...");
     setIsCreateModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    console.log("Closing create project modal...");
+    setIsCreateModalOpen(false);
   };
 
   const filteredProjects = projects.filter(project =>
@@ -148,8 +168,7 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
     );
   }
 
-  console.log("Rendering ProjectsHub with userRole:", userRole);
-  console.log("Is create modal open:", isCreateModalOpen);
+  const canCreateProject = userRole === "studio" || userRole === "producer" || userRole === "admin";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -161,7 +180,7 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
           </h1>
           <p className="text-gray-400">Discover and manage VFX projects</p>
         </div>
-        {(userRole === "studio" || userRole === "producer" || userRole === "admin") && (
+        {canCreateProject && (
           <Button 
             onClick={handleCreateProject}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4 md:mt-0"
@@ -257,14 +276,20 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
       </Tabs>
 
       {/* Create Project Modal */}
-      <CreateProjectModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => {
-          console.log("Closing modal");
-          setIsCreateModalOpen(false);
-        }}
-        onSuccess={handleProjectUpdate}
-      />
+      {canCreateProject && (
+        <CreateProjectModal 
+          isOpen={isCreateModalOpen}
+          onClose={handleCloseModal}
+          onSuccess={() => {
+            handleCloseModal();
+            handleProjectUpdate();
+            toast({
+              title: "Success",
+              description: "Project created successfully!",
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
