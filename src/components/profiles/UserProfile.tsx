@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,8 +21,13 @@ import {
   Briefcase,
   Award,
   Calendar,
-  Camera
+  UserPlus,
+  UserMinus,
+  Users
 } from "lucide-react";
+import AvatarUpload from "./AvatarUpload";
+import PortfolioGrid from "./PortfolioGrid";
+import { useUserFollow } from "@/hooks/useUserFollow";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -37,6 +40,7 @@ interface UserProfileProps {
 const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Profile>>({});
@@ -44,9 +48,44 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  // Get current user ID for follow functionality
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUserId(session?.user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  const { isFollowing, loading: followLoading, toggleFollow } = useUserFollow(currentUserId, userId);
+
   useEffect(() => {
     fetchProfile();
     fetchUserProjects();
+  }, [userId]);
+
+  // Set up real-time subscription for profile updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('Profile updated:', payload);
+          setProfile(payload.new as Profile);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const fetchProfile = async () => {
@@ -70,6 +109,16 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
         .single();
 
       setUserRole(roleData?.role || "artist");
+
+      // Track profile view if not own profile
+      if (currentUserId && currentUserId !== userId) {
+        await supabase
+          .from("profile_views")
+          .insert({
+            viewer_id: currentUserId,
+            profile_id: userId
+          });
+      }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
       toast({
@@ -134,6 +183,14 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
     setIsEditing(false);
   };
 
+  const handleAvatarUpdate = (newUrl: string) => {
+    if (profile) {
+      const updatedProfile = { ...profile, avatar_url: newUrl };
+      setProfile(updatedProfile);
+      setEditData(updatedProfile);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -156,7 +213,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
 
   const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Anonymous User";
   const initials = fullName.split(" ").map(n => n[0]).join("").toUpperCase();
-  const isOwnProfile = currentUserRole !== null; // Assuming if role is passed, it's own profile
+  const isOwnProfile = currentUserId === userId;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -164,19 +221,12 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
       <Card className="bg-gray-900/80 border-blue-500/20 mb-8">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="relative">
-              <Avatar className="h-32 w-32 border-4 border-blue-500/30">
-                <AvatarImage src={profile.avatar_url || ""} />
-                <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-600">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {isOwnProfile && (
-                <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full p-2">
-                  <Camera className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <AvatarUpload
+              userId={userId}
+              currentAvatarUrl={profile.avatar_url}
+              initials={initials}
+              onAvatarUpdate={handleAvatarUpdate}
+            />
 
             <div className="flex-1 space-y-4">
               <div className="flex items-center justify-between">
@@ -192,30 +242,72 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
                       <Star className="h-4 w-4 mr-1 text-yellow-400" />
                       <span>4.8 (24 reviews)</span>
                     </div>
+                    {profile.online_status === 'online' && (
+                      <Badge className="bg-green-500/20 text-green-400">
+                        Online
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Social Stats */}
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-1" />
+                      <span>{profile.followers_count || 0} followers</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span>{profile.following_count || 0} following</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Briefcase className="h-4 w-4 mr-1" />
+                      <span>{profile.portfolio_count || 0} portfolio items</span>
+                    </div>
                   </div>
                 </div>
 
-                {isOwnProfile && (
-                  <div className="flex gap-2">
-                    {isEditing ? (
-                      <>
-                        <Button onClick={handleSave} disabled={saving} size="sm">
-                          <Save className="h-4 w-4 mr-2" />
-                          {saving ? "Saving..." : "Save"}
+                <div className="flex gap-2">
+                  {!isOwnProfile && currentUserId && (
+                    <Button 
+                      onClick={toggleFollow}
+                      disabled={followLoading}
+                      variant={isFollowing ? "outline" : "default"}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserMinus className="h-4 w-4 mr-2" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {isOwnProfile && (
+                    <>
+                      {isEditing ? (
+                        <>
+                          <Button onClick={handleSave} disabled={saving} size="sm">
+                            <Save className="h-4 w-4 mr-2" />
+                            {saving ? "Saving..." : "Save"}
+                          </Button>
+                          <Button onClick={handleCancel} variant="outline" size="sm">
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Edit Profile
                         </Button>
-                        <Button onClick={handleCancel} variant="outline" size="sm">
-                          <X className="h-4 w-4 mr-2" />
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 text-gray-300">
@@ -288,15 +380,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
         </TabsList>
 
         <TabsContent value="portfolio">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Portfolio items would go here */}
-            <Card className="bg-gray-900/80 border-gray-600">
-              <CardContent className="p-6 text-center">
-                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-400">No portfolio items yet</p>
-              </CardContent>
-            </Card>
-          </div>
+          <PortfolioGrid userId={userId} isOwnProfile={isOwnProfile} />
         </TabsContent>
 
         <TabsContent value="projects">

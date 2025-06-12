@@ -13,6 +13,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Community from "./pages/Community";
 import MachineRental from "./pages/MachineRental";
 import Profiles from "./pages/Profiles";
+import ProfileDiscovery from "./pages/ProfileDiscovery";
 import Marketplace from "./pages/Marketplace";
 import TestUsers from "./pages/TestUsers";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/profiles" element={<Profiles />} />
+          <Route path="/profile-discovery" element={<ProfileDiscovery />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/community" element={<Community />} />
           <Route path="/machine-rental" element={<MachineRental />} />

@@ -401,6 +401,92 @@ export type Database = {
           },
         ]
       }
+      portfolio_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          featured: boolean | null
+          file_url: string | null
+          id: string
+          image_url: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          file_url?: string | null
+          id?: string
+          image_url?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean | null
+          file_url?: string | null
+          id?: string
+          image_url?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_views: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_views_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -408,10 +494,15 @@ export type Database = {
           created_at: string
           email: string
           first_name: string | null
+          followers_count: number | null
+          following_count: number | null
           hourly_rate: number | null
           id: string
           last_name: string | null
+          last_seen: string | null
           location: string | null
+          online_status: string | null
+          portfolio_count: number | null
           skills: string[] | null
           updated_at: string
           username: string | null
@@ -424,10 +515,15 @@ export type Database = {
           created_at?: string
           email: string
           first_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           hourly_rate?: number | null
           id: string
           last_name?: string | null
+          last_seen?: string | null
           location?: string | null
+          online_status?: string | null
+          portfolio_count?: number | null
           skills?: string[] | null
           updated_at?: string
           username?: string | null
@@ -440,10 +536,15 @@ export type Database = {
           created_at?: string
           email?: string
           first_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           hourly_rate?: number | null
           id?: string
           last_name?: string | null
+          last_seen?: string | null
           location?: string | null
+          online_status?: string | null
+          portfolio_count?: number | null
           skills?: string[] | null
           updated_at?: string
           username?: string | null
@@ -979,6 +1080,42 @@ export type Database = {
             columns: ["shot_id"]
             isOneToOne: false
             referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
