@@ -107,13 +107,13 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
                 </div>
                 <DropdownMenuSeparator className="bg-gray-700" />
                 <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-700">
-                  <Link to="/profiles" className="flex items-center">
+                  <Link to="/profiles" className="flex items-center text-white hover:text-white">
                     <UserIcon className="h-4 w-4 mr-2" />
                     My Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-700">
-                  <Link to="/settings" className="flex items-center">
+                  <Link to="/settings" className="flex items-center text-white hover:text-white">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Link>

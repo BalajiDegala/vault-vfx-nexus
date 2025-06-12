@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, MapPin, Users, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { useUserFollow } from "@/hooks/useUserFollow";
+import DirectMessaging from "@/components/messaging/DirectMessaging";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -24,6 +24,7 @@ const ProfileDiscovery = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [messagingUser, setMessagingUser] = useState<Profile | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -202,6 +203,7 @@ const ProfileDiscovery = () => {
               profile={profile}
               currentUserId={user?.id || null}
               onViewProfile={() => navigate(`/profiles?user=${profile.id}`)}
+              onMessage={() => setMessagingUser(profile)}
             />
           ))}
         </div>
@@ -223,14 +225,27 @@ const ProfileDiscovery = () => {
           </div>
         )}
       </div>
+
+      {/* Direct Messaging Modal */}
+      {messagingUser && user && (
+        <DirectMessaging
+          currentUserId={user.id}
+          recipientId={messagingUser.id}
+          recipientName={getFullName(messagingUser)}
+          recipientAvatar={messagingUser.avatar_url || undefined}
+          open={!!messagingUser}
+          onOpenChange={(open) => !open && setMessagingUser(null)}
+        />
+      )}
     </div>
   );
 };
 
-const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
+const ProfileCard = ({ profile, currentUserId, onViewProfile, onMessage }: {
   profile: Profile & { user_roles?: { role: string } | null };
   currentUserId: string | null;
   onViewProfile: () => void;
+  onMessage: () => void;
 }) => {
   const { isFollowing, loading: followLoading, toggleFollow } = useUserFollow(currentUserId, profile.id);
 
@@ -241,11 +256,6 @@ const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
   const getInitials = (profile: Profile) => {
     const name = getFullName(profile);
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
-  };
-
-  const handleMessage = () => {
-    console.log("Start conversation with", profile.id);
-    // TODO: Implement messaging functionality
   };
 
   return (
@@ -345,7 +355,7 @@ const ProfileCard = ({ profile, currentUserId, onViewProfile }: {
                 <Button 
                   size="sm"
                   variant="secondary"
-                  onClick={handleMessage}
+                  onClick={onMessage}
                   className="px-3"
                 >
                   <MessageCircle className="h-3 w-3" />
