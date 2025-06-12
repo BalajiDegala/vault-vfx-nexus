@@ -73,32 +73,48 @@ const CreateProjectModal = ({ isOpen, onClose, onSuccess }: CreateProjectModalPr
   };
 
   const onSubmit = async (data: CreateProjectForm) => {
+    console.log("Starting project creation with data:", data);
     setLoading(true);
+    
     try {
+      // Check authentication
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Session check:", session ? "Session found" : "No session");
       
       if (!session?.user) {
+        console.error("No authenticated user found");
         throw new Error("You must be logged in to create a project");
       }
 
+      console.log("Creating project for user:", session.user.id);
+
       const projectData = {
         title: data.title,
-        description: data.description,
-        budget_min: data.budget_min,
-        budget_max: data.budget_max,
+        description: data.description || null,
+        budget_min: data.budget_min || null,
+        budget_max: data.budget_max || null,
         deadline: data.deadline || null,
         security_level: data.security_level || "Standard",
-        skills_required: skills,
+        skills_required: skills.length > 0 ? skills : null,
         client_id: session.user.id,
         status: "open" as const,
         currency: "V3C",
       };
 
-      const { error } = await supabase
-        .from("projects")
-        .insert([projectData]);
+      console.log("Project data to insert:", projectData);
 
-      if (error) throw error;
+      const { data: insertedProject, error } = await supabase
+        .from("projects")
+        .insert([projectData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+
+      console.log("Project created successfully:", insertedProject);
 
       toast({
         title: "Success",
@@ -116,7 +132,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSuccess }: CreateProjectModalPr
       console.error("Error creating project:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create project",
         variant: "destructive",
       });
     } finally {

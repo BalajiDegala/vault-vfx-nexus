@@ -122,6 +122,13 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
     fetchStats();
   };
 
+  const handleCreateProject = () => {
+    console.log("Create project button clicked");
+    console.log("User role:", userRole);
+    console.log("Setting modal open to true");
+    setIsCreateModalOpen(true);
+  };
+
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,6 +148,9 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
     );
   }
 
+  console.log("Rendering ProjectsHub with userRole:", userRole);
+  console.log("Is create modal open:", isCreateModalOpen);
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -151,9 +161,9 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
           </h1>
           <p className="text-gray-400">Discover and manage VFX projects</p>
         </div>
-        {(userRole === "studio" || userRole === "admin") && (
+        {(userRole === "studio" || userRole === "producer" || userRole === "admin") && (
           <Button 
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={handleCreateProject}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4 md:mt-0"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -249,7 +259,10 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
       {/* Create Project Modal */}
       <CreateProjectModal 
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          console.log("Closing modal");
+          setIsCreateModalOpen(false);
+        }}
         onSuccess={handleProjectUpdate}
       />
     </div>
