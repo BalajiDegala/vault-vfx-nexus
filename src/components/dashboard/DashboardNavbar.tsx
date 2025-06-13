@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -22,8 +23,10 @@ import {
   ShoppingCart, 
   Settings, 
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Bell
 } from "lucide-react";
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -35,6 +38,7 @@ interface DashboardNavbarProps {
 const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { unreadCount } = useMessageNotifications(user?.id || '');
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -51,7 +55,12 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
     { label: "Dashboard", icon: Home, path: "/dashboard" },
     { label: "Projects", icon: FolderOpen, path: "/projects" },
     { label: "Talent", icon: Users, path: "/profile-discovery" },
-    { label: "Community", icon: MessageSquare, path: "/community" },
+    { 
+      label: "Community", 
+      icon: MessageSquare, 
+      path: "/community",
+      badge: unreadCount > 0 ? unreadCount : undefined
+    },
     { label: "Machines", icon: Server, path: "/machine-rental" },
     { label: "Marketplace", icon: ShoppingCart, path: "/marketplace" },
   ];
@@ -74,10 +83,15 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
               <Link key={item.path} to={item.path}>
                 <Button 
                   variant="ghost" 
-                  className="text-gray-300 hover:text-white hover:bg-gray-800 flex items-center space-x-2"
+                  className="text-gray-300 hover:text-white hover:bg-gray-800 flex items-center space-x-2 relative"
                 >
                   <item.icon className="h-4 w-4" />
                   <span>{item.label}</span>
+                  {item.badge && (
+                    <Badge className="bg-red-500 text-white text-xs px-1 min-w-[1rem] h-4 rounded-full">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
             ))}
@@ -85,6 +99,16 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <Button variant="ghost" size="sm" className="relative text-gray-300 hover:text-white">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 min-w-[1rem] h-4 rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-800">
