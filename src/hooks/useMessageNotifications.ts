@@ -83,12 +83,13 @@ export const useMessageNotifications = (currentUserId: string) => {
               ? `${senderData.first_name || ''} ${senderData.last_name || ''}`.trim() || 'Someone'
               : 'Someone';
 
-            // Show toast notification
+            // Show toast notification if not on current conversation
             toast({
-              title: `New message from ${senderName}`,
+              title: `💬 New message from ${senderName}`,
               description: payload.new.content.length > 50 
                 ? payload.new.content.substring(0, 50) + '...'
                 : payload.new.content,
+              duration: 5000,
             });
 
             // Update unread count
@@ -101,7 +102,7 @@ export const useMessageNotifications = (currentUserId: string) => {
         supabase.removeChannel(channel);
       };
     }
-  }, [currentUserId, lastReadTimestamp]);
+  }, [currentUserId, lastReadTimestamp, toast]);
 
   return {
     unreadCount,
