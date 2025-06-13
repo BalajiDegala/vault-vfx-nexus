@@ -23,8 +23,7 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const { toast } = useToast();
   const messagesChannelRef = useRef<any>(null);
   const typingChannelRef = useRef<any>(null);
-  const isMessagesSubscribedRef = useRef(false);
-  const isTypingSubscribedRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
   const fetchMessages = async () => {
     if (!currentUserId || !recipientId) return;
@@ -92,18 +91,13 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   };
 
   const subscribeToMessages = () => {
-    // Clean up existing channel
     if (messagesChannelRef.current) {
-      console.log('Cleaning up messages channel');
-      supabase.removeChannel(messagesChannelRef.current);
-      messagesChannelRef.current = null;
-      isMessagesSubscribedRef.current = false;
+      console.log('Messages channel already exists, skipping subscription');
+      return () => {};
     }
 
     const channelName = `direct_messages_${currentUserId}_${recipientId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
-
-    // Store reference immediately
     messagesChannelRef.current = channel;
 
     channel.on(
@@ -119,29 +113,20 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     );
 
-    // Subscribe only if not already subscribed
-    if (!isMessagesSubscribedRef.current) {
-      channel.subscribe((status) => {
-        console.log('Messages channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isMessagesSubscribedRef.current = true;
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          isMessagesSubscribedRef.current = false;
-        }
-      });
-    }
+    channel.subscribe((status) => {
+      console.log('Messages channel subscription status:', status);
+    });
 
     return () => {
       if (messagesChannelRef.current) {
         supabase.removeChannel(messagesChannelRef.current);
         messagesChannelRef.current = null;
-        isMessagesSubscribedRef.current = false;
       }
     };
   };
 
   const broadcastTyping = (isTyping: boolean) => {
-    if (typingChannelRef.current && isTypingSubscribedRef.current) {
+    if (typingChannelRef.current) {
       typingChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
@@ -151,18 +136,13 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   };
 
   const subscribeToTyping = (onTypingChange: (isTyping: boolean) => void) => {
-    // Clean up existing typing channel
     if (typingChannelRef.current) {
-      console.log('Cleaning up typing channel');
-      supabase.removeChannel(typingChannelRef.current);
-      typingChannelRef.current = null;
-      isTypingSubscribedRef.current = false;
+      console.log('Typing channel already exists, skipping subscription');
+      return () => {};
     }
 
     const channelName = `typing_${recipientId}_${currentUserId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
-
-    // Store reference immediately
     typingChannelRef.current = channel;
 
     channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -171,34 +151,49 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     });
 
-    // Subscribe only if not already subscribed
-    if (!isTypingSubscribedRef.current) {
-      channel.subscribe((status) => {
-        console.log('Typing channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isTypingSubscribedRef.current = true;
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          isTypingSubscribedRef.current = false;
-        }
-      });
-    }
+    channel.subscribe((status) => {
+      console.log('Typing channel subscription status:', status);
+    });
 
     return () => {
       if (typingChannelRef.current) {
         supabase.removeChannel(typingChannelRef.current);
         typingChannelRef.current = null;
-        isTypingSubscribedRef.current = false;
       }
     };
   };
 
   useEffect(() => {
-    if (currentUserId && recipientId) {
-      fetchMessages();
-      const unsubscribe = subscribeToMessages();
-      return unsubscribe;
-    }
+    if (!currentUserId || !recipientId || isInitializedRef.current) return;
+    
+    console.log('Initializing direct messages for:', currentUserId, recipientId);
+    isInitializedRef.current = true;
+
+    fetchMessages();
+    const unsubscribe = subscribeToMessages();
+    
+    return () => {
+      unsubscribe();
+      isInitializedRef.current = false;
+    };
   }, [currentUserId, recipientId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (messagesChannelRef.current) {
+        console.log('Component unmounting - cleaning up messages channel');
+        supabase.removeChannel(messagesChannelRef.current);
+        messagesChannelRef.current = null;
+      }
+      if (typingChannelRef.current) {
+        console.log('Component unmounting - cleaning up typing channel');
+        supabase.removeChannel(typingChannelRef.current);
+        typingChannelRef.current = null;
+      }
+      isInitializedRef.current = false;
+    };
+  }, []);
 
   return {
     messages,
