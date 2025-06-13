@@ -104,7 +104,9 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   const broadcastTyping = (isTyping: boolean) => {
@@ -126,7 +128,9 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   useEffect(() => {
