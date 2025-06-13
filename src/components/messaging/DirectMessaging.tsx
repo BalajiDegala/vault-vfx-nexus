@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, MessageCircle, X } from "lucide-react";
+import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -87,7 +87,7 @@ const DirectMessaging = ({
         .from('direct_messages')
         .select(`
           *,
-          sender_profile:sender_id (
+          sender_profile:profiles!sender_id (
             first_name,
             last_name,
             avatar_url
@@ -97,7 +97,16 @@ const DirectMessaging = ({
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Transform the data to match our interface
+      const transformedMessages = (data || []).map(msg => ({
+        ...msg,
+        sender_profile: Array.isArray(msg.sender_profile) 
+          ? msg.sender_profile[0] 
+          : msg.sender_profile
+      }));
+      
+      setMessages(transformedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
