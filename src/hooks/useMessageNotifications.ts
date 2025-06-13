@@ -60,15 +60,18 @@ export const useMessageNotifications = (currentUserId: string) => {
 
     checkUnreadMessages();
     
-    // Clean up any existing channel
+    // Clean up any existing channel first
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // Create new channel with unique name
+    // Create new channel with unique name including timestamp
     const channelName = `message_notifications_${currentUserId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
+
+    // Store reference before configuring
+    channelRef.current = channel;
 
     // Configure the channel
     channel.on(
@@ -109,11 +112,8 @@ export const useMessageNotifications = (currentUserId: string) => {
 
     // Subscribe to the channel
     channel.subscribe((status) => {
-      console.log('Channel subscription status:', status);
+      console.log('Message notifications channel subscription status:', status);
     });
-
-    // Store channel reference
-    channelRef.current = channel;
 
     // Cleanup function
     return () => {
@@ -122,7 +122,7 @@ export const useMessageNotifications = (currentUserId: string) => {
         channelRef.current = null;
       }
     };
-  }, [currentUserId, lastReadTimestamp, toast]);
+  }, [currentUserId, toast]); // Removed lastReadTimestamp from dependencies to prevent re-subscription
 
   return {
     unreadCount,

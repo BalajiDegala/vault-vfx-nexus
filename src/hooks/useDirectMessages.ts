@@ -99,6 +99,9 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
     const channelName = `direct_messages_${currentUserId}_${recipientId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
 
+    // Store reference immediately
+    messagesChannelRef.current = channel;
+
     channel.on(
       'postgres_changes',
       {
@@ -112,8 +115,9 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     );
 
-    channel.subscribe();
-    messagesChannelRef.current = channel;
+    channel.subscribe((status) => {
+      console.log('Messages channel subscription status:', status);
+    });
 
     return () => {
       if (messagesChannelRef.current) {
@@ -143,14 +147,18 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
     const channelName = `typing_${recipientId}_${currentUserId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
 
+    // Store reference immediately
+    typingChannelRef.current = channel;
+
     channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
       if (payload.user_id === recipientId) {
         onTypingChange(payload.typing);
       }
     });
 
-    channel.subscribe();
-    typingChannelRef.current = channel;
+    channel.subscribe((status) => {
+      console.log('Typing channel subscription status:', status);
+    });
 
     return () => {
       if (typingChannelRef.current) {
