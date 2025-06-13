@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Users, TrendingUp, Hash } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import MessagesList from "@/components/messaging/MessagesList";
+import CommunityDiscussions from "@/components/community/CommunityDiscussions";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -77,8 +78,12 @@ const Community = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="messages" className="space-y-6">
+        <Tabs defaultValue="discussions" className="space-y-6">
           <TabsList className="bg-gray-800 border-gray-700">
+            <TabsTrigger value="discussions" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Discussions
+            </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Messages
@@ -88,36 +93,18 @@ const Community = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="discussions" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Discussions
-            </TabsTrigger>
             <TabsTrigger value="trending" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Trending
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="messages" className="space-y-6">
-            <MessagesList currentUserId={user.id} />
+          <TabsContent value="discussions" className="space-y-6">
+            <CommunityDiscussions currentUser={user} />
           </TabsContent>
 
-          <TabsContent value="discussions" className="space-y-6">
-            <Card className="bg-gray-900/80 border-blue-500/20">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Community Discussions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-gray-400 py-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Community Discussions</p>
-                  <p className="text-sm">Coming soon - Join conversations about VFX, techniques, and industry trends</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="messages" className="space-y-6">
+            <MessagesList currentUserId={user.id} />
           </TabsContent>
 
           <TabsContent value="trending" className="space-y-6">
