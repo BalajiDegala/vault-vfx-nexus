@@ -19,7 +19,7 @@ export const useMessageNotifications = (currentUserId: string) => {
   );
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
-  const isInitializedRef = useRef(false);
+  const isSubscribedRef = useRef(false);
 
   const updateLastRead = () => {
     const now = new Date().toISOString();
@@ -57,19 +57,20 @@ export const useMessageNotifications = (currentUserId: string) => {
   };
 
   useEffect(() => {
-    if (!currentUserId || isInitializedRef.current) return;
+    if (!currentUserId) return;
 
-    console.log('Initializing message notifications for user:', currentUserId);
-    isInitializedRef.current = true;
+    console.log('Setting up message notifications for user:', currentUserId);
 
+    // Check unread messages initially
     checkUnreadMessages();
     
     // Cleanup function
     const cleanup = () => {
-      if (channelRef.current) {
+      if (channelRef.current && isSubscribedRef.current) {
         console.log('Cleaning up message notifications channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        isSubscribedRef.current = false;
       }
     };
 
@@ -118,23 +119,30 @@ export const useMessageNotifications = (currentUserId: string) => {
       }
     );
 
-    // Subscribe to the channel
-    channel.subscribe((status) => {
-      console.log('Message notifications channel subscription status:', status);
-    });
+    // Subscribe to the channel only once
+    if (!isSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Message notifications channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
+        } else if (status === 'CLOSED') {
+          isSubscribedRef.current = false;
+        }
+      });
+    }
 
     // Return cleanup function
     return cleanup;
-  }, [currentUserId, toast]);
+  }, [currentUserId, toast, lastReadTimestamp]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      isInitializedRef.current = false;
-      if (channelRef.current) {
+      if (channelRef.current && isSubscribedRef.current) {
         console.log('Component unmounting - cleaning up message notifications channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        isSubscribedRef.current = false;
       }
     };
   }, []);

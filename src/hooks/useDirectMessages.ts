@@ -23,7 +23,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const { toast } = useToast();
   const messagesChannelRef = useRef<any>(null);
   const typingChannelRef = useRef<any>(null);
-  const isInitializedRef = useRef(false);
+  const isMessagesSubscribedRef = useRef(false);
+  const isTypingSubscribedRef = useRef(false);
 
   const fetchMessages = async () => {
     if (!currentUserId || !recipientId) return;
@@ -91,8 +92,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   };
 
   const subscribeToMessages = () => {
-    if (messagesChannelRef.current) {
-      console.log('Messages channel already exists, skipping subscription');
+    if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
+      console.log('Messages channel already subscribed, skipping');
       return () => {};
     }
 
@@ -113,20 +114,28 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     );
 
-    channel.subscribe((status) => {
-      console.log('Messages channel subscription status:', status);
-    });
+    if (!isMessagesSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Messages channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isMessagesSubscribedRef.current = true;
+        } else if (status === 'CLOSED') {
+          isMessagesSubscribedRef.current = false;
+        }
+      });
+    }
 
     return () => {
-      if (messagesChannelRef.current) {
+      if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
         supabase.removeChannel(messagesChannelRef.current);
         messagesChannelRef.current = null;
+        isMessagesSubscribedRef.current = false;
       }
     };
   };
 
   const broadcastTyping = (isTyping: boolean) => {
-    if (typingChannelRef.current) {
+    if (typingChannelRef.current && isTypingSubscribedRef.current) {
       typingChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
@@ -136,8 +145,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   };
 
   const subscribeToTyping = (onTypingChange: (isTyping: boolean) => void) => {
-    if (typingChannelRef.current) {
-      console.log('Typing channel already exists, skipping subscription');
+    if (typingChannelRef.current && isTypingSubscribedRef.current) {
+      console.log('Typing channel already subscribed, skipping');
       return () => {};
     }
 
@@ -151,47 +160,54 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     });
 
-    channel.subscribe((status) => {
-      console.log('Typing channel subscription status:', status);
-    });
+    if (!isTypingSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Typing channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isTypingSubscribedRef.current = true;
+        } else if (status === 'CLOSED') {
+          isTypingSubscribedRef.current = false;
+        }
+      });
+    }
 
     return () => {
-      if (typingChannelRef.current) {
+      if (typingChannelRef.current && isTypingSubscribedRef.current) {
         supabase.removeChannel(typingChannelRef.current);
         typingChannelRef.current = null;
+        isTypingSubscribedRef.current = false;
       }
     };
   };
 
   useEffect(() => {
-    if (!currentUserId || !recipientId || isInitializedRef.current) return;
+    if (!currentUserId || !recipientId) return;
     
-    console.log('Initializing direct messages for:', currentUserId, recipientId);
-    isInitializedRef.current = true;
+    console.log('Setting up direct messages for:', currentUserId, recipientId);
 
     fetchMessages();
     const unsubscribe = subscribeToMessages();
     
     return () => {
       unsubscribe();
-      isInitializedRef.current = false;
     };
   }, [currentUserId, recipientId]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (messagesChannelRef.current) {
+      if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
         console.log('Component unmounting - cleaning up messages channel');
         supabase.removeChannel(messagesChannelRef.current);
         messagesChannelRef.current = null;
+        isMessagesSubscribedRef.current = false;
       }
-      if (typingChannelRef.current) {
+      if (typingChannelRef.current && isTypingSubscribedRef.current) {
         console.log('Component unmounting - cleaning up typing channel');
         supabase.removeChannel(typingChannelRef.current);
         typingChannelRef.current = null;
+        isTypingSubscribedRef.current = false;
       }
-      isInitializedRef.current = false;
     };
   }, []);
 
