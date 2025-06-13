@@ -39,6 +39,8 @@ export const useCommunityPosts = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+      console.log('Fetching community posts...');
+      
       const { data, error } = await supabase
         .from('community_posts')
         .select(`
@@ -51,7 +53,12 @@ export const useCommunityPosts = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching posts:', error);
+        throw error;
+      }
+      
+      console.log('Fetched posts:', data);
       setPosts(data || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -67,6 +74,7 @@ export const useCommunityPosts = () => {
 
   const createPost = async (content: string) => {
     try {
+      console.log('Creating new post...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -77,13 +85,18 @@ export const useCommunityPosts = () => {
           content: content.trim()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating post:', error);
+        throw error;
+      }
       
+      console.log('Post created successfully');
       toast({
         title: "Success",
         description: "Post created successfully!",
       });
       
+      await fetchPosts(); // Refresh posts after creating
       return true;
     } catch (error) {
       console.error('Error creating post:', error);
@@ -98,6 +111,7 @@ export const useCommunityPosts = () => {
 
   const toggleLike = async (postId: string) => {
     try {
+      console.log('Toggling like for post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -118,6 +132,7 @@ export const useCommunityPosts = () => {
           .eq('user_id', user.id);
         
         if (error) throw error;
+        console.log('Post unliked');
       } else {
         // Like
         const { error } = await supabase
@@ -128,7 +143,10 @@ export const useCommunityPosts = () => {
           });
         
         if (error) throw error;
+        console.log('Post liked');
       }
+      
+      await fetchPosts(); // Refresh posts after like/unlike
     } catch (error) {
       console.error('Error toggling like:', error);
       toast({
@@ -141,6 +159,8 @@ export const useCommunityPosts = () => {
 
   const fetchComments = async (postId: string): Promise<Comment[]> => {
     try {
+      console.log('Fetching comments for post:', postId);
+      
       const { data, error } = await supabase
         .from('community_post_comments')
         .select(`
@@ -154,7 +174,12 @@ export const useCommunityPosts = () => {
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+      }
+      
+      console.log('Fetched comments:', data);
       return data || [];
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -164,6 +189,7 @@ export const useCommunityPosts = () => {
 
   const addComment = async (postId: string, content: string) => {
     try {
+      console.log('Adding comment to post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -175,7 +201,13 @@ export const useCommunityPosts = () => {
           content: content.trim()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      }
+      
+      console.log('Comment added successfully');
+      await fetchPosts(); // Refresh posts to update comment count
       return true;
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -193,14 +225,17 @@ export const useCommunityPosts = () => {
 
     // Subscribe to real-time updates
     const channel = supabase
-      .channel('community_posts_updates')
+      .channel('community_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts' }, () => {
+        console.log('Community posts updated, refreshing...');
         fetchPosts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_post_likes' }, () => {
+        console.log('Post likes updated, refreshing...');
         fetchPosts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_post_comments' }, () => {
+        console.log('Post comments updated, refreshing...');
         fetchPosts();
       })
       .subscribe();

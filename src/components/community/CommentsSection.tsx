@@ -28,11 +28,21 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(true);
   const { fetchComments, addComment } = useCommunityPosts();
 
   const loadComments = async () => {
-    const fetchedComments = await fetchComments(postId);
-    setComments(fetchedComments);
+    try {
+      setCommentsLoading(true);
+      console.log('Loading comments for post:', postId);
+      const fetchedComments = await fetchComments(postId);
+      setComments(fetchedComments);
+      console.log('Comments loaded:', fetchedComments.length);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setCommentsLoading(false);
+    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -40,18 +50,37 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     if (!newComment.trim()) return;
 
     setLoading(true);
-    const success = await addComment(postId, newComment);
+    console.log('Submitting comment...');
     
-    if (success) {
-      setNewComment('');
-      loadComments();
+    try {
+      const success = await addComment(postId, newComment);
+      
+      if (success) {
+        setNewComment('');
+        await loadComments(); // Reload comments after adding
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadComments();
+    if (postId) {
+      loadComments();
+    }
   }, [postId]);
+
+  if (commentsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center text-gray-400 py-4">
+          Loading comments...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -73,33 +102,39 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       </form>
 
       <div className="space-y-3">
-        {comments.map((comment) => {
-          const authorName = `${comment.author_profile.first_name} ${comment.author_profile.last_name}`.trim() || 'Anonymous';
-          const avatarFallback = authorName.split(' ').map(n => n[0]).join('').toUpperCase();
-          
-          return (
-            <div key={comment.id} className="flex space-x-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={comment.author_profile.avatar_url} />
-                <AvatarFallback className="bg-gray-600 text-white text-xs">
-                  {avatarFallback}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-medium text-white text-sm">{authorName}</span>
-                    <span className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                    </span>
+        {comments.length === 0 ? (
+          <div className="text-center text-gray-400 py-4">
+            No comments yet. Be the first to comment!
+          </div>
+        ) : (
+          comments.map((comment) => {
+            const authorName = `${comment.author_profile?.first_name || ''} ${comment.author_profile?.last_name || ''}`.trim() || 'Anonymous';
+            const avatarFallback = authorName.split(' ').map(n => n[0]).join('').toUpperCase() || 'A';
+            
+            return (
+              <div key={comment.id} className="flex space-x-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={comment.author_profile?.avatar_url} />
+                  <AvatarFallback className="bg-gray-600 text-white text-xs">
+                    {avatarFallback}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1">
+                  <div className="bg-gray-800 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="font-medium text-white text-sm">{authorName}</span>
+                      <span className="text-xs text-gray-400">
+                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-gray-200 text-sm">{comment.content}</p>
                   </div>
-                  <p className="text-gray-200 text-sm">{comment.content}</p>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

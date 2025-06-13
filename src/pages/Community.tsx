@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Users, TrendingUp, Hash } from "lucide-react";
+import { MessageSquare, Users, TrendingUp } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import MessagesList from "@/components/messaging/MessagesList";
 import CommunityDiscussions from "@/components/community/CommunityDiscussions";
+import TrendingTopics from "@/components/community/TrendingTopics";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -108,21 +108,7 @@ const Community = () => {
           </TabsContent>
 
           <TabsContent value="trending" className="space-y-6">
-            <Card className="bg-gray-900/80 border-blue-500/20">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Hash className="h-5 w-5" />
-                  Trending Topics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-gray-400 py-8">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Trending in VFX</p>
-                  <p className="text-sm">Discover what's hot in the VFX community</p>
-                </div>
-              </CardContent>
-            </Card>
+            <TrendingTopics />
           </TabsContent>
         </Tabs>
       </div>
