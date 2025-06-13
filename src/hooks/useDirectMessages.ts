@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const { toast } = useToast();
+  const messagesChannelRef = useRef<any>(null);
+  const typingChannelRef = useRef<any>(null);
 
   const fetchMessages = async () => {
     if (!currentUserId || !recipientId) return;
@@ -88,48 +90,73 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   };
 
   const subscribeToMessages = () => {
-    const channel = supabase
-      .channel(`direct_messages_${currentUserId}_${recipientId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${currentUserId}))`
-        },
-        () => {
-          fetchMessages();
-        }
-      )
-      .subscribe();
+    // Clean up existing channel
+    if (messagesChannelRef.current) {
+      supabase.removeChannel(messagesChannelRef.current);
+      messagesChannelRef.current = null;
+    }
+
+    const channelName = `direct_messages_${currentUserId}_${recipientId}_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${currentUserId}))`
+      },
+      () => {
+        fetchMessages();
+      }
+    );
+
+    channel.subscribe();
+    messagesChannelRef.current = channel;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (messagesChannelRef.current) {
+        supabase.removeChannel(messagesChannelRef.current);
+        messagesChannelRef.current = null;
+      }
     };
   };
 
   const broadcastTyping = (isTyping: boolean) => {
-    const channel = supabase.channel(`typing_${currentUserId}_${recipientId}`);
-    channel.send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { user_id: currentUserId, typing: isTyping }
-    });
+    if (typingChannelRef.current) {
+      typingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { user_id: currentUserId, typing: isTyping }
+      });
+    }
   };
 
   const subscribeToTyping = (onTypingChange: (isTyping: boolean) => void) => {
-    const channel = supabase
-      .channel(`typing_${recipientId}_${currentUserId}`)
-      .on('broadcast', { event: 'typing' }, ({ payload }) => {
-        if (payload.user_id === recipientId) {
-          onTypingChange(payload.typing);
-        }
-      })
-      .subscribe();
+    // Clean up existing typing channel
+    if (typingChannelRef.current) {
+      supabase.removeChannel(typingChannelRef.current);
+      typingChannelRef.current = null;
+    }
+
+    const channelName = `typing_${recipientId}_${currentUserId}_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
+      if (payload.user_id === recipientId) {
+        onTypingChange(payload.typing);
+      }
+    });
+
+    channel.subscribe();
+    typingChannelRef.current = channel;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (typingChannelRef.current) {
+        supabase.removeChannel(typingChannelRef.current);
+        typingChannelRef.current = null;
+      }
     };
   };
 

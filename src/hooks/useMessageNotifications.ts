@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,6 +18,7 @@ export const useMessageNotifications = (currentUserId: string) => {
     localStorage.getItem(`lastReadMessages_${currentUserId}`) || new Date().toISOString()
   );
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
 
   const updateLastRead = () => {
     const now = new Date().toISOString();
@@ -55,53 +56,72 @@ export const useMessageNotifications = (currentUserId: string) => {
   };
 
   useEffect(() => {
-    if (currentUserId) {
-      checkUnreadMessages();
-      
-      // Subscribe to new messages
-      const channel = supabase
-        .channel(`message_notifications_${currentUserId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: `receiver_id=eq.${currentUserId}`
-          },
-          async (payload) => {
-            console.log('New message notification:', payload);
-            
-            // Fetch sender profile for notification
-            const { data: senderData } = await supabase
-              .from('profiles')
-              .select('first_name, last_name, avatar_url')
-              .eq('id', payload.new.sender_id)
-              .single();
+    if (!currentUserId) return;
 
-            const senderName = senderData 
-              ? `${senderData.first_name || ''} ${senderData.last_name || ''}`.trim() || 'Someone'
-              : 'Someone';
-
-            // Show toast notification if not on current conversation
-            toast({
-              title: `💬 New message from ${senderName}`,
-              description: payload.new.content.length > 50 
-                ? payload.new.content.substring(0, 50) + '...'
-                : payload.new.content,
-              duration: 5000,
-            });
-
-            // Update unread count
-            setUnreadCount(prev => prev + 1);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    checkUnreadMessages();
+    
+    // Clean up any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
+
+    // Create new channel with unique name
+    const channelName = `message_notifications_${currentUserId}_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    // Configure the channel
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `receiver_id=eq.${currentUserId}`
+      },
+      async (payload) => {
+        console.log('New message notification:', payload);
+        
+        // Fetch sender profile for notification
+        const { data: senderData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, avatar_url')
+          .eq('id', payload.new.sender_id)
+          .single();
+
+        const senderName = senderData 
+          ? `${senderData.first_name || ''} ${senderData.last_name || ''}`.trim() || 'Someone'
+          : 'Someone';
+
+        // Show toast notification
+        toast({
+          title: `💬 New message from ${senderName}`,
+          description: payload.new.content.length > 50 
+            ? payload.new.content.substring(0, 50) + '...'
+            : payload.new.content,
+          duration: 5000,
+        });
+
+        // Update unread count
+        setUnreadCount(prev => prev + 1);
+      }
+    );
+
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      console.log('Channel subscription status:', status);
+    });
+
+    // Store channel reference
+    channelRef.current = channel;
+
+    // Cleanup function
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [currentUserId, lastReadTimestamp, toast]);
 
   return {
