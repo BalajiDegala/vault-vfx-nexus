@@ -19,6 +19,7 @@ export const useMessageNotifications = (currentUserId: string) => {
   );
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   const updateLastRead = () => {
     const now = new Date().toISOString();
@@ -60,17 +61,24 @@ export const useMessageNotifications = (currentUserId: string) => {
 
     checkUnreadMessages();
     
+    // Cleanup function
+    const cleanup = () => {
+      if (channelRef.current) {
+        console.log('Cleaning up message notifications channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
+    };
+
     // Clean up any existing channel first
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    cleanup();
 
     // Create new channel with unique name including timestamp
     const channelName = `message_notifications_${currentUserId}_${Date.now()}`;
     const channel = supabase.channel(channelName);
 
-    // Store reference before configuring
+    // Store reference immediately
     channelRef.current = channel;
 
     // Configure the channel
@@ -110,19 +118,21 @@ export const useMessageNotifications = (currentUserId: string) => {
       }
     );
 
-    // Subscribe to the channel
-    channel.subscribe((status) => {
-      console.log('Message notifications channel subscription status:', status);
-    });
+    // Subscribe to the channel only if not already subscribed
+    if (!isSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Message notifications channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          isSubscribedRef.current = false;
+        }
+      });
+    }
 
-    // Cleanup function
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [currentUserId, toast]); // Removed lastReadTimestamp from dependencies to prevent re-subscription
+    // Return cleanup function
+    return cleanup;
+  }, [currentUserId, toast]);
 
   return {
     unreadCount,

@@ -23,6 +23,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const { toast } = useToast();
   const messagesChannelRef = useRef<any>(null);
   const typingChannelRef = useRef<any>(null);
+  const isMessagesSubscribedRef = useRef(false);
+  const isTypingSubscribedRef = useRef(false);
 
   const fetchMessages = async () => {
     if (!currentUserId || !recipientId) return;
@@ -92,8 +94,10 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const subscribeToMessages = () => {
     // Clean up existing channel
     if (messagesChannelRef.current) {
+      console.log('Cleaning up messages channel');
       supabase.removeChannel(messagesChannelRef.current);
       messagesChannelRef.current = null;
+      isMessagesSubscribedRef.current = false;
     }
 
     const channelName = `direct_messages_${currentUserId}_${recipientId}_${Date.now()}`;
@@ -115,20 +119,29 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     );
 
-    channel.subscribe((status) => {
-      console.log('Messages channel subscription status:', status);
-    });
+    // Subscribe only if not already subscribed
+    if (!isMessagesSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Messages channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isMessagesSubscribedRef.current = true;
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          isMessagesSubscribedRef.current = false;
+        }
+      });
+    }
 
     return () => {
       if (messagesChannelRef.current) {
         supabase.removeChannel(messagesChannelRef.current);
         messagesChannelRef.current = null;
+        isMessagesSubscribedRef.current = false;
       }
     };
   };
 
   const broadcastTyping = (isTyping: boolean) => {
-    if (typingChannelRef.current) {
+    if (typingChannelRef.current && isTypingSubscribedRef.current) {
       typingChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
@@ -140,8 +153,10 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
   const subscribeToTyping = (onTypingChange: (isTyping: boolean) => void) => {
     // Clean up existing typing channel
     if (typingChannelRef.current) {
+      console.log('Cleaning up typing channel');
       supabase.removeChannel(typingChannelRef.current);
       typingChannelRef.current = null;
+      isTypingSubscribedRef.current = false;
     }
 
     const channelName = `typing_${recipientId}_${currentUserId}_${Date.now()}`;
@@ -156,14 +171,23 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
       }
     });
 
-    channel.subscribe((status) => {
-      console.log('Typing channel subscription status:', status);
-    });
+    // Subscribe only if not already subscribed
+    if (!isTypingSubscribedRef.current) {
+      channel.subscribe((status) => {
+        console.log('Typing channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isTypingSubscribedRef.current = true;
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          isTypingSubscribedRef.current = false;
+        }
+      });
+    }
 
     return () => {
       if (typingChannelRef.current) {
         supabase.removeChannel(typingChannelRef.current);
         typingChannelRef.current = null;
+        isTypingSubscribedRef.current = false;
       }
     };
   };
