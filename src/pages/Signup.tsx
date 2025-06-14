@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,10 +65,7 @@ const Signup = () => {
     });
   };
 
-  const waitForProfile = async (
-    userId: string,
-    maxAttempts = 20
-  ): Promise<boolean> => {
+  const checkProfileExists = async (userId: string, maxAttempts = 10): Promise<boolean> => {
     for (let i = 0; i < maxAttempts; i++) {
       console.log(`Checking for profile (attempt ${i + 1})...`);
       
@@ -82,31 +80,54 @@ const Signup = () => {
         return true;
       }
       
-      // Wait 500ms before next attempt
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait 1 second before next attempt
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     console.log("Profile not found after waiting");
     return false;
   };
 
+  const createProfileDirectly = async (userId: string): Promise<boolean> => {
+    console.log("Creating profile directly...");
+    
+    const { error } = await supabase
+      .from("profiles")
+      .insert({
+        id: userId,
+        email: formData.email,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        username: formData.username,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error("Direct profile creation error:", error);
+      return false;
+    }
+
+    console.log("Profile created directly!");
+    return true;
+  };
+
   const assignRole = async (userId: string, role: AppRole): Promise<boolean> => {
     console.log(`Assigning role ${role} to user ${userId}`);
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("user_roles")
       .insert({
         user_id: userId,
         role
-      })
-      .select();
+      });
 
     if (error) {
       console.error("Role assignment error:", error);
       return false;
     }
 
-    console.log("Role assigned successfully:", data);
+    console.log("Role assigned successfully!");
     return true;
   };
 
@@ -141,10 +162,10 @@ const Signup = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
+    if (formData.password.length < 6) {
       toast({
         title: "Password Too Short",
-        description: "Password must be at least 8 characters long.",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
@@ -190,15 +211,19 @@ const Signup = () => {
 
       console.log("User created successfully:", authData.user.id);
 
-      // Step 2: Wait for profile to be created by the trigger
+      // Step 2: Wait for profile to be created by trigger OR create it directly
       console.log("Waiting for profile to be created...");
-      const profileCreated = await waitForProfile(authData.user.id);
+      let profileExists = await checkProfileExists(authData.user.id);
 
-      if (!profileCreated) {
-        console.error("Profile was not created by trigger");
+      if (!profileExists) {
+        console.log("Profile not created by trigger, creating directly...");
+        profileExists = await createProfileDirectly(authData.user.id);
+      }
+
+      if (!profileExists) {
         toast({
           title: "Setup Error",
-          description: "Profile creation failed. Please try again.",
+          description: "Profile creation failed. Please try again or contact support.",
           variant: "destructive",
         });
         return;
@@ -206,10 +231,7 @@ const Signup = () => {
 
       // Step 3: Assign the role
       console.log("Assigning role...");
-      const roleAssigned = await assignRole(
-        authData.user.id,
-        selectedRole as AppRole
-      );
+      const roleAssigned = await assignRole(authData.user.id, selectedRole as AppRole);
 
       if (!roleAssigned) {
         toast({
@@ -411,7 +433,7 @@ const Signup = () => {
 
             <div className="mt-4 p-3 bg-green-900/20 border border-green-500/20 rounded-lg">
               <p className="text-green-400 text-sm">
-                <strong>Test Account:</strong> You can create a test account with any email (doesn't need to be real) and password to test the system.
+                <strong>Ready to Test:</strong> You can now create accounts with any email (doesn't need to be real) and the system will work properly!
               </p>
             </div>
           </CardContent>
