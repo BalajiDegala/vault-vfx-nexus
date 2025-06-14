@@ -1,28 +1,31 @@
+
 import { useEffect } from 'react';
 import { useCommunityPostsData } from './useCommunityPostsData';
-import { useCommunityPostActions } from './useCommunityPostActions';
+import { useCommunityPostMutations } from './useCommunityPostMutations';
+import { useCommunityPostEngagement } from './useCommunityPostEngagement';
 import { useCommunityPostsRealtime } from './useCommunityPostsRealtime';
 
 export const useCommunityPosts = () => {
   const { posts, loading, fetchPosts, fetchComments, setPosts } = useCommunityPostsData();
-  const { createPost, toggleLike, addComment, editPost, deletePost, toggleBookmark } = useCommunityPostActions(fetchPosts); // Added toggleBookmark
+  const { createPost, editPost, deletePost } = useCommunityPostMutations(fetchPosts);
+  const { toggleLike, addComment, toggleBookmark } = useCommunityPostEngagement(fetchPosts);
   
   useCommunityPostsRealtime(fetchPosts);
 
   useEffect(() => {
     fetchPosts();
-  }, []); // Removed fetchPosts from dependencies to avoid re-fetching on every action
+  }, []);
 
   return {
     posts,
     loading,
     createPost,
-    toggleLike,
-    fetchComments,
-    addComment,
     editPost, 
     deletePost,
-    toggleBookmark, // Expose toggleBookmark
+    toggleLike,
+    addComment,
+    toggleBookmark,
+    fetchComments,
     refreshPosts: fetchPosts,
     setPosts 
   };
