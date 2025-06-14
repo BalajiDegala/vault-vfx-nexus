@@ -1,11 +1,12 @@
+
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
-import ProjectsTableFilters from "./ProjectsTableFilters";
 import ProjectsDataTable from "./ProjectsDataTable";
 import ProjectsPagination from "./ProjectsPagination";
+import ProjectsTableFiltersContainer from "./ProjectsTableFiltersContainer";
 
-// Utility constants/types (kept the same)
+// Utility constants/types
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 const statusColor: Record<string, string> = {
   completed: "bg-blue-500/20 text-blue-400",
@@ -31,19 +32,20 @@ const typeOptions = [
 ];
 type SortColumn = "title" | "status" | "budget" | "deadline" | "assigned_to" | "security_level" | "project_type";
 
-// Main component (now much cleaner)
+// Main component
 const ProjectsTable = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // filter and sort state
+  // Filter logic state (moved to parent for control)
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [sortColumn, setSortColumn] = useState<SortColumn>("deadline");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [deadlineRange, setDeadlineRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
+
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<SortColumn>("deadline");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,6 +64,20 @@ const ProjectsTable = () => {
     fetchProjects();
   }, []);
 
+  // Handler: Receive filter updates from container
+  const handleFiltersChange = (filters: {
+    statusFilter: string;
+    typeFilter: string;
+    searchQuery: string;
+    deadlineRange: { from: string | null; to: string | null };
+  }) => {
+    setStatusFilter(filters.statusFilter);
+    setTypeFilter(filters.typeFilter);
+    setSearchQuery(filters.searchQuery);
+    setDeadlineRange(filters.deadlineRange);
+    setCurrentPage(1); // Reset page on filter
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -79,23 +95,19 @@ const ProjectsTable = () => {
     if (typeFilter && typeFilter !== "all") {
       result = result.filter((p) => (p.project_type ?? "studio") === typeFilter);
     }
-    // Keyword filter (title, description)
     if (searchQuery) {
       result = result.filter(p =>
         (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
-    // Deadline range filter
     if (deadlineRange.from) {
       result = result.filter(p => p.deadline && new Date(p.deadline) >= new Date(deadlineRange.from as string));
     }
     if (deadlineRange.to) {
       result = result.filter(p => p.deadline && new Date(p.deadline) <= new Date(deadlineRange.to as string));
     }
-    setCurrentPage(1);
     return result;
-  // eslint-disable-next-line
   }, [projects, statusFilter, typeFilter, searchQuery, deadlineRange]);
 
   const sortedProjects = useMemo(() => {
@@ -104,7 +116,6 @@ const ProjectsTable = () => {
       let aVal: any = a[sortColumn];
       let bVal: any = b[sortColumn];
 
-      // Special sorting logic
       if (sortColumn === "budget") {
         aVal = ((a.budget_min ?? 0) + (a.budget_max ?? 0)) / 2;
         bVal = ((b.budget_min ?? 0) + (b.budget_max ?? 0)) / 2;
@@ -145,9 +156,7 @@ const ProjectsTable = () => {
     setCurrentPage(p);
   };
 
-  // Generate page numbers (simple: 1 ... N)
   const pageNumbersArray = () => {
-    // Show max of 5 page buttons
     const arr = [];
     for (let i = Math.max(1, currentPage - 2); i <= Math.min(pageCount, currentPage + 2); i++) {
       arr.push(i);
@@ -157,17 +166,10 @@ const ProjectsTable = () => {
 
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
-      <ProjectsTableFilters
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
+      <ProjectsTableFiltersContainer
         statusOptions={statusOptions}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
         typeOptions={typeOptions}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        deadlineRange={deadlineRange}
-        setDeadlineRange={setDeadlineRange}
+        onChange={handleFiltersChange}
       />
       <ProjectsDataTable
         loading={loading}
