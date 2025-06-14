@@ -26,7 +26,7 @@ const statusColor: Record<string, string> = {
 };
 
 const statusOptions = [
-  { value: "", label: "All" },
+  { value: "all", label: "All" },
   { value: "open", label: "Open" },
   { value: "completed", label: "Completed" },
   { value: "draft", label: "Draft" },
@@ -34,7 +34,7 @@ const statusOptions = [
   { value: "review", label: "Review" },
 ];
 const typeOptions = [
-  { value: "", label: "All" },
+  { value: "all", label: "All" },
   { value: "studio", label: "Studio" },
   { value: "personal", label: "Personal" },
   { value: "freelance", label: "Freelance" },
@@ -48,8 +48,8 @@ const ProjectsTable = () => {
   const [loading, setLoading] = useState(true);
 
   // filter and sort state
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState<SortColumn>("deadline");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -78,10 +78,10 @@ const ProjectsTable = () => {
   // Filtered and sorted projects, in-memory for best UX
   const filteredProjects = useMemo(() => {
     let result = [...projects];
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== "all") {
       result = result.filter((p) => p.status === statusFilter);
     }
-    if (typeFilter) {
+    if (typeFilter && typeFilter !== "all") {
       result = result.filter((p) => (p.project_type ?? "studio") === typeFilter);
     }
     return result;
