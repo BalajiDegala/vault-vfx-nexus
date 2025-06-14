@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CommunityPost, Comment } from '@/types/community';
+import { CommunityPost, Comment, UploadedFile } from '@/types/community';
 
 export const useCommunityPostsData = () => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -32,7 +32,16 @@ export const useCommunityPostsData = () => {
       }
       
       console.log('Fetched posts:', data);
-      setPosts(data || []);
+      
+      // Convert the data to match our CommunityPost interface
+      const formattedPosts: CommunityPost[] = data?.map(post => ({
+        ...post,
+        attachments: post.attachments ? 
+          (Array.isArray(post.attachments) ? post.attachments : JSON.parse(post.attachments as string)) as UploadedFile[] 
+          : []
+      })) || [];
+      
+      setPosts(formattedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({

@@ -22,13 +22,16 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
       // Extract hashtags from content
       const hashtags = extractHashtags(content);
 
+      // Convert attachments to Json format for database storage
+      const attachmentsJson = attachments ? JSON.stringify(attachments) : '[]';
+
       const { error } = await supabase
         .from('community_posts')
         .insert({
           author_id: user.id,
           content: content.trim(),
           category: category,
-          attachments: attachments || []
+          attachments: attachmentsJson as any
         });
 
       if (error) {
