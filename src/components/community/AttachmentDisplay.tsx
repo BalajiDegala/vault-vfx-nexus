@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -15,8 +16,6 @@ interface AttachmentDisplayProps {
 }
 
 const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
   console.log('AttachmentDisplay: Received attachments:', attachments);
 
   if (!attachments || attachments.length === 0) {
@@ -60,7 +59,12 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
                 src={attachment.url}
                 alt={attachment.name}
                 className="max-h-48 rounded-lg object-cover group-hover:opacity-90 transition-opacity"
-                onError={(e) => console.error(`AttachmentDisplay: Error loading image ${attachment.url}`, e)}
+                onError={(e) => {
+                  console.error(`AttachmentDisplay: Error loading image ${attachment.url}`, e);
+                  // Show a placeholder when image fails to load
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzY2NiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjZmZmIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgRXJyb3I8L3RleHQ+PC9zdmc+';
+                }}
+                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${attachment.url}`)}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                 <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -109,11 +113,18 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.open(attachment.url, '_blank')}
+          onClick={() => {
+            // For blob URLs, we can't directly download, so just open in new tab
+            if (attachment.url.startsWith('blob:')) {
+              window.open(attachment.url, '_blank');
+            } else {
+              window.open(attachment.url, '_blank');
+            }
+          }}
           className="text-blue-400 hover:text-blue-300"
         >
           <Download className="h-4 w-4 mr-1" />
-          Download
+          View
         </Button>
       </div>
     );

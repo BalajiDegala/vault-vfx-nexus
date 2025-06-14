@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
 import { UploadedFile } from '@/types/community';
+import { deleteFileFromServer } from '@/utils/fileServer';
 
 export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
@@ -24,7 +25,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       }
       console.log('useEditCommunityPost: Authenticated user for editPost:', user.id);
       
-      // Handle file deletions using your own storage API
+      // Handle file deletions using mock file server
       const filesToDelete: string[] = [];
       if (oldAttachments && newAttachments) {
         const newAttachmentUrls = new Set(newAttachments.map(file => file.url));
@@ -42,21 +43,9 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       if (filesToDelete.length > 0) {
         console.log('useEditCommunityPost: Deleting attachments from storage:', filesToDelete);
         try {
-          const response = await fetch('/api/files/delete', {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-            },
-            body: JSON.stringify({ 
-              fileUrls: filesToDelete,
-              userId: user.id 
-            })
-          });
-
-          if (!response.ok) {
-            console.error('useEditCommunityPost: Error deleting attachments from storage');
-            toast({ title: "Attachment Error", description: "Could not delete old attachments, but post may be updated.", variant: "destructive" });
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            await deleteFileFromServer(filesToDelete, user.id, session.access_token);
           }
         } catch (error) {
           console.error('useEditCommunityPost: Error calling file deletion API:', error);

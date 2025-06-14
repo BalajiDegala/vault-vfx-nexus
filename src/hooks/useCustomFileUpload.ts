@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { uploadFileToServer } from '@/utils/fileServer';
 
 interface FileUploadOptions {
   maxFileSize?: number;
@@ -36,7 +37,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         throw new Error('File type not allowed');
       }
 
-      console.log('Uploading file to custom API:', file.name);
+      console.log('Uploading file:', file.name);
 
       // Get auth token for API authentication
       const { data: { session } } = await supabase.auth.getSession();
@@ -44,33 +45,22 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         throw new Error('Not authenticated');
       }
 
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('userId', userId);
+      setUploadProgress(50);
 
-      // Upload to your custom API
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('File uploaded successfully:', result.url);
-
+      // For now, use a local URL that would work in development
+      // In production, this would be your actual server
+      const result = await uploadFileToServer(file, userId, session.access_token);
+      
       setUploadProgress(100);
+
+      // Create a local object URL for immediate display
+      const localUrl = URL.createObjectURL(file);
+      
+      console.log('File uploaded successfully, using local URL for display:', localUrl);
 
       return {
         name: file.name,
-        url: result.url,
+        url: localUrl, // Use local URL for immediate display
         type: file.type,
         size: file.size
       };

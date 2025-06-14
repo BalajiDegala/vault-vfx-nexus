@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UploadedFile } from '@/types/community';
+import { deleteFileFromServer } from '@/utils/fileServer';
 
 export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
@@ -17,24 +18,16 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
       }
       console.log('useDeleteCommunityPost: Authenticated user for deletePost:', user.id);
 
-      // Delete attachments from your own storage API
+      // Delete attachments from mock file server
       if (attachments && attachments.length > 0) {
         try {
-          const response = await fetch('/api/files/delete', {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-            },
-            body: JSON.stringify({ 
-              fileUrls: attachments.map(file => file.url),
-              userId: user.id 
-            })
-          });
-
-          if (!response.ok) {
-            console.error('useDeleteCommunityPost: Error deleting attachments from storage');
-            toast({ title: "Attachment Error", description: "Could not delete attachments, but post may be deleted.", variant: "destructive" });
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            await deleteFileFromServer(
+              attachments.map(file => file.url),
+              user.id,
+              session.access_token
+            );
           }
         } catch (error) {
           console.error('useDeleteCommunityPost: Error calling file deletion API:', error);

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,7 +9,10 @@ export const useCommunityPostEngagement = (refreshPosts: () => Promise<void>) =>
     try {
       console.log('Toggling like for post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({ title: "Authentication Error", description: "You must be logged in to like posts.", variant: "destructive" });
+        throw new Error('Not authenticated');
+      }
 
       const { data: existingLike, error: checkError } = await supabase
         .from('community_post_likes')
@@ -70,34 +74,66 @@ export const useCommunityPostEngagement = (refreshPosts: () => Promise<void>) =>
       }
       console.log('useCommunityPostEngagement: Authenticated user:', user.id, user.email);
 
-      // Verify user profile exists, as author_id in comments links to profiles
+      // First, ensure the user has a profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile) {
-        console.error('useCommunityPostEngagement: Error fetching user profile or profile not found.', { profileError, profile });
-        toast({ title: "Profile Error", description: "User profile not found. Cannot add comment.", variant: "destructive" });
-        return false;
+      if (profileError) {
+        console.error('useCommunityPostEngagement: Error fetching user profile:', profileError);
+        
+        // If profile doesn't exist, create one
+        if (profileError.code === 'PGRST116') {
+          console.log('useCommunityPostEngagement: Profile not found, creating one...');
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email || '',
+              first_name: user.user_metadata?.first_name || '',
+              last_name: user.user_metadata?.last_name || '',
+              username: user.user_metadata?.username || ''
+            });
+          
+          if (createError) {
+            console.error('useCommunityPostEngagement: Error creating profile:', createError);
+            toast({ title: "Profile Error", description: "Could not create user profile. Please try again.", variant: "destructive" });
+            return false;
+          }
+          console.log('useCommunityPostEngagement: Profile created successfully');
+        } else {
+          toast({ title: "Profile Error", description: "Could not access user profile. Please try again.", variant: "destructive" });
+          return false;
+        }
+      } else {
+        console.log('useCommunityPostEngagement: User profile found:', profile);
       }
-      console.log('useCommunityPostEngagement: User profile found:', profile);
 
       const { error: insertError } = await supabase
         .from('community_post_comments')
         .insert({
           post_id: postId,
-          author_id: user.id, // This should match an ID in 'profiles' table
+          author_id: user.id,
           content: content.trim()
         });
 
       if (insertError) {
         console.error('useCommunityPostEngagement: Error inserting comment into Supabase:', insertError);
-        throw insertError;
+        toast({
+          title: "Error",
+          description: `Failed to add comment: ${insertError.message}`,
+          variant: "destructive",
+        });
+        return false;
       }
       
       console.log('useCommunityPostEngagement: Comment added successfully to Supabase for post:', postId);
+      toast({
+        title: "Success",
+        description: "Comment added successfully!",
+      });
       await refreshPosts();
       return true;
     } catch (error) {
