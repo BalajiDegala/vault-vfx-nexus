@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { Users } from 'lucide-react';
@@ -36,7 +35,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [postToEdit, setPostToEdit] = useState<CommunityPost | null>(null);
 
-  const [isDeleteDialogGOpen, setIsDeleteDialogGOpen] = useState(false); // Typo: isDeleteDialogGOpen -> isDeleteDialogOpen
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [postIdToDelete, setPostIdToDelete] = useState<string | null>(null);
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<UploadedFile[] | undefined>(undefined);
 
@@ -100,14 +99,14 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
   const handleDeletePostRequest = (postId: string, attachments: UploadedFile[] | undefined) => {
     setPostIdToDelete(postId);
     setAttachmentsToDelete(attachments);
-    setIsDeleteDialogGOpen(true); // Typo: isDeleteDialogGOpen -> isDeleteDialogOpen
+    setIsDeleteDialogOpen(true);
   };
 
   const confirmDeletePost = async () => {
     if (postIdToDelete) {
       const success = await deletePost(postIdToDelete, attachmentsToDelete);
       if (success) {
-        setIsDeleteDialogGOpen(false); // Typo: isDeleteDialogGOpen -> isDeleteDialogOpen
+        setIsDeleteDialogOpen(false);
         setPostIdToDelete(null);
         setAttachmentsToDelete(undefined);
       }
@@ -127,13 +126,6 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
       </div>
     );
   }
-
-  // Correcting typo for isDeleteDialogGOpen to isDeleteDialogOpen for consistency
-  // Assuming the original intent was isDeleteDialogOpen, I'll use that.
-  // If it was intentional, please let me know. For now, I'll correct to isDeleteDialogOpen.
-  const isDeleteDialogOpen = isDeleteDialogGOpen; 
-  const setIsDeleteDialogOpen = setIsDeleteDialogGOpen;
-
 
   return (
     <>
@@ -192,7 +184,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
       />
 
       <DeleteConfirmationDialog
-        isOpen={isDeleteDialogOpen} // Using corrected variable name
+        isOpen={isDeleteDialogOpen}
         onClose={() => { setIsDeleteDialogOpen(false); setPostIdToDelete(null); setAttachmentsToDelete(undefined); }}
         onConfirm={confirmDeletePost}
         itemName="this post"
