@@ -157,7 +157,7 @@ export default function PortfolioPage() {
                           {item.file_url && (
                             <Button
                               variant="outline"
-                              size="xs"
+                              size="sm"
                               className="rounded-full"
                               asChild
                               aria-label="Download file"
