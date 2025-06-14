@@ -9,7 +9,7 @@ interface ProjectsTableFiltersContainerProps {
   statusOptions: StatusOption[];
   typeOptions: TypeOption[];
   onChange: (filters: {
-    statusFilter: string;
+    statusFilter: string[];
     typeFilter: string;
     searchQuery: string;
     deadlineRange: { from: string | null; to: string | null };
@@ -21,7 +21,8 @@ const ProjectsTableFiltersContainer: React.FC<ProjectsTableFiltersContainerProps
   typeOptions,
   onChange,
 }) => {
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Allow multi-select: The default is ["all"], which means "all statuses"
+  const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deadlineRange, setDeadlineRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });

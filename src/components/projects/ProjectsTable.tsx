@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -37,8 +36,10 @@ const ProjectsTable = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Change: multi-select filter
+  const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
+
   // Filter logic state (moved to parent for control)
-  const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deadlineRange, setDeadlineRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
@@ -66,7 +67,7 @@ const ProjectsTable = () => {
 
   // Handler: Receive filter updates from container
   const handleFiltersChange = (filters: {
-    statusFilter: string;
+    statusFilter: string[];
     typeFilter: string;
     searchQuery: string;
     deadlineRange: { from: string | null; to: string | null };
@@ -89,8 +90,14 @@ const ProjectsTable = () => {
 
   const filteredProjects = useMemo(() => {
     let result = [...projects];
-    if (statusFilter && statusFilter !== "all") {
-      result = result.filter((p) => p.status === statusFilter);
+    // Change: allow multiple statuses. If "all" in array, don't filter.
+    if (
+      statusFilter.length > 0 &&
+      !statusFilter.includes("all")
+    ) {
+      result = result.filter((p) =>
+        statusFilter.includes(p.status)
+      );
     }
     if (typeFilter && typeFilter !== "all") {
       result = result.filter((p) => (p.project_type ?? "studio") === typeFilter);
@@ -192,5 +199,4 @@ const ProjectsTable = () => {
     </div>
   );
 };
-
 export default ProjectsTable;
