@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
@@ -11,12 +10,17 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
 
   const createPost = async (content: string, category: string = 'general', attachments?: UploadedFile[]) => {
     try {
-      console.log('Creating new post...');
+      console.log('useCommunityPostMutations: Creating new post with content:', content, 'category:', category, 'attachments:', attachments);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        console.warn('useCommunityPostMutations: User not authenticated for createPost.');
+        throw new Error('Not authenticated');
+      }
+      console.log('useCommunityPostMutations: Authenticated user for createPost:', user.id);
 
       const hashtags = extractHashtags(content);
       const attachmentsJson = attachments ? JSON.stringify(attachments) : '[]';
+      console.log('useCommunityPostMutations: Attachments JSON for DB:', attachmentsJson);
 
       const { error } = await supabase
         .from('community_posts')
@@ -24,11 +28,11 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
           author_id: user.id,
           content: content.trim(),
           category: category,
-          attachments: attachmentsJson as any
+          attachments: attachmentsJson as any // Cast as any due to Supabase type complexities with JSONB
         });
 
       if (error) {
-        console.error('Error creating post:', error);
+        console.error('useCommunityPostMutations: Error creating post in Supabase:', error);
         throw error;
       }
       
@@ -36,7 +40,7 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
         await updateTrendingHashtags(hashtags);
       }
       
-      console.log('Post created successfully');
+      console.log('useCommunityPostMutations: Post created successfully.');
       toast({
         title: "Success",
         description: "Post created successfully!",
@@ -45,7 +49,7 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('useCommunityPostMutations: Catch block error creating post:', error);
       toast({
         title: "Error",
         description: "Failed to create post",
@@ -63,10 +67,14 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
     oldAttachments?: UploadedFile[]
   ) => {
     try {
-      console.log('Editing post:', postId);
+      console.log('useCommunityPostMutations: Editing post:', postId, 'with content:', content, 'category:', category, 'newAttachments:', newAttachments, 'oldAttachments:', oldAttachments);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
+      if (!user) {
+        console.warn('useCommunityPostMutations: User not authenticated for editPost.');
+        throw new Error('Not authenticated');
+      }
+      console.log('useCommunityPostMutations: Authenticated user for editPost:', user.id);
+      
       const filesToDelete: string[] = [];
       if (oldAttachments && newAttachments) {
         const newAttachmentUrls = new Set(newAttachments.map(file => file.url));
@@ -94,29 +102,31 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
       }
 
       if (filesToDelete.length > 0) {
-        console.log('Deleting attachments from storage:', filesToDelete);
+        console.log('useCommunityPostMutations: Deleting attachments from storage:', filesToDelete);
         const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove(filesToDelete);
         if (deleteError) {
-          console.error('Error deleting attachments from storage:', deleteError);
+          console.error('useCommunityPostMutations: Error deleting attachments from storage:', deleteError);
+          // Potentially do not throw here, allow post update to proceed
         }
       }
 
       const hashtags = extractHashtags(content);
       const attachmentsJson = newAttachments ? JSON.stringify(newAttachments) : '[]';
+      console.log('useCommunityPostMutations: Attachments JSON for DB update:', attachmentsJson);
 
       const { error } = await supabase
         .from('community_posts')
         .update({
           content: content.trim(),
           category: category,
-          attachments: attachmentsJson as any,
+          attachments: attachmentsJson as any, // Cast as any
           updated_at: new Date().toISOString(),
         })
         .eq('id', postId)
         .eq('author_id', user.id);
 
       if (error) {
-        console.error('Error editing post:', error);
+        console.error('useCommunityPostMutations: Error editing post in Supabase:', error);
         throw error;
       }
 
@@ -133,7 +143,7 @@ export const useCommunityPostMutations = (refreshPosts: () => Promise<void>) => 
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('Error editing post:', error);
+      console.error('useCommunityPostMutations: Catch block error editing post:', error);
       toast({
         title: "Error",
         description: "Failed to update post.",

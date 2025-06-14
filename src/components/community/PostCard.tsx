@@ -23,7 +23,7 @@ import {
 interface PostCardProps {
   post: CommunityPost;
   onToggleLike: (postId: string) => void;
-  onToggleBookmark: (postId: string) => void; // Added
+  onToggleBookmark: (postId: string) => void;
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
   onMessageUser?: (profile: any) => void;
@@ -35,7 +35,7 @@ interface PostCardProps {
 const PostCard = ({ 
   post, 
   onToggleLike, 
-  onToggleBookmark, // Added
+  onToggleBookmark,
   onHashtagClick, 
   onMentionClick, 
   onMessageUser,
@@ -52,7 +52,7 @@ const PostCard = ({
   const isAuthor = currentUserId === post.author_id;
 
   const handleToggleComments = () => {
-    console.log('Toggling comments for post:', post.id);
+    console.log('PostCard: Toggling comments for post:', post.id, 'Current showComments state:', showComments);
     setShowComments(!showComments);
   };
 
@@ -68,6 +68,7 @@ const PostCard = ({
     }
   };
 
+  console.log('PostCard: Rendering post', post.id, 'Attachments received:', post.attachments);
 
   return (
     <ErrorBoundary>
@@ -143,13 +144,13 @@ const PostCard = ({
                 postId={post.id}
                 likesCount={post.likes_count}
                 commentsCount={post.comments_count}
-                bookmarksCount={post.bookmarks_count || 0} // Pass bookmarks_count
-                isLiked={post.is_liked} // Assuming is_liked is fetched (add to types if not)
-                isBookmarked={post.is_bookmarked} // Pass is_bookmarked
+                bookmarksCount={post.bookmarks_count || 0}
+                isLiked={post.is_liked}
+                isBookmarked={post.is_bookmarked}
                 onToggleLike={onToggleLike}
                 onToggleComments={handleToggleComments}
-                onToggleBookmark={onToggleBookmark} // Pass onToggleBookmark
-                onShare={() => handleShare(post.id)} // Pass handleShare with postId
+                onToggleBookmark={onToggleBookmark}
+                onShare={() => handleShare(post.id)}
               />
               
               {showComments && (

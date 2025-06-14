@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,32 +54,57 @@ export const useCommunityPostEngagement = (refreshPosts: () => Promise<void>) =>
   };
 
   const addComment = async (postId: string, content: string) => {
+    console.log('useCommunityPostEngagement: addComment called with postId:', postId, 'content:', content);
     try {
-      console.log('Adding comment to post:', postId);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('useCommunityPostEngagement: Error getting user:', userError);
+        toast({ title: "Authentication Error", description: "Could not verify user. Please log in.", variant: "destructive" });
+        return false;
+      }
+      if (!user) {
+        console.warn('useCommunityPostEngagement: User not authenticated. Cannot add comment.');
+        toast({ title: "Authentication Error", description: "You must be logged in to comment.", variant: "destructive" });
+        return false;
+      }
+      console.log('useCommunityPostEngagement: Authenticated user:', user.id, user.email);
 
-      const { error } = await supabase
+      // Verify user profile exists, as author_id in comments links to profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('useCommunityPostEngagement: Error fetching user profile or profile not found.', { profileError, profile });
+        toast({ title: "Profile Error", description: "User profile not found. Cannot add comment.", variant: "destructive" });
+        return false;
+      }
+      console.log('useCommunityPostEngagement: User profile found:', profile);
+
+      const { error: insertError } = await supabase
         .from('community_post_comments')
         .insert({
           post_id: postId,
-          author_id: user.id,
+          author_id: user.id, // This should match an ID in 'profiles' table
           content: content.trim()
         });
 
-      if (error) {
-        console.error('Error adding comment:', error);
-        throw error;
+      if (insertError) {
+        console.error('useCommunityPostEngagement: Error inserting comment into Supabase:', insertError);
+        throw insertError;
       }
       
-      console.log('Comment added successfully');
+      console.log('useCommunityPostEngagement: Comment added successfully to Supabase for post:', postId);
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error('useCommunityPostEngagement: Catch block error adding comment:', error);
       toast({
         title: "Error",
-        description: "Failed to add comment",
+        description: "Failed to add comment. Please try again.",
         variant: "destructive",
       });
       return false;

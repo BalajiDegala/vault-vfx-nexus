@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -18,7 +17,12 @@ interface AttachmentDisplayProps {
 const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  if (!attachments || attachments.length === 0) return null;
+  console.log('AttachmentDisplay: Received attachments:', attachments);
+
+  if (!attachments || attachments.length === 0) {
+    console.log('AttachmentDisplay: No attachments to display.');
+    return null;
+  }
 
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return <Image className="h-4 w-4" />;
@@ -36,7 +40,18 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   };
 
   const renderAttachment = (attachment: Attachment, index: number) => {
+    console.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
+    if (!attachment || !attachment.url || !attachment.type) {
+      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing URL/type. Skipping.`, attachment);
+      return (
+        <div key={`invalid-${index}`} className="text-red-500 text-sm">
+          Invalid attachment data for: {attachment.name || `Attachment ${index + 1}`}
+        </div>
+      );
+    }
+
     if (attachment.type.startsWith('image/')) {
+      console.log(`AttachmentDisplay: Rendering image ${attachment.name} from URL ${attachment.url}`);
       return (
         <Dialog key={index}>
           <DialogTrigger asChild>
@@ -45,6 +60,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
                 src={attachment.url}
                 alt={attachment.name}
                 className="max-h-48 rounded-lg object-cover group-hover:opacity-90 transition-opacity"
+                onError={(e) => console.error(`AttachmentDisplay: Error loading image ${attachment.url}`, e)}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                 <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -56,6 +72,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
               src={attachment.url}
               alt={attachment.name}
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+              onError={(e) => console.error(`AttachmentDisplay: Error loading image in dialog ${attachment.url}`, e)}
             />
           </DialogContent>
         </Dialog>
@@ -63,12 +80,14 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     }
 
     if (attachment.type.startsWith('video/')) {
+      console.log(`AttachmentDisplay: Rendering video ${attachment.name} from URL ${attachment.url}`);
       return (
         <div key={index} className="max-w-md">
           <video
             controls
             className="w-full rounded-lg"
             preload="metadata"
+            onError={(e) => console.error(`AttachmentDisplay: Error loading video ${attachment.url}`, e)}
           >
             <source src={attachment.url} type={attachment.type} />
             Your browser does not support the video tag.
@@ -76,8 +95,8 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
         </div>
       );
     }
-
-    // For other file types, show a download link
+    
+    console.log(`AttachmentDisplay: Rendering generic file ${attachment.name} (type: ${attachment.type}) from URL ${attachment.url}`);
     return (
       <div key={index} className="flex items-center gap-3 bg-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2 flex-1">

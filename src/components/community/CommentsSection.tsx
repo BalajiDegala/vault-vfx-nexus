@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,7 +34,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   const loadComments = async () => {
     if (!postId) {
-      console.error('No postId provided to CommentsSection');
+      console.error('CommentsSection: No postId provided.');
       setCommentsLoading(false);
       return;
     }
@@ -43,12 +42,12 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     try {
       setCommentsLoading(true);
       setError(null);
-      console.log('Loading comments for post:', postId);
+      console.log('CommentsSection: Loading comments for post:', postId);
       const fetchedComments = await fetchComments(postId);
       setComments(fetchedComments);
-      console.log('Comments loaded:', fetchedComments.length);
+      console.log('CommentsSection: Comments loaded:', fetchedComments.length, fetchedComments);
     } catch (error) {
-      console.error('Error loading comments:', error);
+      console.error('CommentsSection: Error loading comments:', error);
       setError('Failed to load comments');
     } finally {
       setCommentsLoading(false);
@@ -57,24 +56,30 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !postId) return;
+    console.log('CommentsSection: handleSubmitComment triggered.');
+    if (!newComment.trim() || !postId) {
+      console.log('CommentsSection: Comment submission aborted. Reason: Empty comment or no postId.', { newComment, postId });
+      return;
+    }
 
     setLoading(true);
     setError(null);
-    console.log('Submitting comment...');
+    console.log('CommentsSection: Submitting comment for postId:', postId, 'Content:', newComment);
     
     try {
       const success = await addComment(postId, newComment);
+      console.log('CommentsSection: addComment result:', success);
       
       if (success) {
         setNewComment('');
         await loadComments(); // Reload comments after adding
       } else {
-        setError('Failed to post comment');
+        console.error('CommentsSection: Failed to post comment (returned false from addComment).');
+        setError('Failed to post comment. Please try again.');
       }
     } catch (error) {
-      console.error('Error submitting comment:', error);
-      setError('Failed to post comment');
+      console.error('CommentsSection: Error submitting comment:', error);
+      setError('Failed to post comment. An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -82,6 +87,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   useEffect(() => {
     if (postId) {
+      console.log('CommentsSection: postId changed or component mounted with postId:', postId);
       loadComments();
     }
   }, [postId]);

@@ -1,11 +1,13 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Paperclip, X, Image, Video, FileText, File } from 'lucide-react';
 import { useFileUpload } from '@/hooks/useFileUpload';
+// Ensure UploadedFile type is imported if not globally available in this context
+// For now, assuming it's defined elsewhere or implicitly by useFileUpload hook.
+// If not, it should be: import type { UploadedFile } from '@/types/community'; 
 
-interface UploadedFile {
+interface UploadedFile { // Local definition for clarity if not imported
   name: string;
   url: string;
   type: string;
@@ -20,7 +22,7 @@ interface AttachmentUploadProps {
 
 const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: AttachmentUploadProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { uploadMultipleFiles, uploading } = useFileUpload({
+  const { uploadMultipleFiles, uploading, uploadProgress } = useFileUpload({ // Added uploadProgress
     bucket: 'community-attachments',
     maxFileSize: 50 * 1024 * 1024, // 50MB
     allowedTypes: [
@@ -32,21 +34,37 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    console.log('AttachmentUpload: Files selected:', files);
+    if (files.length > maxFiles) {
+      console.warn(`AttachmentUpload: Too many files selected. Max is ${maxFiles}. Truncating.`);
+      // Optionally, add a toast message here
+    }
     const validFiles = files.slice(0, maxFiles);
     setSelectedFiles(validFiles);
+    console.log('AttachmentUpload: Valid files to be processed:', validFiles);
   };
 
   const removeFile = (index: number) => {
+    console.log('AttachmentUpload: Removing file at index:', index);
     setSelectedFiles(files => files.filter((_, i) => i !== index));
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0) {
+      console.log('AttachmentUpload: No files selected for upload.');
+      return;
+    }
+    console.log('AttachmentUpload: Starting upload for files:', selectedFiles, 'by userId:', currentUserId);
 
     const uploadedFiles = await uploadMultipleFiles(selectedFiles, currentUserId);
-    if (uploadedFiles.length > 0) {
+    console.log('AttachmentUpload: Files uploaded response from hook:', uploadedFiles);
+
+    if (uploadedFiles && uploadedFiles.length > 0) {
       onFilesUploaded(uploadedFiles);
+      console.log('AttachmentUpload: onFilesUploaded called with:', uploadedFiles);
       setSelectedFiles([]);
+    } else {
+      console.warn('AttachmentUpload: uploadMultipleFiles returned empty or null. Not calling onFilesUploaded.');
     }
   };
 
@@ -75,6 +93,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
           onChange={handleFileSelect}
           className="hidden"
           id="file-upload"
+          disabled={uploading}
         />
         <Button
           type="button"
@@ -82,6 +101,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
           size="sm"
           onClick={() => document.getElementById('file-upload')?.click()}
           className="border-gray-600 text-gray-300"
+          disabled={uploading}
         >
           <Paperclip className="h-4 w-4 mr-2" />
           Attach Files
@@ -90,16 +110,16 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
           <Button
             type="button"
             onClick={handleUpload}
-            disabled={uploading}
+            disabled={uploading || selectedFiles.length === 0}
             size="sm"
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`}
+            {uploading ? `Uploading... ${uploadProgress > 0 ? uploadProgress + '%' : ''}` : `Upload ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`}
           </Button>
         )}
       </div>
 
-      {selectedFiles.length > 0 && (
+      {selectedFiles.length > 0 && !uploading && (
         <div className="space-y-2">
           <p className="text-xs text-gray-400">Selected files:</p>
           {selectedFiles.map((file, index) => (
@@ -120,6 +140,15 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
               </Button>
             </div>
           ))}
+        </div>
+      )}
+      
+      {uploading && uploadProgress > 0 && (
+        <div className="w-full bg-gray-700 rounded-full h-2.5">
+          <div 
+            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
         </div>
       )}
 
