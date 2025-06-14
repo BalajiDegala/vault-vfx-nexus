@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo } from "react";
 import {
   Table,
@@ -14,6 +13,7 @@ import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowUp, ArrowDown, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ProjectPipelineViewer from "./ProjectPipelineViewer";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -118,6 +118,10 @@ const ProjectsTable = () => {
     return proj;
   }, [filteredProjects, sortColumn, sortDirection]);
 
+  // Add modal for pipeline viewer
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [pipelineOpen, setPipelineOpen] = useState(false);
+
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-3">
@@ -220,7 +224,14 @@ const ProjectsTable = () => {
             </TableRow>
           ) : (
             sortedProjects.map((project) => (
-              <TableRow key={project.id} className="hover:bg-gray-800/50 transition-colors cursor-pointer">
+              <TableRow
+                key={project.id}
+                className="hover:bg-gray-800/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  setSelectedProject(project);
+                  setPipelineOpen(true);
+                }}
+              >
                 <TableCell className="font-medium text-white">{project.title}</TableCell>
                 <TableCell>
                   <Badge className={statusColor[project.status ?? "draft"] ?? "bg-gray-500/20 text-gray-400"}>
@@ -247,6 +258,12 @@ const ProjectsTable = () => {
           )}
         </TableBody>
       </Table>
+
+      <ProjectPipelineViewer
+        project={selectedProject}
+        open={pipelineOpen}
+        onOpenChange={(open) => setPipelineOpen(open)}
+      />
     </div>
   );
 };
