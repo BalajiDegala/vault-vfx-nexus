@@ -11,6 +11,7 @@ import { Database } from "@/integrations/supabase/types";
 import MessagesList from "@/components/messaging/MessagesList";
 import CommunityDiscussions from "@/components/community/CommunityDiscussions";
 import TrendingTopics from "@/components/community/TrendingTopics";
+import NotificationPanel from "@/components/messaging/NotificationPanel";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -19,8 +20,9 @@ const Community = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
-  const { unreadCount } = useMessageNotifications(user?.id || '');
+  const { unreadCount, updateLastRead } = useMessageNotifications(user?.id || '');
 
   useEffect(() => {
     checkUser();
@@ -50,6 +52,15 @@ const Community = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNotificationClick = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const handleMarkAllRead = () => {
+    updateLastRead();
+    setShowNotifications(false);
   };
 
   if (loading) {
@@ -84,14 +95,26 @@ const Community = () => {
               <Users className="h-4 w-4" />
               Discussions
             </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2">
+            <TabsTrigger value="messages" className="flex items-center gap-2 relative">
               <MessageSquare className="h-4 w-4" />
               Messages
-              {unreadCount > 0 && (
-                <Badge className="bg-red-500 text-white text-xs px-1 min-w-[1rem] h-4 rounded-full">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Badge>
-              )}
+              <div className="relative">
+                {unreadCount > 0 && (
+                  <Badge 
+                    className="bg-red-500 text-white text-xs px-1 min-w-[1rem] h-4 rounded-full cursor-pointer"
+                    onClick={handleNotificationClick}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
+                <NotificationPanel
+                  isOpen={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                  currentUserId={user.id}
+                  unreadCount={unreadCount}
+                  onMarkAllRead={handleMarkAllRead}
+                />
+              </div>
             </TabsTrigger>
             <TabsTrigger value="trending" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
