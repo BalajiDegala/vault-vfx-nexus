@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +21,7 @@ import { Database } from "@/integrations/supabase/types";
 import CreateProjectModal from "./CreateProjectModal";
 import BrowseProjectsTab from "./BrowseProjectsTab";
 import MyWorkTab from "./MyWorkTab";
+import ProjectsTable from "./ProjectsTable";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -172,6 +172,9 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Projects Table (global overview) */}
+      <ProjectsTable />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
