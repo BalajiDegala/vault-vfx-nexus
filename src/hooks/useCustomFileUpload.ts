@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { uploadFileToServer } from '@/utils/fileServer';
+import { storeFile, getFileUrl } from '@/utils/localFileStorage';
 
 interface FileUploadOptions {
   maxFileSize?: number;
@@ -14,6 +13,7 @@ interface UploadedFile {
   url: string;
   type: string;
   size: number;
+  fileId: string; // Add fileId for local storage reference
 }
 
 export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
@@ -37,38 +37,35 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         throw new Error('File type not allowed');
       }
 
-      console.log('Uploading file:', file.name);
+      console.log('Storing file locally:', file.name);
+      setUploadProgress(25);
 
-      // Get auth token for API authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('Not authenticated');
+      // Store file in localStorage
+      const storedFile = await storeFile(file);
+      setUploadProgress(75);
+
+      // Get the blob URL for immediate display
+      const fileUrl = getFileUrl(storedFile.id);
+      if (!fileUrl) {
+        throw new Error('Failed to create file URL');
       }
 
-      setUploadProgress(50);
-
-      // For now, use a local URL that would work in development
-      // In production, this would be your actual server
-      const result = await uploadFileToServer(file, userId, session.access_token);
-      
       setUploadProgress(100);
-
-      // Create a local object URL for immediate display
-      const localUrl = URL.createObjectURL(file);
       
-      console.log('File uploaded successfully, using local URL for display:', localUrl);
+      console.log('File stored successfully with ID:', storedFile.id);
 
       return {
         name: file.name,
-        url: localUrl, // Use local URL for immediate display
+        url: fileUrl,
         type: file.type,
-        size: file.size
+        size: file.size,
+        fileId: storedFile.id // Store the local file ID
       };
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error storing file locally:', error);
       toast({
         title: "Upload Error",
-        description: error instanceof Error ? error.message : "Failed to upload file",
+        description: error instanceof Error ? error.message : "Failed to store file locally",
         variant: "destructive",
       });
       return null;

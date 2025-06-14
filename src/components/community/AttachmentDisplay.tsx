@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Image, Video, FileText, File, Download, ExternalLink } from 'lucide-react';
+import { getFileUrl } from '@/utils/localFileStorage';
 
 interface Attachment {
   name: string;
   url: string;
   type: string;
   size: number;
+  fileId?: string; // Optional for backwards compatibility
 }
 
 interface AttachmentDisplayProps {
@@ -38,10 +40,24 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getAttachmentUrl = (attachment: Attachment): string => {
+    // If we have a fileId, try to get the current URL from local storage
+    if (attachment.fileId) {
+      const localUrl = getFileUrl(attachment.fileId);
+      if (localUrl) {
+        return localUrl;
+      }
+      console.warn('AttachmentDisplay: Could not retrieve local file:', attachment.fileId);
+    }
+    
+    // Fallback to stored URL (for backwards compatibility)
+    return attachment.url;
+  };
+
   const renderAttachment = (attachment: Attachment, index: number) => {
     console.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
-    if (!attachment || !attachment.url || !attachment.type) {
-      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing URL/type. Skipping.`, attachment);
+    if (!attachment || !attachment.type) {
+      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type. Skipping.`, attachment);
       return (
         <div key={`invalid-${index}`} className="text-red-500 text-sm">
           Invalid attachment data for: {attachment.name || `Attachment ${index + 1}`}
@@ -49,22 +65,24 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
       );
     }
 
+    const fileUrl = getAttachmentUrl(attachment);
+
     if (attachment.type.startsWith('image/')) {
-      console.log(`AttachmentDisplay: Rendering image ${attachment.name} from URL ${attachment.url}`);
+      console.log(`AttachmentDisplay: Rendering image ${attachment.name} from URL ${fileUrl}`);
       return (
         <Dialog key={index}>
           <DialogTrigger asChild>
             <div className="relative cursor-pointer group">
               <img
-                src={attachment.url}
+                src={fileUrl}
                 alt={attachment.name}
                 className="max-h-48 rounded-lg object-cover group-hover:opacity-90 transition-opacity"
                 onError={(e) => {
-                  console.error(`AttachmentDisplay: Error loading image ${attachment.url}`, e);
+                  console.error(`AttachmentDisplay: Error loading image ${fileUrl}`, e);
                   // Show a placeholder when image fails to load
                   (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzY2NiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjZmZmIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgRXJyb3I8L3RleHQ+PC9zdmc+';
                 }}
-                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${attachment.url}`)}
+                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${fileUrl}`)}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                 <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -73,10 +91,10 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
           </DialogTrigger>
           <DialogContent className="max-w-4xl bg-gray-900 border-gray-700">
             <img
-              src={attachment.url}
+              src={fileUrl}
               alt={attachment.name}
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-              onError={(e) => console.error(`AttachmentDisplay: Error loading image in dialog ${attachment.url}`, e)}
+              onError={(e) => console.error(`AttachmentDisplay: Error loading image in dialog ${fileUrl}`, e)}
             />
           </DialogContent>
         </Dialog>
@@ -84,23 +102,23 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     }
 
     if (attachment.type.startsWith('video/')) {
-      console.log(`AttachmentDisplay: Rendering video ${attachment.name} from URL ${attachment.url}`);
+      console.log(`AttachmentDisplay: Rendering video ${attachment.name} from URL ${fileUrl}`);
       return (
         <div key={index} className="max-w-md">
           <video
             controls
             className="w-full rounded-lg"
             preload="metadata"
-            onError={(e) => console.error(`AttachmentDisplay: Error loading video ${attachment.url}`, e)}
+            onError={(e) => console.error(`AttachmentDisplay: Error loading video ${fileUrl}`, e)}
           >
-            <source src={attachment.url} type={attachment.type} />
+            <source src={fileUrl} type={attachment.type} />
             Your browser does not support the video tag.
           </video>
         </div>
       );
     }
     
-    console.log(`AttachmentDisplay: Rendering generic file ${attachment.name} (type: ${attachment.type}) from URL ${attachment.url}`);
+    console.log(`AttachmentDisplay: Rendering generic file ${attachment.name} (type: ${attachment.type}) from URL ${fileUrl}`);
     return (
       <div key={index} className="flex items-center gap-3 bg-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2 flex-1">
@@ -114,12 +132,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
           variant="ghost"
           size="sm"
           onClick={() => {
-            // For blob URLs, we can't directly download, so just open in new tab
-            if (attachment.url.startsWith('blob:')) {
-              window.open(attachment.url, '_blank');
-            } else {
-              window.open(attachment.url, '_blank');
-            }
+            window.open(fileUrl, '_blank');
           }}
           className="text-blue-400 hover:text-blue-300"
         >

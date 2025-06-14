@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ interface UploadedFile {
   url: string;
   type: string;
   size: number;
+  fileId?: string; // Add fileId for local storage
 }
 
 interface AttachmentUploadProps {
@@ -21,11 +21,11 @@ interface AttachmentUploadProps {
 const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: AttachmentUploadProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const { uploadMultipleFiles, uploading, uploadProgress } = useCustomFileUpload({
-    maxFileSize: 50 * 1024 * 1024, // 50MB
+    maxFileSize: 5 * 1024 * 1024, // Reduced to 5MB for local storage
     allowedTypes: [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
       'video/mp4', 'video/webm',
-      'application/pdf', 'text/plain', 'application/zip'
+      'application/pdf', 'text/plain'
     ]
   });
 
@@ -50,10 +50,10 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
       console.log('AttachmentUpload: No files selected for upload.');
       return;
     }
-    console.log('AttachmentUpload: Starting upload for files:', selectedFiles, 'by userId:', currentUserId);
+    console.log('AttachmentUpload: Starting local storage upload for files:', selectedFiles, 'by userId:', currentUserId);
 
     const uploadedFiles = await uploadMultipleFiles(selectedFiles, currentUserId);
-    console.log('AttachmentUpload: Files uploaded response from hook:', uploadedFiles);
+    console.log('AttachmentUpload: Files stored locally, response from hook:', uploadedFiles);
 
     if (uploadedFiles && uploadedFiles.length > 0) {
       onFilesUploaded(uploadedFiles);
@@ -85,7 +85,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
         <Input
           type="file"
           multiple
-          accept="image/*,video/*,application/pdf,text/plain,application/zip"
+          accept="image/*,video/*,application/pdf,text/plain"
           onChange={handleFileSelect}
           className="hidden"
           id="file-upload"
@@ -110,7 +110,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
             size="sm"
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {uploading ? `Uploading... ${uploadProgress > 0 ? uploadProgress + '%' : ''}` : `Upload ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`}
+            {uploading ? `Storing... ${uploadProgress > 0 ? uploadProgress + '%' : ''}` : `Store ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`}
           </Button>
         )}
       </div>
@@ -149,7 +149,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
       )}
 
       <div className="text-xs text-gray-500">
-        Max {maxFiles} files, 50MB each. Supported: Images, Videos, PDF, Text, ZIP
+        Max {maxFiles} files, 5MB each (stored locally). Supported: Images, Videos, PDF, Text
       </div>
     </div>
   );
