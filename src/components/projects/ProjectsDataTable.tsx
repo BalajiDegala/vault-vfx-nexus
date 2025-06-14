@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Table,
@@ -9,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ArrowUp, ArrowDown, Edit, Trash2 } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/integrations/supabase/types";
 import ProjectPipelineViewer from "./ProjectPipelineViewer";
@@ -17,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import ProjectRow from "./ProjectRow";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type SortColumn = "title" | "status" | "budget" | "deadline" | "assigned_to" | "security_level" | "project_type";
@@ -139,69 +139,13 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
             </TableRow>
           ) : (
             sortedProjects.map((project) => (
-              <TableRow
+              <ProjectRow
                 key={project.id}
-                className="hover:bg-gray-800/50 transition-colors cursor-pointer"
-                onClick={() => {
-                  // Only open pipeline if not clicking actions buttons
-                  if ((window as any)._actionClick) {
-                    (window as any)._actionClick = false;
-                    return;
-                  }
-                  setSelectedProject(project);
-                  setPipelineOpen(true);
-                }}
-              >
-                <TableCell className="font-medium text-white">{project.title}</TableCell>
-                <TableCell>
-                  <Badge className={statusColor[project.status ?? "draft"] ?? "bg-gray-500/20 text-gray-400"}>
-                    {project.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {project.budget_min && project.budget_max
-                    ? `${project.budget_min}–${project.budget_max} ${project.currency ?? "V3C"}`
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  {project.deadline ? new Date(project.deadline).toLocaleDateString() : "—"}
-                </TableCell>
-                <TableCell>
-                  {project.assigned_to
-                    ? <span className="text-blue-300">Assigned</span>
-                    : <span className="text-gray-400">Unassigned</span>}
-                </TableCell>
-                <TableCell>{project.security_level ?? "Standard"}</TableCell>
-                <TableCell className="capitalize">{project.project_type ?? "studio"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Edit ${project.title}`}
-                      onClick={e => {
-                        e.stopPropagation();
-                        (window as any)._actionClick = true;
-                        handleEditClick(project);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Delete ${project.title}`}
-                      onClick={e => {
-                        e.stopPropagation();
-                        (window as any)._actionClick = true;
-                        handleDeleteClick(project);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                project={project}
+                statusColor={statusColor}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+              />
             ))
           )}
         </TableBody>

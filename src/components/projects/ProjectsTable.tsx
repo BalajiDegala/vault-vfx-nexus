@@ -3,15 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import ProjectsTableFilters from "./ProjectsTableFilters";
 import ProjectsDataTable from "./ProjectsDataTable";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-  PaginationEllipsis
-} from "@/components/ui/pagination";
+import ProjectsPagination from "./ProjectsPagination";
 
 // Utility constants/types (kept the same)
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -154,7 +146,7 @@ const ProjectsTable = () => {
   };
 
   // Generate page numbers (simple: 1 ... N)
-  const pageNumbers = () => {
+  const pageNumbersArray = () => {
     // Show max of 5 page buttons
     const arr = [];
     for (let i = Math.max(1, currentPage - 2); i <= Math.min(pageCount, currentPage + 2); i++) {
@@ -189,52 +181,12 @@ const ProjectsTable = () => {
         setPipelineOpen={setPipelineOpen}
         statusColor={statusColor}
       />
-
-      {/* Pagination Controls */}
-      {pageCount > 1 && (
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => goToPage(currentPage - 1)}
-                tabIndex={0}
-                style={{ cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
-                aria-disabled={currentPage === 1}
-              />
-            </PaginationItem>
-            {pageNumbers()[0] > 1 && (
-              <PaginationItem>
-                <PaginationLink onClick={() => goToPage(1)}>{1}</PaginationLink>
-                {pageNumbers()[0] > 2 && <PaginationEllipsis />}
-              </PaginationItem>
-            )}
-            {pageNumbers().map((num) => (
-              <PaginationItem key={num}>
-                <PaginationLink
-                  isActive={num === currentPage}
-                  onClick={() => goToPage(num)}
-                >
-                  {num}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            {pageNumbers()[pageNumbers().length - 1] < pageCount && (
-              <PaginationItem>
-                {pageNumbers()[pageNumbers().length - 1] < pageCount - 1 && <PaginationEllipsis />}
-                <PaginationLink onClick={() => goToPage(pageCount)}>{pageCount}</PaginationLink>
-              </PaginationItem>
-            )}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => goToPage(currentPage + 1)}
-                tabIndex={0}
-                style={{ cursor: currentPage === pageCount ? "not-allowed" : "pointer" }}
-                aria-disabled={currentPage === pageCount}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <ProjectsPagination
+        pageCount={pageCount}
+        currentPage={currentPage}
+        goToPage={goToPage}
+        pageNumbers={pageNumbersArray()}
+      />
     </div>
   );
 };
