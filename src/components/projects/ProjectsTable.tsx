@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -51,6 +50,9 @@ const ProjectsTable = () => {
   const [sortColumn, setSortColumn] = useState<SortColumn>("deadline");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deadlineRange, setDeadlineRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -85,11 +87,24 @@ const ProjectsTable = () => {
     if (typeFilter && typeFilter !== "all") {
       result = result.filter((p) => (p.project_type ?? "studio") === typeFilter);
     }
-    // Reset to page 1 if filters change
+    // Keyword filter (title, description)
+    if (searchQuery) {
+      result = result.filter(p =>
+        (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+    // Deadline range filter
+    if (deadlineRange.from) {
+      result = result.filter(p => p.deadline && new Date(p.deadline) >= new Date(deadlineRange.from as string));
+    }
+    if (deadlineRange.to) {
+      result = result.filter(p => p.deadline && new Date(p.deadline) <= new Date(deadlineRange.to as string));
+    }
     setCurrentPage(1);
     return result;
   // eslint-disable-next-line
-  }, [projects, statusFilter, typeFilter]);
+  }, [projects, statusFilter, typeFilter, searchQuery, deadlineRange]);
 
   const sortedProjects = useMemo(() => {
     let proj = [...filteredProjects];
@@ -157,6 +172,10 @@ const ProjectsTable = () => {
         typeFilter={typeFilter}
         setTypeFilter={setTypeFilter}
         typeOptions={typeOptions}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        deadlineRange={deadlineRange}
+        setDeadlineRange={setDeadlineRange}
       />
       <ProjectsDataTable
         loading={loading}
