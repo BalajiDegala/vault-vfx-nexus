@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,9 +40,27 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
   const { unreadCount } = useMessageNotifications(user?.id || '');
 
   const handleLogout = async () => {
+    console.log("DashboardNavbar: Starting logout process...");
     setIsLoggingOut(true);
-    await supabase.auth.signOut();
-    navigate("/login");
+    
+    try {
+      // Clear any stored role selection
+      sessionStorage.removeItem('selectedRole');
+      console.log("DashboardNavbar: Cleared session storage");
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("DashboardNavbar: Logout error:", error);
+      } else {
+        console.log("DashboardNavbar: Logout successful, navigating to login");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("DashboardNavbar: Unexpected logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const getInitials = (user: User) => {
