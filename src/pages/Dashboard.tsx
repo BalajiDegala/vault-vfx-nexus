@@ -37,48 +37,33 @@ const Dashboard = () => {
         console.log("Dashboard: Session found for user:", session.user.id);
         setUser(session.user);
 
-        // Get user roles with retry logic
-        let rolesData = null;
-        let attempts = 0;
-        const maxAttempts = 3;
+        // Get user roles
+        const { data: rolesData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
 
-        while (!rolesData && attempts < maxAttempts) {
-          attempts++;
-          console.log(`Dashboard: Fetching roles (attempt ${attempts})...`);
-          
-          const { data, error: roleError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id);
-
-          if (roleError) {
-            console.error("Dashboard: Role fetch error:", roleError);
-            if (attempts >= maxAttempts) {
-              toast({
-                title: "Role Fetch Error",
-                description: "Unable to fetch user roles. Please try logging in again.",
-                variant: "destructive",
-              });
-              navigate("/login");
-              return;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            continue;
-          }
-
-          rolesData = data;
+        if (roleError) {
+          console.error("Dashboard: Role fetch error:", roleError);
+          toast({
+            title: "Role Fetch Error",
+            description: "Unable to fetch user roles. Logging out.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          return;
         }
 
         console.log("Dashboard: Roles query result:", rolesData);
 
         if (!rolesData || rolesData.length === 0) {
-          console.log("Dashboard: No roles found for user");
+          console.log("Dashboard: No roles found for user. Logging out.");
           toast({
             title: "No Role Assigned",
-            description: "Please complete your registration or contact support.",
+            description: "Please sign in again and select a role to continue.",
             variant: "destructive",
           });
-          navigate("/login");
+          await supabase.auth.signOut();
           return;
         }
 

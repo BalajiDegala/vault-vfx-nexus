@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +98,7 @@ const Login = () => {
           description: authError.message,
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -109,69 +109,62 @@ const Login = () => {
           description: "Authentication failed.",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
       console.log("User authenticated successfully:", authData.user.id);
 
-      // Check user roles with retry logic
-      let roleData = null;
-      let attempts = 0;
-      const maxAttempts = 3;
+      // Check user roles and assign if none exist
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authData.user.id);
 
-      while (!roleData && attempts < maxAttempts) {
-        attempts++;
-        console.log(`Checking user roles (attempt ${attempts})...`);
-        
-        const { data, error: roleError } = await supabase
+      if (rolesError) {
+        console.error("Role check error:", rolesError);
+        toast({
+          title: "Access Error",
+          description: "Unable to verify your roles. Please try again or contact support.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Role check result:", { rolesData, selectedRole });
+
+      if (!rolesData || rolesData.length === 0) {
+        console.log("No roles found for user. Assigning selected role.");
+        const { error: insertError } = await supabase
           .from("user_roles")
-          .select("role")
-          .eq("user_id", authData.user.id);
+          .insert({ user_id: authData.user.id, role: selectedRole });
 
-        if (roleError) {
-          console.error("Role check error:", roleError);
-          if (attempts >= maxAttempts) {
-            toast({
-              title: "Access Error",
-              description: "Unable to verify your roles. Please try again or contact support.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
+        if (insertError) {
+          console.error("Failed to assign role:", insertError);
+          toast({
+            title: "Role Assignment Failed",
+            description: "Could not assign your initial role. Please contact support.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
         }
-
-        roleData = data;
-        console.log("Role check result:", { roleData, selectedRole });
-      }
-
-      if (!roleData || roleData.length === 0) {
-        console.log("No roles found for user");
-        toast({
-          title: "No Roles Assigned",
-          description: "Your account doesn't have any roles assigned. Please contact an administrator.",
-          variant: "destructive",
-        });
-        await supabase.auth.signOut();
-        return;
-      }
-
-      // Check if user has the selected role
-      const userRoles = roleData.map(r => r.role);
-      console.log("User has roles:", userRoles);
-
-      if (!userRoles.includes(selectedRole)) {
-        console.log("User does not have the selected role");
-        toast({
-          title: "Access Denied",
-          description: `You don't have the ${selectedRole} role. Available roles: ${userRoles.join(", ")}`,
-          variant: "destructive",
-        });
-        await supabase.auth.signOut();
-        return;
+        console.log(`Role '${selectedRole}' assigned successfully.`);
+      } else {
+        const userRoles = rolesData.map(r => r.role as AppRole);
+        if (!userRoles.includes(selectedRole)) {
+          console.log("User does not have the selected role");
+          toast({
+            title: "Access Denied",
+            description: `You don't have the '${selectedRole}' role. Please select one of your available roles: ${userRoles.join(", ")}.`,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
       }
 
       console.log("Login successful, redirecting to dashboard");
