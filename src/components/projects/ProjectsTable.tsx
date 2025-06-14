@@ -4,6 +4,7 @@ import { Database } from "@/integrations/supabase/types";
 import ProjectsDataTable from "./ProjectsDataTable";
 import ProjectsPagination from "./ProjectsPagination";
 import ProjectsTableFiltersContainer from "./ProjectsTableFiltersContainer";
+import ProjectsBulkActionsBar from "./ProjectsBulkActionsBar"; // NEW
 
 // Utility constants/types
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -51,6 +52,9 @@ const ProjectsTable = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  // New: Track selected project IDs
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -170,6 +174,28 @@ const ProjectsTable = () => {
     }
     return arr;
   };
+  
+  // Deselect on new filter, page, or project list
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [projects, currentPage, statusFilter, typeFilter, searchQuery, deadlineRange]);
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} projects? This cannot be undone.`)) return;
+    const { error } = await supabase.from("projects").delete().in("id", selectedIds);
+    if (!error) {
+      setProjects((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+      setSelectedIds([]);
+    } else {
+      alert("Error deleting projects!");
+    }
+  };
+
+  // Select logic helpers
+  const isAllOnPageSelected = pagedProjects.length > 0 && pagedProjects.every(p => selectedIds.includes(p.id));
+  const isIndeterminate = selectedIds.length > 0 && !isAllOnPageSelected;
 
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
@@ -178,6 +204,13 @@ const ProjectsTable = () => {
         typeOptions={typeOptions}
         onChange={handleFiltersChange}
       />
+      {selectedIds.length > 0 && (
+        <ProjectsBulkActionsBar
+          selectedCount={selectedIds.length}
+          onDelete={handleBulkDelete}
+          onDeselectAll={() => setSelectedIds([])}
+        />
+      )}
       <ProjectsDataTable
         loading={loading}
         sortedProjects={pagedProjects}
@@ -189,6 +222,12 @@ const ProjectsTable = () => {
         pipelineOpen={pipelineOpen}
         setPipelineOpen={setPipelineOpen}
         statusColor={statusColor}
+        // Bulk selection props
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        isAllOnPageSelected={isAllOnPageSelected}
+        isIndeterminate={isIndeterminate}
+        pagedProjects={pagedProjects}
       />
       <ProjectsPagination
         pageCount={pageCount}

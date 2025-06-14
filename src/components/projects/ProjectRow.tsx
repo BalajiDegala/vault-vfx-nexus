@@ -13,6 +13,9 @@ interface ProjectRowProps {
   statusColor: Record<string, string>;
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  // Bulk selection
+  isSelected?: boolean;
+  onSelectChange?: (checked: boolean) => void;
 }
 
 const ProjectRow: React.FC<ProjectRowProps> = ({
@@ -20,6 +23,8 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
   statusColor,
   onEdit,
   onDelete,
+  isSelected = false,
+  onSelectChange,
 }) => (
   <tr
     className="hover:bg-gray-800/50 transition-colors cursor-pointer"
@@ -32,6 +37,19 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
     }}
     data-project-id={project.id}
   >
+    {/* Bulk checkbox */}
+    <td className="w-8 text-center p-0">
+      {typeof onSelectChange === "function" ? (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={e => onSelectChange(e.target.checked)}
+          onClick={e => e.stopPropagation()}
+          aria-label={`Select row for ${project.title}`}
+          className="accent-blue-500"
+        />
+      ) : null}
+    </td>
     <td className="font-medium text-white">{project.title}</td>
     <td>
       <Badge className={statusColor[project.status ?? "draft"] ?? "bg-gray-500/20 text-gray-400"}>

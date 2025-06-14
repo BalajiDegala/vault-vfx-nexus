@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Table,
   TableBody,
@@ -32,18 +32,24 @@ interface ProjectsDataTableProps {
   pipelineOpen: boolean;
   setPipelineOpen: (open: boolean) => void;
   statusColor: Record<string, string>;
+  selectedIds: string[];
+  setSelectedIds: (ids: string[]) => void;
+  isAllOnPageSelected: boolean;
+  isIndeterminate: boolean;
+  pagedProjects: Project[];
 }
 
 const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
   loading, sortedProjects, sortColumn, sortDirection, handleSort,
   selectedProject, setSelectedProject, pipelineOpen, setPipelineOpen,
-  statusColor
+  statusColor,
+  selectedIds, setSelectedIds, isAllOnPageSelected, isIndeterminate, pagedProjects,
 }) => {
   const { toast } = useToast();
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   // Handler for Delete action
   const handleDeleteClick = (project: Project) => {
@@ -84,12 +90,36 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
     });
   };
 
+  // Select all handler for current page
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const toAdd = pagedProjects.map((p) => p.id).filter((id) => !selectedIds.includes(id));
+      setSelectedIds([...selectedIds, ...toAdd]);
+    } else {
+      const toRemove = pagedProjects.map((p) => p.id);
+      setSelectedIds(selectedIds.filter((id) => !toRemove.includes(id)));
+    }
+  };
+
   return (
     <>
       <Table>
         <TableCaption className="text-left px-4 py-2">All Projects ({sortedProjects.length})</TableCaption>
         <TableHeader>
           <TableRow>
+            {/* Bulk selection checkbox header */}
+            <TableHead className="w-8 text-center p-0">
+              <input
+                type="checkbox"
+                aria-label="Select all"
+                checked={isAllOnPageSelected}
+                ref={input => {
+                  if (input) input.indeterminate = isIndeterminate;
+                }}
+                onChange={e => handleSelectAll(e.target.checked)}
+                className="accent-blue-500"
+              />
+            </TableHead>
             <TableHead className="cursor-pointer select-none" onClick={() => handleSort("title")}>
               Title
               {sortColumn === "title" && (sortDirection === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
@@ -126,14 +156,14 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center">
+              <TableCell colSpan={9} className="text-center">
                 <Loader2 className="inline-block animate-spin text-blue-400 mx-1" />
                 Loading projects...
               </TableCell>
             </TableRow>
           ) : sortedProjects.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-gray-400">
+              <TableCell colSpan={9} className="text-center text-gray-400">
                 No projects found.
               </TableCell>
             </TableRow>
@@ -145,6 +175,14 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
                 statusColor={statusColor}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                // Bulk selection
+                isSelected={selectedIds.includes(project.id)}
+                onSelectChange={checked => {
+                  setSelectedIds(checked
+                    ? [...selectedIds, project.id]
+                    : selectedIds.filter(id => id !== project.id)
+                  );
+                }}
               />
             ))
           )}
