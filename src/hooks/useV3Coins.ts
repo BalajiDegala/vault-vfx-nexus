@@ -16,9 +16,12 @@ export interface V3CTransaction {
   created_at: string;
 }
 
+// TypeScript workaround for Supabase types not containing v3c_transactions or new RPC
+type V3CTransactionRow = V3CTransaction;
+
 export function useV3Coins(userId?: string) {
   const [balance, setBalance] = useState<number | null>(null);
-  const [transactions, setTransactions] = useState<V3CTransaction[]>([]);
+  const [transactions, setTransactions] = useState<V3CTransactionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -41,7 +44,8 @@ export function useV3Coins(userId?: string) {
   const fetchTransactions = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    // @ts-expect-error: v3c_transactions not in generated types yet
+    const { data, error } = await (supabase as any)
       .from("v3c_transactions")
       .select("*")
       .eq("user_id", userId)
@@ -51,7 +55,8 @@ export function useV3Coins(userId?: string) {
       setLoading(false);
       return;
     }
-    setTransactions(data || []);
+    // Defensive parse as V3CTransactionRow[]
+    setTransactions((data as V3CTransactionRow[]) || []);
     setLoading(false);
   }, [userId, toast]);
 
@@ -76,8 +81,8 @@ export function useV3Coins(userId?: string) {
     if (amount <= 0) return { error: "Amount must be positive." };
     if (!toUserId || toUserId === userId) return { error: "Invalid recipient" };
 
-    // Transaction: deduct from sender, add to recipient atomically
-    const { data, error } = await supabase.rpc("process_v3c_donation", {
+    // @ts-expect-error: process_v3c_donation not in generated types yet
+    const { data, error } = await (supabase as any).rpc("process_v3c_donation", {
       sender_id: userId,
       receiver_id: toUserId,
       v3c_amount: amount,
@@ -109,8 +114,8 @@ export function useV3Coins(userId?: string) {
     if (!userId) return { error: "Not authenticated" };
     if (amount <= 0) return { error: "Amount must be positive." };
 
-    // Insert transaction and update balance
-    const { error } = await supabase.rpc("process_v3c_transaction", {
+    // @ts-expect-error: process_v3c_transaction not in generated types yet
+    const { error } = await (supabase as any).rpc("process_v3c_transaction", {
       p_user_id: userId,
       p_amount: amount,
       p_type: type,

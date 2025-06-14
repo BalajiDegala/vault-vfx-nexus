@@ -1262,6 +1262,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_v3c_donation: {
+        Args: {
+          sender_id: string
+          receiver_id: string
+          v3c_amount: number
+          tx_type: string
+          meta?: Json
+        }
+        Returns: undefined
+      }
+      process_v3c_transaction: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_type: string
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
       update_hashtag_count: {
         Args: { hashtag_name: string }
         Returns: undefined
