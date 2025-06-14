@@ -1,32 +1,37 @@
-
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, TrendingUp } from 'lucide-react';
+import { Users } from 'lucide-react'; // Removed TrendingUp as it's not used
 import { useCommunityPosts } from '@/hooks/useCommunityPosts';
 import CreatePostModal from './CreatePostModal';
 import PostCard from './PostCard';
 import PostCategories from './PostCategories';
 import TrendingHashtags from './TrendingHashtags';
 import DirectMessaging from '@/components/messaging/DirectMessaging';
-
-interface UploadedFile {
-  name: string;
-  url: string;
-  type: string;
-  size: number;
-}
+import EditPostModal from './EditPostModal'; // Import EditPostModal
+import DeleteConfirmationDialog from './DeleteConfirmationDialog'; // Import DeleteConfirmationDialog
+import { CommunityPost, UploadedFile } from '@/types/community'; // Import CommunityPost type
 
 interface CommunityDiscussionsProps {
   currentUser: User;
 }
 
 const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
-  const { posts, loading, createPost, toggleLike } = useCommunityPosts();
+  const { posts, loading, createPost, toggleLike, editPost, deletePost, refreshPosts } = useCommunityPosts();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [hashtagFilter, setHashtagFilter] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
+
+  // State for Edit Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<CommunityPost | null>(null);
+
+  // State for Delete Confirmation Dialog
+  const [isDeleteDialogGOpen, setIsDeleteDialogGOpen] = useState(false);
+  const [postIdToDelete, setPostIdToDelete] = useState<string | null>(null);
+  const [attachmentsToDelete, setAttachmentsToDelete] = useState<UploadedFile[] | undefined>(undefined);
+
 
   const filteredPosts = posts.filter(post => {
     const categoryMatch = selectedCategory === 'all' || post.category === selectedCategory;
@@ -40,12 +45,11 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
 
   const handleHashtagClick = (hashtag: string) => {
     setHashtagFilter(hashtag);
-    setSelectedCategory('all'); // Reset category filter when filtering by hashtag
+    setSelectedCategory('all');
   };
 
   const handleMentionClick = (mention: string) => {
     console.log('Clicked mention:', mention);
-    // TODO: Navigate to user profile or open user info modal
   };
 
   const handleMessageUser = (profile: any) => {
@@ -57,7 +61,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
     setHashtagFilter(null);
     setSelectedCategory('all');
   };
-
+  
   const getDisplayName = (profile: any) => {
     if (profile.first_name || profile.last_name) {
       return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
@@ -65,6 +69,47 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
     return profile.username || 'Unknown User';
   };
 
+
+  // Handlers for Edit/Delete Modals
+  const handleEditPostRequest = (post: CommunityPost) => {
+    setPostToEdit(post);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditedPost = async (
+    postId: string,
+    content: string,
+    category: string,
+    newAttachments: UploadedFile[],
+    oldAttachments: UploadedFile[]
+  ) => {
+    const success = await editPost(postId, content, category, newAttachments, oldAttachments);
+    if (success) {
+      setIsEditModalOpen(false);
+      setPostToEdit(null);
+      // refreshPosts(); // editPost already calls refreshPosts
+    }
+    return success;
+  };
+
+  const handleDeletePostRequest = (postId: string, attachments: UploadedFile[] | undefined) => {
+    setPostIdToDelete(postId);
+    setAttachmentsToDelete(attachments);
+    setIsDeleteDialogGOpen(true);
+  };
+
+  const confirmDeletePost = async () => {
+    if (postIdToDelete) {
+      const success = await deletePost(postIdToDelete, attachmentsToDelete);
+      if (success) {
+        setIsDeleteDialogGOpen(false);
+        setPostIdToDelete(null);
+        setAttachmentsToDelete(undefined);
+        // refreshPosts(); // deletePost already calls refreshPosts
+      }
+    }
+  };
+  
   if (loading) {
     return (
       <div className="space-y-6">
@@ -153,6 +198,8 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
                   onMentionClick={handleMentionClick}
                   onMessageUser={handleMessageUser}
                   currentUserId={currentUser.id}
+                  onEditPost={handleEditPostRequest}
+                  onDeletePost={handleDeletePostRequest}
                 />
               ))}
             </div>
@@ -178,7 +225,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
         </div>
       </div>
 
-      {/* Direct Messaging Modal */}
+      {/* Modals and Dialogs */}
       {selectedProfile && (
         <DirectMessaging
           currentUserId={currentUser.id}
@@ -189,6 +236,21 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
           onOpenChange={setShowMessaging}
         />
       )}
+
+      <EditPostModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setPostToEdit(null); }}
+        postToEdit={postToEdit}
+        onSave={handleSaveEditedPost}
+        currentUserId={currentUser.id}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogGOpen}
+        onClose={() => { setIsDeleteDialogGOpen(false); setPostIdToDelete(null); setAttachmentsToDelete(undefined); }}
+        onConfirm={confirmDeletePost}
+        itemName="this post"
+      />
     </>
   );
 };

@@ -5,10 +5,9 @@ import { useCommunityPostActions } from './useCommunityPostActions';
 import { useCommunityPostsRealtime } from './useCommunityPostsRealtime';
 
 export const useCommunityPosts = () => {
-  const { posts, loading, fetchPosts, fetchComments } = useCommunityPostsData();
-  const { createPost, toggleLike, addComment } = useCommunityPostActions(fetchPosts);
+  const { posts, loading, fetchPosts, fetchComments, setPosts } = useCommunityPostsData(); // Added setPosts
+  const { createPost, toggleLike, addComment, editPost, deletePost } = useCommunityPostActions(fetchPosts);
   
-  // Set up real-time subscriptions
   useCommunityPostsRealtime(fetchPosts);
 
   useEffect(() => {
@@ -22,6 +21,10 @@ export const useCommunityPosts = () => {
     toggleLike,
     fetchComments,
     addComment,
-    refreshPosts: fetchPosts
+    editPost, 
+    deletePost,
+    refreshPosts: fetchPosts,
+    setPosts // expose setPosts if needed by realtime updates directly modifying posts
   };
 };
+

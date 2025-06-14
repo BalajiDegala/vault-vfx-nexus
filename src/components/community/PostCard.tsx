@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react'; // Added Edit3 and Trash2
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from './CommentsSection';
 import ErrorBoundary from './ErrorBoundary';
@@ -12,29 +11,23 @@ import EnhancedPostContentParser from './EnhancedPostContentParser';
 import PostEngagement from './PostEngagement';
 import AttachmentDisplay from './AttachmentDisplay';
 import { POST_CATEGORIES } from './PostCategories';
+import { CommunityPost } from '@/types/community'; // Import CommunityPost type
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import Dropdown components
 
 interface PostCardProps {
-  post: {
-    id: string;
-    author_id: string;
-    content: string;
-    likes_count: number;
-    comments_count: number;
-    created_at: string;
-    trending: boolean;
-    category?: string;
-    attachments?: any[];
-    author_profile: {
-      first_name: string;
-      last_name: string;
-      avatar_url: string;
-    };
-  };
+  post: CommunityPost; // Use imported CommunityPost type
   onToggleLike: (postId: string) => void;
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
   onMessageUser?: (profile: any) => void;
   currentUserId?: string;
+  onEditPost: (post: CommunityPost) => void; // Handler for editing
+  onDeletePost: (postId: string, attachments: any[] | undefined) => void; // Handler for deleting
 }
 
 const PostCard = ({ 
@@ -43,7 +36,9 @@ const PostCard = ({
   onHashtagClick, 
   onMentionClick, 
   onMessageUser,
-  currentUserId 
+  currentUserId,
+  onEditPost,
+  onDeletePost
 }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   
@@ -51,6 +46,7 @@ const PostCard = ({
   const avatarFallback = authorName.split(' ').map(n => n[0]).join('').toUpperCase();
   
   const categoryInfo = POST_CATEGORIES.find(cat => cat.id === post.category) || POST_CATEGORIES.find(cat => cat.id === 'general');
+  const isAuthor = currentUserId === post.author_id;
 
   const handleToggleComments = () => {
     console.log('Toggling comments for post:', post.id);
@@ -58,7 +54,6 @@ const PostCard = ({
   };
 
   const handleShare = (postId: string) => {
-    // Custom share logic
     if (navigator.share) {
       navigator.share({
         title: `${authorName}'s VFX post`,
@@ -71,7 +66,6 @@ const PostCard = ({
   };
 
   const handleBookmark = (postId: string) => {
-    // TODO: Implement bookmark functionality
     console.log('Bookmarking post:', postId);
   };
 
@@ -94,6 +88,9 @@ const PostCard = ({
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-gray-400">
                       {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      {post.updated_at && new Date(post.updated_at).getTime() !== new Date(post.created_at).getTime() && (
+                        <span className="text-xs text-gray-500 italic ml-1">(edited)</span>
+                      )}
                     </p>
                     {post.category && categoryInfo && (
                       <Badge className={`${categoryInfo.color} text-white text-xs`}>
@@ -107,9 +104,25 @@ const PostCard = ({
                     )}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                {isAuthor && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white" align="end">
+                      <DropdownMenuItem onClick={() => onEditPost(post)} className="hover:!bg-gray-700 cursor-pointer">
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDeletePost(post.id, post.attachments)} className="text-red-400 hover:!bg-red-500/20 hover:!text-red-300 cursor-pointer">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
               
               <div className="mb-4">
