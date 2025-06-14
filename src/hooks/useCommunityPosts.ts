@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ interface CommunityPost {
   id: string;
   author_id: string;
   content: string;
+  category?: string;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -35,6 +35,30 @@ export const useCommunityPosts = () => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const extractHashtags = (content: string): string[] => {
+    const hashtagRegex = /#(\w+)/g;
+    const matches = content.match(hashtagRegex);
+    return matches ? matches.map(tag => tag.substring(1).toLowerCase()) : [];
+  };
+
+  const updateTrendingHashtags = async (hashtags: string[]) => {
+    if (hashtags.length === 0) return;
+
+    try {
+      for (const hashtag of hashtags) {
+        const { error } = await supabase.rpc('update_hashtag_count', {
+          hashtag_name: hashtag
+        });
+        
+        if (error) {
+          console.error('Error updating hashtag count:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updateTrendingHashtags:', error);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -72,22 +96,31 @@ export const useCommunityPosts = () => {
     }
   };
 
-  const createPost = async (content: string) => {
+  const createPost = async (content: string, category: string = 'general') => {
     try {
       console.log('Creating new post...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Extract hashtags from content
+      const hashtags = extractHashtags(content);
+
       const { error } = await supabase
         .from('community_posts')
         .insert({
           author_id: user.id,
-          content: content.trim()
+          content: content.trim(),
+          category: category
         });
 
       if (error) {
         console.error('Error creating post:', error);
         throw error;
+      }
+      
+      // Update trending hashtags
+      if (hashtags.length > 0) {
+        await updateTrendingHashtags(hashtags);
       }
       
       console.log('Post created successfully');

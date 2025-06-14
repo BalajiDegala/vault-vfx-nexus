@@ -3,10 +3,13 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Heart, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from './CommentsSection';
 import ErrorBoundary from './ErrorBoundary';
+import PostContentParser from './PostContentParser';
+import { POST_CATEGORIES } from './PostCategories';
 
 interface PostCardProps {
   post: {
@@ -17,6 +20,7 @@ interface PostCardProps {
     comments_count: number;
     created_at: string;
     trending: boolean;
+    category?: string;
     author_profile: {
       first_name: string;
       last_name: string;
@@ -24,14 +28,18 @@ interface PostCardProps {
     };
   };
   onToggleLike: (postId: string) => void;
+  onHashtagClick?: (hashtag: string) => void;
+  onMentionClick?: (mention: string) => void;
   currentUserId?: string;
 }
 
-const PostCard = ({ post, onToggleLike, currentUserId }: PostCardProps) => {
+const PostCard = ({ post, onToggleLike, onHashtagClick, onMentionClick, currentUserId }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   
   const authorName = `${post.author_profile.first_name} ${post.author_profile.last_name}`.trim() || 'Anonymous';
   const avatarFallback = authorName.split(' ').map(n => n[0]).join('').toUpperCase();
+  
+  const categoryInfo = POST_CATEGORIES.find(cat => cat.id === post.category) || POST_CATEGORIES.find(cat => cat.id === 'general');
 
   const handleToggleComments = () => {
     console.log('Toggling comments for post:', post.id);
@@ -54,14 +62,21 @@ const PostCard = ({ post, onToggleLike, currentUserId }: PostCardProps) => {
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h4 className="font-semibold text-white">{authorName}</h4>
-                  <p className="text-sm text-gray-400">
-                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                    {post.trending && (
-                      <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">
-                        🔥 Trending
-                      </span>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-400">
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                    </p>
+                    {post.category && categoryInfo && (
+                      <Badge className={`${categoryInfo.color} text-white text-xs`}>
+                        {categoryInfo.label}
+                      </Badge>
                     )}
-                  </p>
+                    {post.trending && (
+                      <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                        🔥 Trending
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
                   <MoreHorizontal className="h-4 w-4" />
@@ -69,7 +84,11 @@ const PostCard = ({ post, onToggleLike, currentUserId }: PostCardProps) => {
               </div>
               
               <div className="mb-4">
-                <p className="text-gray-200 whitespace-pre-wrap">{post.content}</p>
+                <PostContentParser 
+                  content={post.content}
+                  onHashtagClick={onHashtagClick}
+                  onMentionClick={onMentionClick}
+                />
               </div>
               
               <div className="flex items-center space-x-4">
