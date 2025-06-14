@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,7 @@ const DirectMessaging = ({
   onOpenChange 
 }: DirectMessagingProps) => {
   const [newMessage, setNewMessage] = useState('');
-  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false); // Manages recipient's typing state
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -35,10 +34,12 @@ const DirectMessaging = ({
   const {
     messages,
     loading,
+    // typing, // This is current user's typing state, managed by useDirectMessages
+    // setTyping, // Setter for current user's typing state
     sendMessage,
-    broadcastTyping,
-    subscribeToTyping
-  } = useDirectMessages(currentUserId, recipientId);
+    broadcastTyping, // This is used to broadcast current user's typing
+    // subscribeToTyping, // This is no longer returned / used directly here
+  } = useDirectMessages(currentUserId, recipientId, setOtherUserTyping); // Pass setOtherUserTyping as callback
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -46,16 +47,21 @@ const DirectMessaging = ({
     }
   }, [messages]);
 
-  useEffect(() => {
-    if (open) {
-      const unsubscribeTyping = subscribeToTyping(setOtherUserTyping);
-      return unsubscribeTyping;
-    }
-  }, [open, subscribeToTyping]);
+  // This useEffect is no longer needed as useMessageSubscriptionManager handles typing subscriptions internally
+  // useEffect(() => {
+  //   if (open) {
+  //     const unsubscribeTyping = subscribeToTyping(setOtherUserTyping);
+  //     return unsubscribeTyping;
+  //   }
+  // }, [open, subscribeToTyping]);
 
   useEffect(() => {
     if (open && inputRef.current) {
       inputRef.current.focus();
+    }
+    if (!open) {
+      // Reset recipient typing state when dialog closes
+      setOtherUserTyping(false); 
     }
   }, [open]);
 
@@ -66,7 +72,11 @@ const DirectMessaging = ({
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
-      broadcastTyping(false);
+      // Inform that current user stopped typing after sending a message
+      if (broadcastTyping) broadcastTyping(false); 
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   };
 
@@ -74,16 +84,15 @@ const DirectMessaging = ({
     const value = e.target.value;
     setNewMessage(value);
 
-    // Handle typing indicator
+    if (!broadcastTyping) return; // Guard if broadcastTyping is not yet available
+
     if (value.trim()) {
       broadcastTyping(true);
       
-      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      // Set new timeout to stop typing indicator
       typingTimeoutRef.current = setTimeout(() => {
         broadcastTyping(false);
       }, 2000);
@@ -114,7 +123,18 @@ const DirectMessaging = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpenState) => {
+      onOpenChange(newOpenState);
+      if (!newOpenState) {
+        // Ensure typing indicator for recipient is cleared if modal is closed externally
+        setOtherUserTyping(false); 
+        // Optionally, also broadcast that current user stopped typing
+        if (broadcastTyping) broadcastTyping(false);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+      }
+    }}>
       <DialogContent className="max-w-md h-[600px] bg-gray-900 border-gray-700 flex flex-col p-0">
         <DialogHeader className="p-4 border-b border-gray-700 flex-shrink-0">
           <DialogTitle className="text-white flex items-center justify-between">
@@ -195,7 +215,7 @@ const DirectMessaging = ({
                 );
               })}
               
-              {otherUserTyping && (
+              {otherUserTyping && !loading && messages.length > 0 && ( // Only show if not loading and there are messages
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={recipientAvatar} />

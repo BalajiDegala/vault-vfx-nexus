@@ -1,7 +1,8 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMessageSubscriptionManager } from './useMessageSubscriptionManager';
 
 interface DirectMessage {
   id: string;
@@ -16,19 +17,20 @@ interface DirectMessage {
   };
 }
 
-export const useDirectMessages = (currentUserId: string, recipientId: string) => {
+export const useDirectMessages = (
+  currentUserId: string, 
+  recipientId: string,
+  onRecipientTyping: (isTyping: boolean) => void // Callback from component
+) => {
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [typing, setTyping] = useState(false);
+  const [typing, setTyping] = useState(false); // Current user's typing state
   const { toast } = useToast();
-  const messagesChannelRef = useRef<any>(null);
-  const typingChannelRef = useRef<any>(null);
-  const isMessagesSubscribedRef = useRef(false);
-  const isTypingSubscribedRef = useRef(false);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!currentUserId || !recipientId) return;
     
+    console.log(`Fetching messages between ${currentUserId} and ${recipientId}`);
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -64,7 +66,7 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUserId, recipientId, toast]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || !currentUserId || !recipientId) return false;
@@ -79,6 +81,8 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
         });
 
       if (error) throw error;
+      // New messages will be fetched via subscription, or manually if needed
+      // fetchMessages(); // Optionally, fetch immediately for quicker update
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -91,134 +95,32 @@ export const useDirectMessages = (currentUserId: string, recipientId: string) =>
     }
   };
 
-  const subscribeToMessages = () => {
-    if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
-      console.log('Messages channel already subscribed, skipping');
-      return () => {};
-    }
-
-    const channelName = `direct_messages_${currentUserId}_${recipientId}_${Date.now()}`;
-    const channel = supabase.channel(channelName);
-    messagesChannelRef.current = channel;
-
-    channel.on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'direct_messages',
-        filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${currentUserId}))`
-      },
-      () => {
-        fetchMessages();
-      }
-    );
-
-    if (!isMessagesSubscribedRef.current) {
-      channel.subscribe((status) => {
-        console.log('Messages channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isMessagesSubscribedRef.current = true;
-        } else if (status === 'CLOSED') {
-          isMessagesSubscribedRef.current = false;
-        }
-      });
-    }
-
-    return () => {
-      if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
-        supabase.removeChannel(messagesChannelRef.current);
-        messagesChannelRef.current = null;
-        isMessagesSubscribedRef.current = false;
-      }
-    };
-  };
-
-  const broadcastTyping = (isTyping: boolean) => {
-    if (typingChannelRef.current && isTypingSubscribedRef.current) {
-      typingChannelRef.current.send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: { user_id: currentUserId, typing: isTyping }
-      });
-    }
-  };
-
-  const subscribeToTyping = (onTypingChange: (isTyping: boolean) => void) => {
-    if (typingChannelRef.current && isTypingSubscribedRef.current) {
-      console.log('Typing channel already subscribed, skipping');
-      return () => {};
-    }
-
-    const channelName = `typing_${recipientId}_${currentUserId}_${Date.now()}`;
-    const channel = supabase.channel(channelName);
-    typingChannelRef.current = channel;
-
-    channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
-      if (payload.user_id === recipientId) {
-        onTypingChange(payload.typing);
-      }
-    });
-
-    if (!isTypingSubscribedRef.current) {
-      channel.subscribe((status) => {
-        console.log('Typing channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isTypingSubscribedRef.current = true;
-        } else if (status === 'CLOSED') {
-          isTypingSubscribedRef.current = false;
-        }
-      });
-    }
-
-    return () => {
-      if (typingChannelRef.current && isTypingSubscribedRef.current) {
-        supabase.removeChannel(typingChannelRef.current);
-        typingChannelRef.current = null;
-        isTypingSubscribedRef.current = false;
-      }
-    };
-  };
+  // Use the subscription manager for realtime events
+  const { broadcastTyping: broadcastUserTypingActivity } = useMessageSubscriptionManager(
+    currentUserId,
+    recipientId,
+    fetchMessages, // Callback when a new message is received
+    onRecipientTyping // Callback when recipient's typing status changes
+  );
 
   useEffect(() => {
-    if (!currentUserId || !recipientId) return;
+    if (!currentUserId || !recipientId) {
+      setMessages([]); // Clear messages if IDs are not valid
+      return;
+    }
     
-    console.log('Setting up direct messages for:', currentUserId, recipientId);
-
+    console.log('useDirectMessages effect: Initial fetch for', currentUserId, recipientId);
     fetchMessages();
-    const unsubscribe = subscribeToMessages();
-    
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUserId, recipientId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (messagesChannelRef.current && isMessagesSubscribedRef.current) {
-        console.log('Component unmounting - cleaning up messages channel');
-        supabase.removeChannel(messagesChannelRef.current);
-        messagesChannelRef.current = null;
-        isMessagesSubscribedRef.current = false;
-      }
-      if (typingChannelRef.current && isTypingSubscribedRef.current) {
-        console.log('Component unmounting - cleaning up typing channel');
-        supabase.removeChannel(typingChannelRef.current);
-        typingChannelRef.current = null;
-        isTypingSubscribedRef.current = false;
-      }
-    };
-  }, []);
+    // Subscriptions are handled by useMessageSubscriptionManager's internal useEffect
+  }, [currentUserId, recipientId, fetchMessages]);
 
   return {
     messages,
     loading,
-    typing,
-    setTyping,
+    typing, // Current user's typing state
+    setTyping, // Setter for current user's typing state
     sendMessage,
-    broadcastTyping,
-    subscribeToTyping,
+    broadcastTyping: broadcastUserTypingActivity, // Expose the broadcast function from the manager
     refreshMessages: fetchMessages
   };
 };
