@@ -37,13 +37,18 @@ interface ProjectsDataTableProps {
   isAllOnPageSelected: boolean;
   isIndeterminate: boolean;
   pagedProjects: Project[];
+  onSelectAllFiltered?: () => void;
+  selectAllActive?: boolean;
+  totalFilteredCount?: number;
 }
-
 const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
   loading, sortedProjects, sortColumn, sortDirection, handleSort,
   selectedProject, setSelectedProject, pipelineOpen, setPipelineOpen,
   statusColor,
   selectedIds, setSelectedIds, isAllOnPageSelected, isIndeterminate, pagedProjects,
+  onSelectAllFiltered,
+  selectAllActive,
+  totalFilteredCount,
 }) => {
   const { toast } = useToast();
 
@@ -112,13 +117,26 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
               <input
                 type="checkbox"
                 aria-label="Select all"
-                checked={isAllOnPageSelected}
+                checked={selectAllActive}
                 ref={input => {
                   if (input) input.indeterminate = isIndeterminate;
                 }}
-                onChange={e => handleSelectAll(e.target.checked)}
+                onChange={e => {
+                  if (onSelectAllFiltered) {
+                    onSelectAllFiltered();
+                  } else {
+                    handleSelectAll(e.target.checked);
+                  }
+                }}
                 className="accent-blue-500"
               />
+              <span className="block text-[0.65rem] text-blue-300">
+                {selectAllActive
+                  ? `All ${totalFilteredCount} selected`
+                  : isAllOnPageSelected
+                  ? "All page"
+                  : ""}
+              </span>
             </TableHead>
             <TableHead className="cursor-pointer select-none" onClick={() => handleSort("title")}>
               Title
