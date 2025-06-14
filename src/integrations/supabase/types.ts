@@ -135,6 +135,7 @@ export type Database = {
       community_posts: {
         Row: {
           author_id: string
+          category: string | null
           comments_count: number
           content: string
           created_at: string
@@ -146,6 +147,7 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          category?: string | null
           comments_count?: number
           content: string
           created_at?: string
@@ -157,6 +159,7 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          category?: string | null
           comments_count?: number
           content?: string
           created_at?: string
@@ -1126,6 +1129,27 @@ export type Database = {
           },
         ]
       }
+      trending_hashtags: {
+        Row: {
+          hashtag: string
+          last_updated: string | null
+          post_count: number | null
+          user_count: number | null
+        }
+        Insert: {
+          hashtag: string
+          last_updated?: string | null
+          post_count?: number | null
+          user_count?: number | null
+        }
+        Update: {
+          hashtag?: string
+          last_updated?: string | null
+          post_count?: number | null
+          user_count?: number | null
+        }
+        Relationships: []
+      }
       user_follows: {
         Row: {
           created_at: string
@@ -1193,14 +1217,7 @@ export type Database = {
       }
     }
     Views: {
-      trending_hashtags: {
-        Row: {
-          hashtag: string | null
-          post_count: number | null
-          user_count: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       has_role: {
@@ -1209,6 +1226,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      update_hashtag_count: {
+        Args: { hashtag_name: string }
+        Returns: undefined
       }
     }
     Enums: {

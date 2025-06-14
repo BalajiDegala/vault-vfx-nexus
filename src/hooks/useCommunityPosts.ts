@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -256,7 +257,7 @@ export const useCommunityPosts = () => {
   useEffect(() => {
     fetchPosts();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates - create a single channel
     const channel = supabase
       .channel('community_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts' }, () => {
