@@ -1,4 +1,3 @@
-
 export interface CommunityPost {
   id: string;
   author_id: string;
@@ -6,8 +5,9 @@ export interface CommunityPost {
   category?: string;
   likes_count: number;
   comments_count: number;
+  bookmarks_count: number; // Added
   created_at: string;
-  updated_at?: string; // Make updated_at optional or ensure it's always set
+  updated_at?: string; 
   trending: boolean;
   attachments?: UploadedFile[];
   author_profile: {
@@ -15,8 +15,8 @@ export interface CommunityPost {
     last_name: string;
     avatar_url: string;
   };
-  // Add mentioned_users if it's part of the select query and needed client-side
-  mentioned_users?: string[]; 
+  mentioned_users?: string[];
+  is_bookmarked?: boolean; // Added to track if current user bookmarked this post
 }
 
 export interface Comment {
@@ -38,4 +38,3 @@ export interface UploadedFile {
   type: string;
   size: number;
 }
-

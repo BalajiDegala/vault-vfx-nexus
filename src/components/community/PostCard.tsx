@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react'; // Added Edit3 and Trash2
+import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from './CommentsSection';
 import ErrorBoundary from './ErrorBoundary';
@@ -11,28 +11,31 @@ import EnhancedPostContentParser from './EnhancedPostContentParser';
 import PostEngagement from './PostEngagement';
 import AttachmentDisplay from './AttachmentDisplay';
 import { POST_CATEGORIES } from './PostCategories';
-import { CommunityPost } from '@/types/community'; // Import CommunityPost type
+import { CommunityPost } from '@/types/community';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Import Dropdown components
+} from "@/components/ui/dropdown-menu";
+
 
 interface PostCardProps {
-  post: CommunityPost; // Use imported CommunityPost type
+  post: CommunityPost;
   onToggleLike: (postId: string) => void;
+  onToggleBookmark: (postId: string) => void; // Added
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
   onMessageUser?: (profile: any) => void;
   currentUserId?: string;
-  onEditPost: (post: CommunityPost) => void; // Handler for editing
-  onDeletePost: (postId: string, attachments: any[] | undefined) => void; // Handler for deleting
+  onEditPost: (post: CommunityPost) => void;
+  onDeletePost: (postId: string, attachments: any[] | undefined) => void;
 }
 
 const PostCard = ({ 
   post, 
   onToggleLike, 
+  onToggleBookmark, // Added
   onHashtagClick, 
   onMentionClick, 
   onMessageUser,
@@ -65,13 +68,10 @@ const PostCard = ({
     }
   };
 
-  const handleBookmark = (postId: string) => {
-    console.log('Bookmarking post:', postId);
-  };
 
   return (
     <ErrorBoundary>
-      <Card className="bg-gray-900/80 border-gray-700">
+      <Card className="bg-gray-900/80 border-gray-700 text-white">
         <CardContent className="p-6">
           <div className="flex items-start space-x-3">
             <Avatar className="h-10 w-10">
@@ -85,7 +85,7 @@ const PostCard = ({
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h4 className="font-semibold text-white">{authorName}</h4>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm text-gray-400">
                       {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                       {post.updated_at && new Date(post.updated_at).getTime() !== new Date(post.created_at).getTime() && (
@@ -107,7 +107,7 @@ const PostCard = ({
                 {isAuthor && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white h-8 w-8 p-0">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -143,10 +143,13 @@ const PostCard = ({
                 postId={post.id}
                 likesCount={post.likes_count}
                 commentsCount={post.comments_count}
+                bookmarksCount={post.bookmarks_count || 0} // Pass bookmarks_count
+                isLiked={post.is_liked} // Assuming is_liked is fetched (add to types if not)
+                isBookmarked={post.is_bookmarked} // Pass is_bookmarked
                 onToggleLike={onToggleLike}
                 onToggleComments={handleToggleComments}
-                onShare={handleShare}
-                onBookmark={handleBookmark}
+                onToggleBookmark={onToggleBookmark} // Pass onToggleBookmark
+                onShare={() => handleShare(post.id)} // Pass handleShare with postId
               />
               
               {showComments && (

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +13,9 @@ export const useCommunityPostsData = () => {
       setLoading(true);
       console.log('Fetching community posts...');
       
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: postsData, error: postsError } = await supabase
         .from('community_posts')
         .select(`
           *,
@@ -26,19 +27,36 @@ export const useCommunityPostsData = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching posts:', error);
-        throw error;
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        throw postsError;
       }
       
-      console.log('Fetched posts:', data);
+      let bookmarkedPostIds = new Set<string>();
+      if (user && postsData) {
+        const { data: bookmarksData, error: bookmarksError } = await supabase
+          .from('community_post_bookmarks')
+          .select('post_id')
+          .eq('user_id', user.id);
+
+        if (bookmarksError) {
+          console.error('Error fetching user bookmarks:', bookmarksError);
+          // Continue without bookmark status if this fails
+        } else if (bookmarksData) {
+          bookmarksData.forEach(b => bookmarkedPostIds.add(b.post_id));
+        }
+      }
       
-      // Convert the data to match our CommunityPost interface
-      const formattedPosts: CommunityPost[] = data?.map(post => ({
+      console.log('Fetched posts:', postsData);
+      
+      const formattedPosts: CommunityPost[] = postsData?.map(post => ({
         ...post,
         attachments: post.attachments ? 
           (Array.isArray(post.attachments) ? post.attachments : JSON.parse(post.attachments as string)) as UploadedFile[] 
-          : []
+          : [],
+        is_bookmarked: user ? bookmarkedPostIds.has(post.id) : false,
+        // Ensure bookmarks_count is a number, defaulting to 0 if null/undefined
+        bookmarks_count: typeof post.bookmarks_count === 'number' ? post.bookmarks_count : 0,
       })) || [];
       
       setPosts(formattedPosts);

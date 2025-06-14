@@ -6,6 +6,7 @@ import { UploadedFile } from '@/types/community'; // Ensure UploadedFile is impo
 // Define BUCKET_NAME at the top for clarity
 const BUCKET_NAME = 'community-attachments';
 
+
 export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
 
@@ -86,7 +87,7 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
             }
           }
         });
-      } else if (oldAttachments && !newAttachments) { // All old attachments removed
+      } else if (oldAttachments && (!newAttachments || newAttachments.length === 0)) { // All old attachments removed or newAttachments is empty
          oldAttachments.forEach(oldFile => {
             try {
               const urlPath = new URL(oldFile.url).pathname;
@@ -179,12 +180,6 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
         }
       }
 
-      // Delete post (likes and comments should ideally be handled by CASCADE DELETE in DB)
-      // If not, they would need to be deleted here explicitly.
-      // For example:
-      // await supabase.from('community_post_comments').delete().eq('post_id', postId);
-      // await supabase.from('community_post_likes').delete().eq('post_id', postId);
-
       const { error } = await supabase
         .from('community_posts')
         .delete()
@@ -222,12 +217,18 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
       if (!user) throw new Error('Not authenticated');
 
       // Check if already liked
-      const { data: existingLike } = await supabase
+      const { data: existingLike, error: checkError } = await supabase
         .from('community_post_likes')
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle no existing like
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116: " esattamente una riga attesa, ma nessuna restituita" (exactly one row expected, but none returned) - specific error code for no rows with .single()
+         // For other errors, throw them
+        throw checkError;
+      }
+
 
       if (existingLike) {
         // Unlike
@@ -252,7 +253,7 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
         console.log('Post liked');
       }
       
-      await refreshPosts(); // Refresh posts after like/unlike
+      await refreshPosts(); 
     } catch (error) {
       console.error('Error toggling like:', error);
       toast({
@@ -296,11 +297,69 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
     }
   };
 
+  const toggleBookmark = async (postId: string) => {
+    try {
+      console.log('Toggling bookmark for post:', postId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Authentication Error", description: "You must be logged in to bookmark posts.", variant: "destructive" });
+        throw new Error('Not authenticated');
+      }
+
+      const { data: existingBookmark, error: checkError } = await supabase
+        .from('community_post_bookmarks')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // Ignore 'no rows' error for maybeSingle
+        throw checkError;
+      }
+
+      if (existingBookmark) {
+        // Unbookmark
+        const { error: deleteError } = await supabase
+          .from('community_post_bookmarks')
+          .delete()
+          .eq('id', existingBookmark.id); // Delete by bookmark ID for safety
+        
+        if (deleteError) throw deleteError;
+        console.log('Post unbookmarked');
+        toast({ title: "Success", description: "Post removed from bookmarks." });
+      } else {
+        // Bookmark
+        const { error: insertError } = await supabase
+          .from('community_post_bookmarks')
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+        
+        if (insertError) throw insertError;
+        console.log('Post bookmarked');
+        toast({ title: "Success", description: "Post added to bookmarks!" });
+      }
+      
+      await refreshPosts();
+      return true;
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   return {
     createPost,
     toggleLike,
     addComment,
     editPost,
-    deletePost
+    deletePost,
+    toggleBookmark // Expose the new function
   };
 };

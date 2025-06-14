@@ -54,6 +54,35 @@ export type Database = {
           },
         ]
       }
+      community_post_bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_bookmarks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_post_comments: {
         Row: {
           author_id: string
@@ -136,6 +165,7 @@ export type Database = {
         Row: {
           attachments: Json | null
           author_id: string
+          bookmarks_count: number
           category: string | null
           comments_count: number
           content: string
@@ -149,6 +179,7 @@ export type Database = {
         Insert: {
           attachments?: Json | null
           author_id: string
+          bookmarks_count?: number
           category?: string | null
           comments_count?: number
           content: string
@@ -162,6 +193,7 @@ export type Database = {
         Update: {
           attachments?: Json | null
           author_id?: string
+          bookmarks_count?: number
           category?: string | null
           comments_count?: number
           content?: string
