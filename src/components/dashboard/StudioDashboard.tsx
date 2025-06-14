@@ -6,6 +6,8 @@ import DynamicDashboard from "./DynamicDashboard";
 import StudioTaskSharing from "@/components/studio/StudioTaskSharing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Share2 } from "lucide-react";
+import V3CoinsWallet from "@/components/v3c/V3CoinsWallet";
+import V3CoinsSendForm from "@/components/v3c/V3CoinsSendForm";
 
 interface StudioDashboardProps {
   user: User;
@@ -18,8 +20,11 @@ const StudioDashboard = ({ user }: StudioDashboardProps) => {
   return (
     <div className={`min-h-screen bg-gradient-to-br ${themeColors.background}`}>
       <DashboardNavbar user={user} userRole="studio" />
-      
       <div className="container mx-auto px-4 py-8">
+        {/* V3C Wallet Section */}
+        <V3CoinsWallet userId={user.id} />
+        <V3CoinsSendForm userId={user.id} />
+
         <div className="mb-8">
           <h1 className={`text-3xl font-bold bg-gradient-to-r ${themeColors.primary} bg-clip-text text-transparent mb-2`}>
             Studio Command Center
@@ -53,3 +58,4 @@ const StudioDashboard = ({ user }: StudioDashboardProps) => {
 };
 
 export default StudioDashboard;
+
