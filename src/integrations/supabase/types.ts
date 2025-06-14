@@ -1250,6 +1250,39 @@ export type Database = {
           },
         ]
       }
+      v3c_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          project_id: string | null
+          related_user_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          project_id?: string | null
+          related_user_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          project_id?: string | null
+          related_user_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
