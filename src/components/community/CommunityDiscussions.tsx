@@ -1,23 +1,32 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react'; // Removed TrendingUp as it's not used
+import { Users } from 'lucide-react';
 import { useCommunityPosts } from '@/hooks/useCommunityPosts';
 import CreatePostModal from './CreatePostModal';
 import PostCard from './PostCard';
 import PostCategories from './PostCategories';
 import TrendingHashtags from './TrendingHashtags';
 import DirectMessaging from '@/components/messaging/DirectMessaging';
-import EditPostModal from './EditPostModal'; // Import EditPostModal
-import DeleteConfirmationDialog from './DeleteConfirmationDialog'; // Import DeleteConfirmationDialog
-import { CommunityPost, UploadedFile } from '@/types/community'; // Import CommunityPost type
+import EditPostModal from './EditPostModal';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
+import { CommunityPost, UploadedFile } from '@/types/community';
 
 interface CommunityDiscussionsProps {
   currentUser: User;
 }
 
 const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
-  const { posts, loading, createPost, toggleLike, editPost, deletePost, refreshPosts } = useCommunityPosts();
+  const { 
+    posts, 
+    loading, 
+    createPost, 
+    toggleLike, 
+    editPost, 
+    deletePost, 
+    refreshPosts, // Kept refreshPosts, though it might be implicitly called by actions
+    toggleBookmark // Added toggleBookmark from the hook
+  } = useCommunityPosts();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [hashtagFilter, setHashtagFilter] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
@@ -194,6 +203,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
                   key={post.id}
                   post={post}
                   onToggleLike={toggleLike}
+                  onToggleBookmark={toggleBookmark} // Added this prop
                   onHashtagClick={handleHashtagClick}
                   onMentionClick={handleMentionClick}
                   onMessageUser={handleMessageUser}

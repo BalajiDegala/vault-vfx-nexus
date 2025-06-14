@@ -17,6 +17,7 @@ export interface CommunityPost {
   };
   mentioned_users?: string[];
   is_bookmarked?: boolean; // Added to track if current user bookmarked this post
+  is_liked?: boolean; // Added to track if current user liked this post
 }
 
 export interface Comment {

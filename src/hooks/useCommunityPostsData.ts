@@ -33,7 +33,10 @@ export const useCommunityPostsData = () => {
       }
       
       let bookmarkedPostIds = new Set<string>();
+      let likedPostIds = new Set<string>(); // For tracking liked posts
+
       if (user && postsData) {
+        // Fetch bookmarks
         const { data: bookmarksData, error: bookmarksError } = await supabase
           .from('community_post_bookmarks')
           .select('post_id')
@@ -41,9 +44,20 @@ export const useCommunityPostsData = () => {
 
         if (bookmarksError) {
           console.error('Error fetching user bookmarks:', bookmarksError);
-          // Continue without bookmark status if this fails
         } else if (bookmarksData) {
           bookmarksData.forEach(b => bookmarkedPostIds.add(b.post_id));
+        }
+
+        // Fetch likes
+        const { data: likesData, error: likesError } = await supabase
+          .from('community_post_likes')
+          .select('post_id')
+          .eq('user_id', user.id);
+
+        if (likesError) {
+          console.error('Error fetching user likes:', likesError);
+        } else if (likesData) {
+          likesData.forEach(l => likedPostIds.add(l.post_id));
         }
       }
       
@@ -55,7 +69,7 @@ export const useCommunityPostsData = () => {
           (Array.isArray(post.attachments) ? post.attachments : JSON.parse(post.attachments as string)) as UploadedFile[] 
           : [],
         is_bookmarked: user ? bookmarkedPostIds.has(post.id) : false,
-        // Ensure bookmarks_count is a number, defaulting to 0 if null/undefined
+        is_liked: user ? likedPostIds.has(post.id) : false, // Add is_liked status
         bookmarks_count: typeof post.bookmarks_count === 'number' ? post.bookmarks_count : 0,
       })) || [];
       
