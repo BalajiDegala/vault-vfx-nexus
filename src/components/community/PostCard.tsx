@@ -4,11 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from './CommentsSection';
 import ErrorBoundary from './ErrorBoundary';
-import PostContentParser from './PostContentParser';
+import EnhancedPostContentParser from './EnhancedPostContentParser';
+import PostEngagement from './PostEngagement';
 import { POST_CATEGORIES } from './PostCategories';
 
 interface PostCardProps {
@@ -30,10 +31,18 @@ interface PostCardProps {
   onToggleLike: (postId: string) => void;
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
+  onMessageUser?: (profile: any) => void;
   currentUserId?: string;
 }
 
-const PostCard = ({ post, onToggleLike, onHashtagClick, onMentionClick, currentUserId }: PostCardProps) => {
+const PostCard = ({ 
+  post, 
+  onToggleLike, 
+  onHashtagClick, 
+  onMentionClick, 
+  onMessageUser,
+  currentUserId 
+}: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   
   const authorName = `${post.author_profile.first_name} ${post.author_profile.last_name}`.trim() || 'Anonymous';
@@ -44,6 +53,24 @@ const PostCard = ({ post, onToggleLike, onHashtagClick, onMentionClick, currentU
   const handleToggleComments = () => {
     console.log('Toggling comments for post:', post.id);
     setShowComments(!showComments);
+  };
+
+  const handleShare = (postId: string) => {
+    // Custom share logic
+    if (navigator.share) {
+      navigator.share({
+        title: `${authorName}'s VFX post`,
+        text: post.content,
+        url: `${window.location.origin}/community?post=${postId}`
+      });
+    } else {
+      navigator.clipboard.writeText(`${window.location.origin}/community?post=${postId}`);
+    }
+  };
+
+  const handleBookmark = (postId: string) => {
+    // TODO: Implement bookmark functionality
+    console.log('Bookmarking post:', postId);
   };
 
   return (
@@ -84,34 +111,24 @@ const PostCard = ({ post, onToggleLike, onHashtagClick, onMentionClick, currentU
               </div>
               
               <div className="mb-4">
-                <PostContentParser 
+                <EnhancedPostContentParser 
                   content={post.content}
                   onHashtagClick={onHashtagClick}
                   onMentionClick={onMentionClick}
+                  onMessageUser={onMessageUser}
+                  currentUserId={currentUserId}
                 />
               </div>
               
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onToggleLike(post.id)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <Heart className="h-4 w-4 mr-1" />
-                  {post.likes_count}
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToggleComments}
-                  className="text-gray-400 hover:text-blue-500 transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  {post.comments_count}
-                </Button>
-              </div>
+              <PostEngagement
+                postId={post.id}
+                likesCount={post.likes_count}
+                commentsCount={post.comments_count}
+                onToggleLike={onToggleLike}
+                onToggleComments={handleToggleComments}
+                onShare={handleShare}
+                onBookmark={handleBookmark}
+              />
               
               {showComments && (
                 <div className="mt-4 pt-4 border-t border-gray-700">
