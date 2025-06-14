@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Database, Server, AlertTriangle } from "lucide-react";
 import DashboardNavbar from "./DashboardNavbar";
 import V3CoinsWallet from "@/components/v3c/V3CoinsWallet";
+import V3CoinsAdminPanel from "@/components/v3c/V3CoinsAdminPanel";
 
 interface AdminDashboardProps {
   user: User;
@@ -20,6 +21,11 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
       <div className="container mx-auto px-4 py-8">
         {/* V3C Wallet Section */}
         <V3CoinsWallet userId={user.id} />
+
+        {/* Admin V3C Panel */}
+        <div className="mb-8">
+          <V3CoinsAdminPanel adminUserId={user.id} />
+        </div>
 
         <div className="mb-8">
           <h1 className={`text-3xl font-bold bg-gradient-to-r ${themeColors.primary} bg-clip-text text-transparent mb-2`}>
@@ -89,4 +95,3 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
 };
 
 export default AdminDashboard;
-
