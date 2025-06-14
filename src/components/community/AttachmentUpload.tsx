@@ -1,13 +1,11 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Paperclip, X, Image, Video, FileText, File } from 'lucide-react';
-import { useFileUpload } from '@/hooks/useFileUpload';
-// Ensure UploadedFile type is imported if not globally available in this context
-// For now, assuming it's defined elsewhere or implicitly by useFileUpload hook.
-// If not, it should be: import type { UploadedFile } from '@/types/community'; 
+import { useCustomFileUpload } from '@/hooks/useCustomFileUpload';
 
-interface UploadedFile { // Local definition for clarity if not imported
+interface UploadedFile {
   name: string;
   url: string;
   type: string;
@@ -22,8 +20,7 @@ interface AttachmentUploadProps {
 
 const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: AttachmentUploadProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { uploadMultipleFiles, uploading, uploadProgress } = useFileUpload({ // Added uploadProgress
-    bucket: 'community-attachments',
+  const { uploadMultipleFiles, uploading, uploadProgress } = useCustomFileUpload({
     maxFileSize: 50 * 1024 * 1024, // 50MB
     allowedTypes: [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -37,7 +34,6 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
     console.log('AttachmentUpload: Files selected:', files);
     if (files.length > maxFiles) {
       console.warn(`AttachmentUpload: Too many files selected. Max is ${maxFiles}. Truncating.`);
-      // Optionally, add a toast message here
     }
     const validFiles = files.slice(0, maxFiles);
     setSelectedFiles(validFiles);

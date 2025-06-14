@@ -4,8 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
 import { UploadedFile } from '@/types/community';
 
-const BUCKET_NAME = 'community-attachments';
-
 export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
 
@@ -26,39 +24,43 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       }
       console.log('useEditCommunityPost: Authenticated user for editPost:', user.id);
       
+      // Handle file deletions using your own storage API
       const filesToDelete: string[] = [];
       if (oldAttachments && newAttachments) {
         const newAttachmentUrls = new Set(newAttachments.map(file => file.url));
         oldAttachments.forEach(oldFile => {
           if (!newAttachmentUrls.has(oldFile.url)) {
-            try {
-              const urlPath = new URL(oldFile.url).pathname;
-              const filePath = urlPath.substring(urlPath.indexOf(`/${BUCKET_NAME}/`) + `/${BUCKET_NAME}/`.length);
-              if (filePath) filesToDelete.push(filePath);
-            } catch (e) {
-              console.error("useEditCommunityPost: Error parsing attachment URL for deletion:", oldFile.url, e);
-            }
+            filesToDelete.push(oldFile.url);
           }
         });
       } else if (oldAttachments && (!newAttachments || newAttachments.length === 0)) {
-         oldAttachments.forEach(oldFile => {
-            try {
-              const urlPath = new URL(oldFile.url).pathname;
-              const filePath = urlPath.substring(urlPath.indexOf(`/${BUCKET_NAME}/`) + `/${BUCKET_NAME}/`.length);
-              if (filePath) filesToDelete.push(filePath);
-            } catch (e) {
-              console.error("useEditCommunityPost: Error parsing attachment URL for deletion:", oldFile.url, e);
-            }
-          });
+        oldAttachments.forEach(oldFile => {
+          filesToDelete.push(oldFile.url);
+        });
       }
 
       if (filesToDelete.length > 0) {
         console.log('useEditCommunityPost: Deleting attachments from storage:', filesToDelete);
-        const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove(filesToDelete);
-        if (deleteError) {
-          console.error('useEditCommunityPost: Error deleting attachments from storage:', deleteError);
-          // Potentially do not throw here, allow post update to proceed
-          toast({ title: "Attachment Error", description: "Could not delete old attachments, but post may be updated.", variant: "warning" });
+        try {
+          const response = await fetch('/api/files/delete', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({ 
+              fileUrls: filesToDelete,
+              userId: user.id 
+            })
+          });
+
+          if (!response.ok) {
+            console.error('useEditCommunityPost: Error deleting attachments from storage');
+            toast({ title: "Attachment Error", description: "Could not delete old attachments, but post may be updated.", variant: "destructive" });
+          }
+        } catch (error) {
+          console.error('useEditCommunityPost: Error calling file deletion API:', error);
+          toast({ title: "Attachment Error", description: "Could not delete old attachments, but post may be updated.", variant: "destructive" });
         }
       }
 
@@ -71,7 +73,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
         .update({
           content: content.trim(),
           category: category,
-          attachments: attachmentsJson as any, // Cast as any
+          attachments: attachmentsJson as any,
           updated_at: new Date().toISOString(),
         })
         .eq('id', postId)

@@ -3,8 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UploadedFile } from '@/types/community';
 
-const BUCKET_NAME = 'community-attachments';
-
 export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
 
@@ -19,33 +17,28 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
       }
       console.log('useDeleteCommunityPost: Authenticated user for deletePost:', user.id);
 
-
+      // Delete attachments from your own storage API
       if (attachments && attachments.length > 0) {
-        const filePaths = attachments.map(file => {
-           try {
-            const urlPath = new URL(file.url).pathname;
-            // Ensure the path starts correctly after the bucket name
-            const bucketPrefix = `/${BUCKET_NAME}/`;
-            const startIndex = urlPath.indexOf(bucketPrefix);
-            if (startIndex === -1) {
-                console.error("useDeleteCommunityPost: Bucket name not found in URL path:", file.url);
-                return null;
-            }
-            return urlPath.substring(startIndex + bucketPrefix.length);
-          } catch (e) {
-            console.error("useDeleteCommunityPost: Error parsing attachment URL for deletion:", file.url, e);
-            return null;
-          }
-        }).filter(path => path !== null) as string[];
+        try {
+          const response = await fetch('/api/files/delete', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({ 
+              fileUrls: attachments.map(file => file.url),
+              userId: user.id 
+            })
+          });
 
-        if (filePaths.length > 0) {
-          console.log('useDeleteCommunityPost: Deleting attachments from storage:', filePaths);
-          const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove(filePaths);
-          if (deleteError) {
-            console.error('useDeleteCommunityPost: Error deleting attachments from storage:', deleteError);
-            // Potentially do not throw here, allow post deletion to proceed
-            toast({ title: "Attachment Error", description: "Could not delete attachments, but post may be deleted.", variant: "warning" });
+          if (!response.ok) {
+            console.error('useDeleteCommunityPost: Error deleting attachments from storage');
+            toast({ title: "Attachment Error", description: "Could not delete attachments, but post may be deleted.", variant: "destructive" });
           }
+        } catch (error) {
+          console.error('useDeleteCommunityPost: Error calling file deletion API:', error);
+          toast({ title: "Attachment Error", description: "Could not delete attachments, but post may be deleted.", variant: "destructive" });
         }
       }
 
