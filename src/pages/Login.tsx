@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
@@ -106,8 +105,8 @@ const Login = () => {
       
       console.log("Role check result:", { rolesData, selectedRole });
 
-      // If user doesn't have the selected role, check if they have any roles
       if (!rolesData || rolesData.length === 0) {
+        // If user doesn't have the selected role, check what roles they have
         console.log("User does not have the selected role. Checking all user roles...");
         
         const { data: allRolesData, error: allRolesError } = await supabase
@@ -115,70 +114,72 @@ const Login = () => {
           .select("role")
           .eq("user_id", authData.user.id);
 
-        if (allRolesError) {
-          console.error("All roles check error:", allRolesError);
+      if (allRolesError) {
+        console.error("All roles check error:", allRolesError);
+        toast({
+          title: "Access Error",
+          description: "Unable to verify your roles. Please try again or contact support.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      if (!allRolesData || allRolesData.length === 0) {
+        // No roles found—try to assign selected
+        console.log("No roles found for user. Assigning selected role.");
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: authData.user.id, role: selectedRole });
+
+        if (insertError) {
+          console.error("Failed to assign role:", insertError);
           toast({
-            title: "Access Error",
-            description: "Unable to verify your roles. Please try again or contact support.",
+            title: "Role Assignment Failed",
+            description: "Could not assign your initial role. Please contact support.",
             variant: "destructive",
           });
           await supabase.auth.signOut();
           setLoading(false);
           return;
         }
-
-        if (!allRolesData || allRolesData.length === 0) {
-          console.log("No roles found for user. Assigning selected role.");
-          const { error: insertError } = await supabase
-            .from("user_roles")
-            .insert({ user_id: authData.user.id, role: selectedRole });
-
-          if (insertError) {
-            console.error("Failed to assign role:", insertError);
-            toast({
-              title: "Role Assignment Failed",
-              description: "Could not assign your initial role. Please contact support.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-            setLoading(false);
-            return;
-          }
-          console.log(`Role '${selectedRole}' assigned successfully.`);
-        } else {
-          const userRoles = allRolesData.map(r => r.role as AppRole);
-          console.log("User has roles but not the selected one:", userRoles);
-          toast({
-            title: "Access Denied",
-            description: `You don't have the '${selectedRole}' role. Please select one of your available roles: ${userRoles.join(", ")}.`,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
+        console.log(`Role '${selectedRole}' assigned successfully.`);
+      } else {
+        // User has roles, but not the selected
+        const userRoles = allRolesData.map(r => r.role as AppRole);
+        console.log("User has roles but not the selected one:", userRoles);
+        toast({
+          title: "Access Denied",
+          description: `You don't have the '${selectedRole}' role. Please select one: ${userRoles.join(", ")}.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
-
-      // Store the selected role in session storage so Dashboard knows which role to use
-      sessionStorage.setItem('selectedRole', selectedRole);
-
-      console.log("Login successful, redirecting to dashboard");
-      toast({
-        title: "Welcome back!",
-        description: `Successfully logged in as ${selectedRole}.`,
-      });
-      navigate("/dashboard");
-
-    } catch (error) {
-      console.error("Unexpected login error:", error);
-      toast({
-        title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Store the selected role in session storage so Dashboard knows which role to use
+    sessionStorage.setItem('selectedRole', selectedRole);
+
+    console.log("Login successful, redirecting to dashboard");
+    toast({
+      title: "Welcome back!",
+      description: `Successfully logged in as ${selectedRole}.`,
+    });
+    navigate("/dashboard");
+
+  } catch (error) {
+    console.error("Unexpected login error:", error);
+    toast({
+      title: "Login Error",
+      description: "An unexpected error occurred. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (authChecking) {
     return (

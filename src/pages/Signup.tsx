@@ -41,11 +41,20 @@ const Signup = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedRole) {
       toast({
         title: "Role Required",
         description: "Please select your role to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedRole === "admin") {
+      toast({
+        title: "Signup Not Allowed",
+        description: "You cannot sign up as an Admin. Please select another role.",
         variant: "destructive",
       });
       return;
@@ -106,7 +115,7 @@ const Signup = () => {
       let profileExists = await checkProfileExists(authData.user.id);
 
       if (!profileExists) {
-        console.log("Profile not created by trigger, creating directly...");
+        console.error("Profile not created by trigger, creating directly...");
         profileExists = await createProfileDirectly(
           authData.user.id,
           formData.email,
@@ -138,7 +147,6 @@ const Signup = () => {
         return;
       }
 
-      console.log("Signup completed successfully!");
       toast({
         title: "Welcome to V3!",
         description: "Account created successfully! You can now log in.",
@@ -166,7 +174,6 @@ const Signup = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Home
         </Link>
-
         <Card className="bg-gray-900/80 border-blue-500/20 backdrop-blur-md">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -174,13 +181,16 @@ const Signup = () => {
             </CardTitle>
             <p className="text-gray-400">Create your account and start connecting</p>
           </CardHeader>
-
           <CardContent className="space-y-8">
             <RoleSelection 
               selectedRole={selectedRole} 
               onRoleSelect={setSelectedRole} 
             />
-
+            {selectedRole === "admin" && (
+              <div className="bg-red-800/50 border border-red-600 rounded px-4 py-2 text-red-200 text-sm">
+                Signup as <b>Admin</b> is not allowed. Please select another role.
+              </div>
+            )}
             <SignupForm
               formData={formData}
               onFormDataChange={setFormData}
@@ -188,7 +198,6 @@ const Signup = () => {
               loading={loading}
               selectedRole={selectedRole}
             />
-
             <div className="text-center">
               <p className="text-gray-400">
                 Already have an account?{" "}
@@ -197,7 +206,6 @@ const Signup = () => {
                 </Link>
               </p>
             </div>
-
             <div className="mt-4 p-3 bg-green-900/20 border border-green-500/20 rounded-lg">
               <p className="text-green-400 text-sm">
                 <strong>Ready to Test:</strong> You can now create accounts with any email (doesn't need to be real) and the system will work properly!
