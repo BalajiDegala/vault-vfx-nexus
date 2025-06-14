@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,34 @@ const Dashboard = () => {
         console.log("Dashboard: Session found for user:", session.user.id);
         setUser(session.user);
 
-        // Get user roles
+        // First check if there's a selected role from login
+        const selectedRoleFromLogin = sessionStorage.getItem('selectedRole') as AppRole;
+        
+        if (selectedRoleFromLogin) {
+          console.log("Dashboard: Using selected role from login:", selectedRoleFromLogin);
+          
+          // Verify user actually has this role
+          const { data: roleData, error: roleError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("role", selectedRoleFromLogin)
+            .single();
+
+          if (roleError) {
+            console.error("Dashboard: Role verification error:", roleError);
+            sessionStorage.removeItem('selectedRole');
+          } else if (roleData) {
+            console.log("Dashboard: Role verified, setting user role:", selectedRoleFromLogin);
+            setUserRole(selectedRoleFromLogin);
+            // Clear the selected role from session storage since we've used it
+            sessionStorage.removeItem('selectedRole');
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback: Get user roles if no specific role was selected
         const { data: rolesData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
@@ -57,7 +85,7 @@ const Dashboard = () => {
         console.log("Dashboard: Roles query result:", rolesData);
 
         if (!rolesData || rolesData.length === 0) {
-          console.log("Dashboard: No roles found for user. Logging out.");
+          console.log("Dashboard: No roles found for user. Redirecting to login.");
           toast({
             title: "No Role Assigned",
             description: "Please sign in again and select a role to continue.",
@@ -99,6 +127,8 @@ const Dashboard = () => {
       async (event, session) => {
         console.log("Dashboard: Auth state changed:", event);
         if (event === 'SIGNED_OUT' || !session) {
+          // Clear any stored role selection
+          sessionStorage.removeItem('selectedRole');
           navigate("/login");
         } else if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
