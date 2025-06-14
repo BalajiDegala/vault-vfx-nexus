@@ -6,30 +6,49 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { POST_CATEGORIES } from './PostCategories';
+import AttachmentUpload from './AttachmentUpload';
 
-interface CreatePostModalProps {
-  onCreatePost: (content: string, category?: string) => Promise<boolean>;
+interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
 }
 
-const CreatePostModal = ({ onCreatePost }: CreatePostModalProps) => {
+interface CreatePostModalProps {
+  onCreatePost: (content: string, category?: string, attachments?: UploadedFile[]) => Promise<boolean>;
+  currentUserId: string;
+}
+
+const CreatePostModal = ({ onCreatePost, currentUserId }: CreatePostModalProps) => {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('general');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [attachments, setAttachments] = useState<UploadedFile[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
     setLoading(true);
-    const success = await onCreatePost(content, category);
+    const success = await onCreatePost(content, category, attachments);
     
     if (success) {
       setContent('');
       setCategory('general');
+      setAttachments([]);
       setIsOpen(false);
     }
     setLoading(false);
+  };
+
+  const handleFilesUploaded = (files: UploadedFile[]) => {
+    setAttachments(prev => [...prev, ...files]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -40,7 +59,7 @@ const CreatePostModal = ({ onCreatePost }: CreatePostModalProps) => {
           Create Post
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-900 border-gray-700">
+      <DialogContent className="bg-gray-900 border-gray-700 max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-white">Create New Discussion</DialogTitle>
         </DialogHeader>
@@ -74,6 +93,35 @@ const CreatePostModal = ({ onCreatePost }: CreatePostModalProps) => {
               <p>💡 Tips: Use #vfx #3d #animation for hashtags, @username for mentions</p>
             </div>
           </div>
+
+          <div>
+            <label className="text-gray-300 text-sm font-medium mb-2 block">Attachments</label>
+            <AttachmentUpload
+              onFilesUploaded={handleFilesUploaded}
+              currentUserId={currentUserId}
+              maxFiles={5}
+            />
+          </div>
+
+          {attachments.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-gray-300 text-sm font-medium">Attached files:</p>
+              {attachments.map((file, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-800 p-2 rounded">
+                  <span className="text-sm text-gray-300">{file.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAttachment(index)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           
           <div className="flex justify-between items-center">
             <span className="text-gray-400 text-sm">

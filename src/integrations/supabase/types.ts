@@ -134,6 +134,7 @@ export type Database = {
       }
       community_posts: {
         Row: {
+          attachments: Json | null
           author_id: string
           category: string | null
           comments_count: number
@@ -146,6 +147,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json | null
           author_id: string
           category?: string | null
           comments_count?: number
@@ -158,6 +160,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json | null
           author_id?: string
           category?: string | null
           comments_count?: number

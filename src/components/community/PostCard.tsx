@@ -10,6 +10,7 @@ import CommentsSection from './CommentsSection';
 import ErrorBoundary from './ErrorBoundary';
 import EnhancedPostContentParser from './EnhancedPostContentParser';
 import PostEngagement from './PostEngagement';
+import AttachmentDisplay from './AttachmentDisplay';
 import { POST_CATEGORIES } from './PostCategories';
 
 interface PostCardProps {
@@ -22,6 +23,7 @@ interface PostCardProps {
     created_at: string;
     trending: boolean;
     category?: string;
+    attachments?: any[];
     author_profile: {
       first_name: string;
       last_name: string;
@@ -119,6 +121,10 @@ const PostCard = ({
                   currentUserId={currentUserId}
                 />
               </div>
+
+              {post.attachments && post.attachments.length > 0 && (
+                <AttachmentDisplay attachments={post.attachments} />
+              )}
               
               <PostEngagement
                 postId={post.id}

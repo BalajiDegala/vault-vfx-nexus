@@ -8,6 +8,7 @@ export interface CommunityPost {
   comments_count: number;
   created_at: string;
   trending: boolean;
+  attachments?: UploadedFile[];
   author_profile: {
     first_name: string;
     last_name: string;
@@ -26,4 +27,11 @@ export interface Comment {
     last_name: string;
     avatar_url: string;
   };
+}
+
+export interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
 }

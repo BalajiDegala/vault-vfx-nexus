@@ -3,10 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
 
+interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
   const { toast } = useToast();
 
-  const createPost = async (content: string, category: string = 'general') => {
+  const createPost = async (content: string, category: string = 'general', attachments?: UploadedFile[]) => {
     try {
       console.log('Creating new post...');
       const { data: { user } } = await supabase.auth.getUser();
@@ -20,7 +27,8 @@ export const useCommunityPostActions = (refreshPosts: () => Promise<void>) => {
         .insert({
           author_id: user.id,
           content: content.trim(),
-          category: category
+          category: category,
+          attachments: attachments || []
         });
 
       if (error) {

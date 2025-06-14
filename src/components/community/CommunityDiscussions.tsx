@@ -10,6 +10,13 @@ import PostCategories from './PostCategories';
 import TrendingHashtags from './TrendingHashtags';
 import DirectMessaging from '@/components/messaging/DirectMessaging';
 
+interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 interface CommunityDiscussionsProps {
   currentUser: User;
 }
@@ -27,8 +34,8 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
     return categoryMatch && hashtagMatch;
   });
 
-  const handleCreatePost = async (content: string, category?: string) => {
-    return await createPost(content, category);
+  const handleCreatePost = async (content: string, category?: string, attachments?: UploadedFile[]) => {
+    return await createPost(content, category, attachments);
   };
 
   const handleHashtagClick = (hashtag: string) => {
@@ -85,7 +92,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
               </h2>
               <p className="text-gray-400 mt-1">Share knowledge, ask questions, and connect with fellow VFX artists</p>
             </div>
-            <CreatePostModal onCreatePost={handleCreatePost} />
+            <CreatePostModal onCreatePost={handleCreatePost} currentUserId={currentUser.id} />
           </div>
 
           {/* Filters */}
@@ -132,7 +139,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
                     : 'Try adjusting your category or hashtag filters to see more posts.'
                   }
                 </p>
-                {posts.length === 0 && <CreatePostModal onCreatePost={handleCreatePost} />}
+                {posts.length === 0 && <CreatePostModal onCreatePost={handleCreatePost} currentUserId={currentUser.id} />}
               </CardContent>
             </Card>
           ) : (
