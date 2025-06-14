@@ -1,3 +1,4 @@
+
 export interface CommunityPost {
   id: string;
   author_id: string;
@@ -5,7 +6,7 @@ export interface CommunityPost {
   category?: string;
   likes_count: number;
   comments_count: number;
-  bookmarks_count: number; // Added
+  bookmarks_count: number;
   created_at: string;
   updated_at?: string; 
   trending: boolean;
@@ -16,8 +17,8 @@ export interface CommunityPost {
     avatar_url: string;
   };
   mentioned_users?: string[];
-  is_bookmarked?: boolean; // Added to track if current user bookmarked this post
-  is_liked?: boolean; // Added to track if current user liked this post
+  is_bookmarked?: boolean;
+  is_liked?: boolean;
 }
 
 export interface Comment {
@@ -38,4 +39,5 @@ export interface UploadedFile {
   url: string;
   type: string;
   size: number;
+  fileId?: string; // Made optional for backwards compatibility, but should always be present for local storage files
 }

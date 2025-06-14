@@ -1,24 +1,42 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Image, Video, FileText, File, Download, ExternalLink } from 'lucide-react';
-import { getFileUrl } from '@/utils/localFileStorage';
+import { Image, Video, FileText, File, Download, ExternalLink, AlertCircle } from 'lucide-react';
+import { getFileUrl, getStorageInfo } from '@/utils/localFileStorage';
 
 interface Attachment {
   name: string;
   url: string;
   type: string;
   size: number;
-  fileId?: string; // Optional for backwards compatibility
+  fileId?: string;
 }
 
 interface AttachmentDisplayProps {
   attachments: Attachment[];
 }
 
+// URL cache to prevent memory leaks and unnecessary blob URL recreation
+const urlCache = new Map<string, string>();
+
 const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  
   console.log('AttachmentDisplay: Received attachments:', attachments);
+  console.log('AttachmentDisplay: Current storage info:', getStorageInfo());
+
+  useEffect(() => {
+    // Cleanup blob URLs when component unmounts
+    return () => {
+      urlCache.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+      urlCache.clear();
+    };
+  }, []);
 
   if (!attachments || attachments.length === 0) {
     console.log('AttachmentDisplay: No attachments to display.');
@@ -41,34 +59,80 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   };
 
   const getAttachmentUrl = (attachment: Attachment): string => {
-    // If we have a fileId, try to get the current URL from local storage
+    console.log('AttachmentDisplay: Getting URL for attachment:', attachment.name, 'fileId:', attachment.fileId);
+    
+    // If we have a fileId, try to get fresh URL from local storage
     if (attachment.fileId) {
+      // Check cache first
+      const cacheKey = `file_${attachment.fileId}`;
+      if (urlCache.has(cacheKey)) {
+        const cachedUrl = urlCache.get(cacheKey)!;
+        console.log('AttachmentDisplay: Using cached URL for:', attachment.name);
+        return cachedUrl;
+      }
+      
+      // Generate fresh blob URL from localStorage
       const localUrl = getFileUrl(attachment.fileId);
       if (localUrl) {
+        console.log('AttachmentDisplay: Generated fresh blob URL for:', attachment.name, localUrl);
+        urlCache.set(cacheKey, localUrl);
         return localUrl;
+      } else {
+        console.error('AttachmentDisplay: Failed to retrieve file from localStorage:', attachment.fileId);
+        setImageErrors(prev => new Set([...prev, attachment.fileId!]));
       }
-      console.warn('AttachmentDisplay: Could not retrieve local file:', attachment.fileId);
     }
     
     // Fallback to stored URL (for backwards compatibility)
+    console.log('AttachmentDisplay: Using fallback URL for:', attachment.name, attachment.url);
     return attachment.url;
+  };
+
+  const handleImageError = (attachment: Attachment) => {
+    console.error('AttachmentDisplay: Image failed to load:', attachment.name, 'fileId:', attachment.fileId);
+    if (attachment.fileId) {
+      setImageErrors(prev => new Set([...prev, attachment.fileId!]));
+      // Remove from cache to force regeneration on next render
+      const cacheKey = `file_${attachment.fileId}`;
+      if (urlCache.has(cacheKey)) {
+        const oldUrl = urlCache.get(cacheKey)!;
+        if (oldUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(oldUrl);
+        }
+        urlCache.delete(cacheKey);
+      }
+    }
   };
 
   const renderAttachment = (attachment: Attachment, index: number) => {
     console.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
+    
     if (!attachment || !attachment.type) {
-      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type. Skipping.`, attachment);
+      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type.`, attachment);
       return (
-        <div key={`invalid-${index}`} className="text-red-500 text-sm">
-          Invalid attachment data for: {attachment.name || `Attachment ${index + 1}`}
+        <div key={`invalid-${index}`} className="flex items-center gap-2 bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">Invalid attachment: {attachment.name || `Attachment ${index + 1}`}</span>
         </div>
       );
     }
 
     const fileUrl = getAttachmentUrl(attachment);
+    const hasError = attachment.fileId && imageErrors.has(attachment.fileId);
 
     if (attachment.type.startsWith('image/')) {
-      console.log(`AttachmentDisplay: Rendering image ${attachment.name} from URL ${fileUrl}`);
+      if (hasError) {
+        return (
+          <div key={index} className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 text-yellow-400">
+            <AlertCircle className="h-4 w-4" />
+            <div>
+              <p className="text-sm font-medium">{attachment.name}</p>
+              <p className="text-xs">Image file not found in local storage</p>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <Dialog key={index}>
           <DialogTrigger asChild>
@@ -77,12 +141,8 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
                 src={fileUrl}
                 alt={attachment.name}
                 className="max-h-48 rounded-lg object-cover group-hover:opacity-90 transition-opacity"
-                onError={(e) => {
-                  console.error(`AttachmentDisplay: Error loading image ${fileUrl}`, e);
-                  // Show a placeholder when image fails to load
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzY2NiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjZmZmIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgRXJyb3I8L3RleHQ+PC9zdmc+';
-                }}
-                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${fileUrl}`)}
+                onError={() => handleImageError(attachment)}
+                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${attachment.name}`)}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                 <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -94,7 +154,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
               src={fileUrl}
               alt={attachment.name}
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-              onError={(e) => console.error(`AttachmentDisplay: Error loading image in dialog ${fileUrl}`, e)}
+              onError={() => handleImageError(attachment)}
             />
           </DialogContent>
         </Dialog>
@@ -102,14 +162,25 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     }
 
     if (attachment.type.startsWith('video/')) {
-      console.log(`AttachmentDisplay: Rendering video ${attachment.name} from URL ${fileUrl}`);
+      if (hasError) {
+        return (
+          <div key={index} className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 text-yellow-400">
+            <AlertCircle className="h-4 w-4" />
+            <div>
+              <p className="text-sm font-medium">{attachment.name}</p>
+              <p className="text-xs">Video file not found in local storage</p>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div key={index} className="max-w-md">
           <video
             controls
             className="w-full rounded-lg"
             preload="metadata"
-            onError={(e) => console.error(`AttachmentDisplay: Error loading video ${fileUrl}`, e)}
+            onError={() => handleImageError(attachment)}
           >
             <source src={fileUrl} type={attachment.type} />
             Your browser does not support the video tag.
@@ -118,7 +189,6 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
       );
     }
     
-    console.log(`AttachmentDisplay: Rendering generic file ${attachment.name} (type: ${attachment.type}) from URL ${fileUrl}`);
     return (
       <div key={index} className="flex items-center gap-3 bg-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2 flex-1">
@@ -126,18 +196,22 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
           <div>
             <p className="text-sm text-gray-300 font-medium">{attachment.name}</p>
             <p className="text-xs text-gray-500">{formatFileSize(attachment.size)}</p>
+            {hasError && <p className="text-xs text-yellow-400">File not found in storage</p>}
           </div>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
-            window.open(fileUrl, '_blank');
+            if (!hasError) {
+              window.open(fileUrl, '_blank');
+            }
           }}
-          className="text-blue-400 hover:text-blue-300"
+          disabled={hasError}
+          className="text-blue-400 hover:text-blue-300 disabled:text-gray-500"
         >
           <Download className="h-4 w-4 mr-1" />
-          View
+          {hasError ? 'Missing' : 'View'}
         </Button>
       </div>
     );

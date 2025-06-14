@@ -13,7 +13,7 @@ interface UploadedFile {
   url: string;
   type: string;
   size: number;
-  fileId: string; // Add fileId for local storage reference
+  fileId: string; // This is critical for local storage reference
 }
 
 export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
@@ -26,6 +26,8 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
       setUploading(true);
       setUploadProgress(0);
 
+      console.log('useCustomFileUpload: Starting upload for:', file.name, 'Size:', file.size);
+
       // Validate file size
       const maxSize = options.maxFileSize || 50 * 1024 * 1024; // 50MB default
       if (file.size > maxSize) {
@@ -37,11 +39,12 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         throw new Error('File type not allowed');
       }
 
-      console.log('Storing file locally:', file.name);
+      console.log('useCustomFileUpload: Validation passed, storing file in localStorage');
       setUploadProgress(25);
 
       // Store file in localStorage
       const storedFile = await storeFile(file);
+      console.log('useCustomFileUpload: File stored with ID:', storedFile.id);
       setUploadProgress(75);
 
       // Get the blob URL for immediate display
@@ -52,17 +55,20 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
 
       setUploadProgress(100);
       
-      console.log('File stored successfully with ID:', storedFile.id);
+      console.log('useCustomFileUpload: Upload complete. FileId:', storedFile.id, 'URL:', fileUrl);
 
-      return {
+      const uploadedFile: UploadedFile = {
         name: file.name,
         url: fileUrl,
         type: file.type,
         size: file.size,
-        fileId: storedFile.id // Store the local file ID
+        fileId: storedFile.id // Ensure fileId is always included
       };
+
+      console.log('useCustomFileUpload: Returning uploaded file:', uploadedFile);
+      return uploadedFile;
     } catch (error) {
-      console.error('Error storing file locally:', error);
+      console.error('useCustomFileUpload: Error during upload:', error);
       toast({
         title: "Upload Error",
         description: error instanceof Error ? error.message : "Failed to store file locally",
@@ -76,6 +82,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
   };
 
   const uploadMultipleFiles = async (files: File[], userId: string): Promise<UploadedFile[]> => {
+    console.log('useCustomFileUpload: Starting multiple file upload for', files.length, 'files');
     const uploadedFiles: UploadedFile[] = [];
     
     for (const file of files) {
@@ -85,6 +92,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
       }
     }
     
+    console.log('useCustomFileUpload: Multiple upload complete. Successful uploads:', uploadedFiles.length);
     return uploadedFiles;
   };
 
