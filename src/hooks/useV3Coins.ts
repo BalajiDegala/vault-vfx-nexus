@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +43,6 @@ export function useV3Coins(userId?: string) {
   const fetchTransactions = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    // @ts-expect-error: v3c_transactions not in generated types yet
     const { data, error } = await (supabase as any)
       .from("v3c_transactions")
       .select("*")
@@ -81,7 +79,6 @@ export function useV3Coins(userId?: string) {
     if (amount <= 0) return { error: "Amount must be positive." };
     if (!toUserId || toUserId === userId) return { error: "Invalid recipient" };
 
-    // @ts-expect-error: process_v3c_donation not in generated types yet
     const { data, error } = await (supabase as any).rpc("process_v3c_donation", {
       sender_id: userId,
       receiver_id: toUserId,
@@ -114,7 +111,6 @@ export function useV3Coins(userId?: string) {
     if (!userId) return { error: "Not authenticated" };
     if (amount <= 0) return { error: "Amount must be positive." };
 
-    // @ts-expect-error: process_v3c_transaction not in generated types yet
     const { error } = await (supabase as any).rpc("process_v3c_transaction", {
       p_user_id: userId,
       p_amount: amount,
