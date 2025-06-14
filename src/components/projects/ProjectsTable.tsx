@@ -1,8 +1,18 @@
+
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import ProjectsTableFilters from "./ProjectsTableFilters";
 import ProjectsDataTable from "./ProjectsDataTable";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis
+} from "@/components/ui/pagination";
 
 // Utility constants/types (kept the same)
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -41,6 +51,10 @@ const ProjectsTable = () => {
   const [sortColumn, setSortColumn] = useState<SortColumn>("deadline");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -71,7 +85,10 @@ const ProjectsTable = () => {
     if (typeFilter && typeFilter !== "all") {
       result = result.filter((p) => (p.project_type ?? "studio") === typeFilter);
     }
+    // Reset to page 1 if filters change
+    setCurrentPage(1);
     return result;
+  // eslint-disable-next-line
   }, [projects, statusFilter, typeFilter]);
 
   const sortedProjects = useMemo(() => {
@@ -104,9 +121,32 @@ const ProjectsTable = () => {
     return proj;
   }, [filteredProjects, sortColumn, sortDirection]);
 
+  // Pagination
+  const pageCount = Math.ceil(sortedProjects.length / itemsPerPage);
+  const pagedProjects = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedProjects.slice(start, start + itemsPerPage);
+  }, [sortedProjects, currentPage, itemsPerPage]);
+
   // Modal state
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [pipelineOpen, setPipelineOpen] = useState(false);
+
+  // Page change handler
+  const goToPage = (p: number) => {
+    if (p < 1 || p > pageCount) return;
+    setCurrentPage(p);
+  };
+
+  // Generate page numbers (simple: 1 ... N)
+  const pageNumbers = () => {
+    // Show max of 5 page buttons
+    const arr = [];
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(pageCount, currentPage + 2); i++) {
+      arr.push(i);
+    }
+    return arr;
+  };
 
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
@@ -120,7 +160,7 @@ const ProjectsTable = () => {
       />
       <ProjectsDataTable
         loading={loading}
-        sortedProjects={sortedProjects}
+        sortedProjects={pagedProjects}
         sortColumn={sortColumn}
         sortDirection={sortDirection}
         handleSort={handleSort}
@@ -130,6 +170,52 @@ const ProjectsTable = () => {
         setPipelineOpen={setPipelineOpen}
         statusColor={statusColor}
       />
+
+      {/* Pagination Controls */}
+      {pageCount > 1 && (
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => goToPage(currentPage - 1)}
+                tabIndex={0}
+                style={{ cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
+                aria-disabled={currentPage === 1}
+              />
+            </PaginationItem>
+            {pageNumbers()[0] > 1 && (
+              <PaginationItem>
+                <PaginationLink onClick={() => goToPage(1)}>{1}</PaginationLink>
+                {pageNumbers()[0] > 2 && <PaginationEllipsis />}
+              </PaginationItem>
+            )}
+            {pageNumbers().map((num) => (
+              <PaginationItem key={num}>
+                <PaginationLink
+                  isActive={num === currentPage}
+                  onClick={() => goToPage(num)}
+                >
+                  {num}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            {pageNumbers()[pageNumbers().length - 1] < pageCount && (
+              <PaginationItem>
+                {pageNumbers()[pageNumbers().length - 1] < pageCount - 1 && <PaginationEllipsis />}
+                <PaginationLink onClick={() => goToPage(pageCount)}>{pageCount}</PaginationLink>
+              </PaginationItem>
+            )}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => goToPage(currentPage + 1)}
+                tabIndex={0}
+                style={{ cursor: currentPage === pageCount ? "not-allowed" : "pointer" }}
+                aria-disabled={currentPage === pageCount}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };
