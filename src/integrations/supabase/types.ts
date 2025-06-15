@@ -200,6 +200,54 @@ export type Database = {
           },
         ]
       }
+      dcv_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          session_token: string
+          status: string
+          updated_at: string
+          user_id: string
+          vm_instance_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          session_token: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          vm_instance_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_token?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vm_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dcv_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dcv_sessions_vm_instance_id_fkey"
+            columns: ["vm_instance_id"]
+            isOneToOne: false
+            referencedRelation: "vm_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string
