@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +59,7 @@ export const useAdvancedFilters = (projects: Project[]) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSavedPresets((data as SavedFilterPreset[]) || []);
+      setSavedPresets((data as unknown as SavedFilterPreset[]) || []);
     } catch (error) {
       console.error("Error loading filter presets:", error);
     }
