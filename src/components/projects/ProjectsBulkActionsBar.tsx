@@ -1,21 +1,26 @@
+
 import React from "react";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Database } from "@/integrations/supabase/types";
 
-const statusOptions = [
+type ProjectStatus = Database["public"]["Enums"]["project_status"];
+
+const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: "open", label: "Open" },
   { value: "completed", label: "Completed" },
   { value: "draft", label: "Draft" },
   { value: "cancelled", label: "Cancelled" },
   { value: "review", label: "Review" },
+  { value: "in_progress", label: "In Progress" },
 ];
 
 interface ProjectsBulkActionsBarProps {
   selectedCount: number;
   onDelete: () => void;
   onDeselectAll: () => void;
-  onBulkStatusChange: (status: string) => void;
+  onBulkStatusChange: (status: ProjectStatus) => void;
   disabled?: boolean;
 }
 
@@ -26,7 +31,7 @@ const ProjectsBulkActionsBar: React.FC<ProjectsBulkActionsBarProps> = ({
   onBulkStatusChange,
   disabled = false,
 }) => {
-  const [newStatus, setNewStatus] = useState<string>("");
+  const [newStatus, setNewStatus] = useState<ProjectStatus | "">("");
 
   return (
     <div className="flex flex-wrap gap-2 items-center mb-2 bg-blue-950/85 rounded-md border border-blue-700 px-3 py-2 shadow-lg">
@@ -47,7 +52,7 @@ const ProjectsBulkActionsBar: React.FC<ProjectsBulkActionsBarProps> = ({
         <select
           className="rounded border bg-gray-800 border-blue-700 text-blue-100 px-2 py-1 text-sm"
           value={newStatus}
-          onChange={(e) => setNewStatus(e.target.value)}
+          onChange={(e) => setNewStatus(e.target.value as ProjectStatus | "")}
         >
           <option value="">Change Status</option>
           {statusOptions.map((opt) => (
@@ -61,7 +66,7 @@ const ProjectsBulkActionsBar: React.FC<ProjectsBulkActionsBarProps> = ({
           variant="secondary"
           disabled={!newStatus || disabled}
           onClick={() => {
-            if (newStatus) onBulkStatusChange(newStatus);
+            if (newStatus) onBulkStatusChange(newStatus as ProjectStatus);
           }}
         >
           Apply
@@ -78,4 +83,5 @@ const ProjectsBulkActionsBar: React.FC<ProjectsBulkActionsBarProps> = ({
     </div>
   );
 };
+
 export default ProjectsBulkActionsBar;

@@ -1,20 +1,26 @@
+
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import ProjectsDataTable from "./ProjectsDataTable";
 import ProjectsPagination from "./ProjectsPagination";
 import ProjectsTableFiltersContainer from "./ProjectsTableFiltersContainer";
-import ProjectsBulkActionsBar from "./ProjectsBulkActionsBar"; // NEW
+import ProjectsBulkActionsBar from "./ProjectsBulkActionsBar";
+import { useToast } from "@/hooks/use-toast";
 
 // Utility constants/types
 type Project = Database["public"]["Tables"]["projects"]["Row"];
+type ProjectStatus = Database["public"]["Enums"]["project_status"];
+
 const statusColor: Record<string, string> = {
   completed: "bg-blue-500/20 text-blue-400",
   open: "bg-green-500/20 text-green-400",
   draft: "bg-yellow-500/20 text-yellow-400",
   cancelled: "bg-red-500/20 text-red-400",
   review: "bg-cyan-500/20 text-cyan-400",
+  in_progress: "bg-purple-500/20 text-purple-400",
 };
+
 const statusOptions = [
   { value: "all", label: "All" },
   { value: "open", label: "Open" },
@@ -22,7 +28,9 @@ const statusOptions = [
   { value: "draft", label: "Draft" },
   { value: "cancelled", label: "Cancelled" },
   { value: "review", label: "Review" },
+  { value: "in_progress", label: "In Progress" },
 ];
+
 const typeOptions = [
   { value: "all", label: "All" },
   { value: "studio", label: "Studio" },
@@ -30,12 +38,15 @@ const typeOptions = [
   { value: "freelance", label: "Freelance" },
   { value: "test", label: "Test" },
 ];
+
 type SortColumn = "title" | "status" | "budget" | "deadline" | "assigned_to" | "security_level" | "project_type";
 
 // Main component
 const ProjectsTable = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const { toast } = useToast();
 
   // Change: multi-select filter
   const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
@@ -177,22 +188,36 @@ const ProjectsTable = () => {
   };
   
   // Bulk status update
-  const handleBulkStatusChange = async (status: string) => {
+  const handleBulkStatusChange = async (status: ProjectStatus) => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`Update status for ${selectedIds.length} projects to "${status}"?`)) return;
-    const { error } = await supabase
-      .from("projects")
-      .update({ status })
-      .in("id", selectedIds);
-    if (!error) {
-      setProjects((prev) =>
-        prev.map((p) =>
-          selectedIds.includes(p.id) ? { ...p, status } : p
-        )
-      );
-      setSelectedIds([]);
-    } else {
-      alert("Error updating status!");
+    
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status })
+        .in("id", selectedIds);
+        
+      if (!error) {
+        setProjects((prev) =>
+          prev.map((p) =>
+            selectedIds.includes(p.id) ? { ...p, status } : p
+          )
+        );
+        setSelectedIds([]);
+        toast({
+          title: "Status Updated",
+          description: `Successfully updated ${selectedIds.length} projects to "${status}".`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update project status.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -225,13 +250,26 @@ const ProjectsTable = () => {
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} projects? This cannot be undone.`)) return;
-    const { error } = await supabase.from("projects").delete().in("id", selectedIds);
-    if (!error) {
-      setProjects((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
-      setSelectedIds([]);
-    } else {
-      alert("Error deleting projects!");
+    
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("projects").delete().in("id", selectedIds);
+      if (!error) {
+        setProjects((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+        setSelectedIds([]);
+        toast({
+          title: "Projects Deleted",
+          description: `Successfully deleted ${selectedIds.length} projects.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete projects.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -258,7 +296,7 @@ const ProjectsTable = () => {
             setSelectAllActive(false);
           }}
           onBulkStatusChange={handleBulkStatusChange}
-          disabled={!anySelected}
+          disabled={bulkActionLoading}
         />
       )}
       <ProjectsDataTable
@@ -297,4 +335,5 @@ const ProjectsTable = () => {
     </div>
   );
 };
+
 export default ProjectsTable;
