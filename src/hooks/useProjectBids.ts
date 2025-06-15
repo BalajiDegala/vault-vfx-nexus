@@ -34,13 +34,13 @@ export const useProjectBids = (projectId?: string) => {
         .from('project_bids')
         .select(`
           *,
-          bidder_profile:profiles(
+          profiles!project_bids_bidder_id_fkey (
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects(
+          projects!project_bids_project_id_fkey (
             title,
             description
           )
@@ -50,7 +50,14 @@ export const useProjectBids = (projectId?: string) => {
 
       if (error) throw error;
       
-      setBids((data || []) as ProjectBidWithProfile[]);
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(bid => ({
+        ...bid,
+        bidder_profile: bid.profiles,
+        project: bid.projects
+      }));
+      
+      setBids(transformedData as ProjectBidWithProfile[]);
     } catch (error) {
       console.error('Error fetching project bids:', error);
       toast({
