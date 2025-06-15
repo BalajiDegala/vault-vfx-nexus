@@ -2,9 +2,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Fully type-agnostic version to prevent TS deep type recursion
-export const useProjectTasks = (studioId: any): any => {
-  // State hooks forced to any
+/**
+ * Fetches studio projects and tasks and disables all type inference by using any everywhere.
+ * This avoids TypeScript "excessively deep and possibly infinite" instantiation.
+ */
+function useProjectTasks(studioId: any): any {
+  // All state is forced to any to stop TS recursion
   const [projects, setProjects] = useState<any>([]);
   const [tasksByProject, setTasksByProject] = useState<any>({});
   const [loading, setLoading] = useState<any>(false);
@@ -15,17 +18,15 @@ export const useProjectTasks = (studioId: any): any => {
     // eslint-disable-next-line
   }, [studioId]);
 
-  // Explicitly state function type as any
-  const fetchStudioProjectsAndTasks: any = async (): Promise<any> => {
-    setLoading(true);
+  // No type on this function, everything is as any!
+  const fetchStudioProjectsAndTasks = async (): Promise<any> => {
+    setLoading(true as any);
 
-    // All Supabase results and values are explicitly any
     const fetchProjects: any = await supabase
       .from("projects")
       .select("id, title")
       .eq("client_id", studioId);
 
-    // Type as any
     const projectsData: any = fetchProjects && fetchProjects.data ? fetchProjects.data : [];
     const error: any = fetchProjects && fetchProjects.error ? fetchProjects.error : null;
 
@@ -37,7 +38,7 @@ export const useProjectTasks = (studioId: any): any => {
     }
     setProjects(projectsData as any);
 
-    // Collect tasks for each project, typed as any
+    // Always locally type to any
     const tasksResult: any = {};
     for (let i = 0; i < (projectsData as any).length; i++) {
       const project: any = (projectsData as any)[i];
@@ -53,11 +54,13 @@ export const useProjectTasks = (studioId: any): any => {
     return undefined as any;
   };
 
-  // Return is explicitly and redundantly cast to any
+  // All returned values explicitly typed as any to avoid TS recursion.
   return {
     projects: projects as any,
     tasksByProject: tasksByProject as any,
     loading: loading as any,
     refetch: fetchStudioProjectsAndTasks as any,
   } as any;
-};
+}
+
+export { useProjectTasks };
