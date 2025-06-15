@@ -45,9 +45,9 @@ export default function useProjectTasks(studioId: any): any {
       const fetchTasks: any = await supabase
         .from("tasks")
         .select("id, name, description, task_type, status, priority")
-        .eq("project_id", project.id);
+        .eq("project_id", (project as any).id);
       const tasks: any = fetchTasks && fetchTasks.data ? fetchTasks.data : [];
-      tasksResult[project.id as any] = tasks as any;
+      tasksResult[(project as any).id as any] = tasks as any;
     }
     setTasksByProject(tasksResult as any);
     setLoading(false as any);
@@ -55,6 +55,7 @@ export default function useProjectTasks(studioId: any): any {
   };
 
   // All returned values explicitly typed as any to avoid TS recursion.
+  // Spread into a plain object and force type to any at every level.
   const result: any = {
     projects: projects as any,
     tasksByProject: tasksByProject as any,

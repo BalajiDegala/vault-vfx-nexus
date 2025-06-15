@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+// CHANGED: Use default import for useProjectTasks to fix import error
+import useProjectTasks from "@/hooks/useProjectTasks";
 import { useSharedTasks } from '@/hooks/useSharedTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
