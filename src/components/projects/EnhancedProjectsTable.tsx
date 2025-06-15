@@ -6,11 +6,9 @@ import ProjectsDataTable from "./ProjectsDataTable";
 import ProjectsPagination from "./ProjectsPagination";
 import ProjectsTableFiltersContainer from "./ProjectsTableFiltersContainer";
 import ProjectsBulkActionsBar from "./ProjectsBulkActionsBar";
-import AdvancedFiltersModal from "./AdvancedFiltersModal";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Download, RotateCcw } from "lucide-react";
-import { useAdvancedFilters } from "@/hooks/useAdvancedFilters";
+import { Download, RotateCcw } from "lucide-react";
+import { useProjectFilters } from "@/hooks/useProjectFilters";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useProjectSorting } from "@/hooks/useProjectSorting";
 import { useProjectBulkActions } from "@/hooks/useProjectBulkActions";
@@ -19,6 +17,24 @@ import { useToast } from "@/hooks/use-toast";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
+
+const statusOptions = [
+  { value: "all", label: "All" },
+  { value: "open", label: "Open" },
+  { value: "completed", label: "Completed" },
+  { value: "draft", label: "Draft" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "review", label: "Review" },
+  { value: "in_progress", label: "In Progress" },
+];
+
+const typeOptions = [
+  { value: "all", label: "All" },
+  { value: "studio", label: "Studio" },
+  { value: "personal", label: "Personal" },
+  { value: "freelance", label: "Freelance" },
+  { value: "test", label: "Test" },
+];
 
 interface EnhancedProjectsTableProps {
   userRole?: AppRole | null;
@@ -36,16 +52,13 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
   const { getStatusColor } = useProjectStatuses();
   
   const {
-    filters,
+    statusFilter,
+    typeFilter,
+    searchQuery,
+    deadlineRange,
     filteredProjects,
-    updateFilters,
-    clearAllFilters,
-    activeFiltersCount,
-    savedPresets,
-    saveFilterPreset,
-    loadFilterPreset,
-    deleteFilterPreset,
-  } = useAdvancedFilters(projects);
+    handleFiltersChange
+  } = useProjectFilters(projects);
 
   const {
     sortColumn,
@@ -91,7 +104,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
   // Reset page when filters change
   useEffect(() => {
     resetPage();
-  }, [filters, resetPage]);
+  }, [statusFilter, typeFilter, searchQuery, deadlineRange, resetPage]);
 
   // Deselect when projects change
   useEffect(() => {
@@ -134,6 +147,17 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
     });
   };
 
+  const clearAllFilters = () => {
+    handleFiltersChange({
+      statusFilter: ["all"],
+      typeFilter: "all",
+      searchQuery: "",
+      deadlineRange: { from: null, to: null },
+    });
+  };
+
+  const hasActiveFilters = !statusFilter.includes("all") || typeFilter !== "all" || searchQuery || deadlineRange.from || deadlineRange.to;
+
   // Create dynamic status color mapping
   const statusColor: Record<string, string> = {
     completed: "bg-blue-500/20 text-blue-400",
@@ -150,30 +174,20 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
 
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
-      {/* Enhanced Search and Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search projects, skills, or keywords..."
-            value={filters.searchQuery}
-            onChange={(e) => updateFilters({ searchQuery: e.target.value })}
-            className="pl-10 bg-gray-800/50 border-gray-600 text-white"
-          />
+      {/* Filters Section */}
+      <ProjectsTableFiltersContainer
+        statusOptions={statusOptions}
+        typeOptions={typeOptions}
+        onChange={handleFiltersChange}
+      />
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="text-sm text-gray-400">
+          Showing {filteredProjects.length} of {projects.length} projects
         </div>
         
         <div className="flex items-center gap-2">
-          <AdvancedFiltersModal
-            filters={filters}
-            onFiltersChange={updateFilters}
-            onClearAll={clearAllFilters}
-            activeFiltersCount={activeFiltersCount}
-            savedPresets={savedPresets}
-            onSavePreset={saveFilterPreset}
-            onLoadPreset={loadFilterPreset}
-            onDeletePreset={deleteFilterPreset}
-          />
-          
           <Button
             variant="outline"
             onClick={handleExportCSV}
@@ -183,23 +197,17 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
             Export {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
           </Button>
 
-          {activeFiltersCount > 0 && (
+          {hasActiveFilters && (
             <Button
               variant="outline"
               onClick={clearAllFilters}
               className="border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
+              Reset Filters
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Results Summary */}
-      <div className="mb-4 text-sm text-gray-400">
-        Showing {filteredProjects.length} of {projects.length} projects
-        {activeFiltersCount > 0 && ` (${activeFiltersCount} filter${activeFiltersCount > 1 ? 's' : ''} applied)`}
       </div>
 
       {anySelected && (
