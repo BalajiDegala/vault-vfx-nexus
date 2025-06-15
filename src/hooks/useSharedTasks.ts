@@ -53,7 +53,7 @@ export const useSharedTasks = (userRole: string, userId: string) => {
     try {
       let query = supabase.from('shared_tasks').select(`
         *,
-        tasks:task_id (
+        tasks (
           id,
           name,
           description,
@@ -61,11 +61,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
           status,
           priority,
           estimated_hours,
-          shots:shot_id (
+          shots (
             name,
-            sequences:sequence_id (
+            sequences (
               name,
-              projects:project_id (
+              projects (
                 title,
                 project_code
               )
