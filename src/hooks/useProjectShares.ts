@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,13 +34,13 @@ export const useProjectShares = (userId?: string) => {
         .from('project_shares')
         .select(`
           *,
-          studio_profile:profiles!project_shares_studio_id_fkey (
+          studio_profile:profiles!studio_id (
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects!project_shares_project_id_fkey (
+          project:projects!project_id (
             title,
             description,
             status
@@ -52,8 +51,7 @@ export const useProjectShares = (userId?: string) => {
 
       if (error) throw error;
       
-      const typedData = (data || []) as ProjectShareWithProfiles[];
-      setShares(typedData);
+      setShares((data || []) as ProjectShareWithProfiles[]);
     } catch (error) {
       console.error('Error fetching project shares:', error);
       toast({

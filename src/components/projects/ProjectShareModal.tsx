@@ -25,7 +25,7 @@ const ProjectShareModal = ({ isOpen, onClose, project, onShareSubmitted }: Proje
   const { searchUsers, searchResults, loading: searchLoading } = useUserSearch();
   const [formData, setFormData] = useState({
     studio_id: '',
-    access_level: 'view' as const,
+    access_level: 'view' as 'view' | 'bid' | 'full',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
