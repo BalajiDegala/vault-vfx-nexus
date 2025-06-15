@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +21,7 @@ export interface V3CTransactionResult {
   transaction_id?: string;
   previous_balance?: number;
   new_balance?: number;
-  amount?: number;
+  amount?: string;
   type?: string;
   error?: string;
   error_code?: string;
@@ -44,9 +43,6 @@ function convertToTransactionResult(data: any): V3CTransactionResult {
   return data;
 }
 
-// Global channel tracking to prevent duplicates across hook instances
-const activeChannels = new Map<string, RealtimeChannel>();
-
 export function useV3CoinsEnhanced(userId?: string) {
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<V3CTransaction[]>([]);
@@ -57,6 +53,7 @@ export function useV3CoinsEnhanced(userId?: string) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<number>(0);
   const mountedRef = useRef(true);
+  const currentUserIdRef = useRef<string | undefined>(userId);
 
   // Fetch balance with optimistic locking
   const fetchBalance = useCallback(async (silent = false) => {
@@ -144,74 +141,75 @@ export function useV3CoinsEnhanced(userId?: string) {
 
   // Setup real-time subscriptions with improved duplicate prevention
   useEffect(() => {
-    if (!userId) return;
-
-    const channelKey = `v3c_user_${userId}`;
-    
-    // Check if there's already an active channel for this user
-    if (activeChannels.has(channelKey)) {
-      console.log("=== REUSING EXISTING REALTIME CHANNEL ===");
-      const existingChannel = activeChannels.get(channelKey)!;
-      channelRef.current = existingChannel;
-      setRealtimeConnected(true);
-      return;
+    // Clean up if userId changed
+    if (currentUserIdRef.current !== userId) {
+      if (channelRef.current) {
+        console.log("=== CLEANING UP CHANNEL DUE TO USER ID CHANGE ===");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        setRealtimeConnected(false);
+      }
+      currentUserIdRef.current = userId;
     }
 
-    console.log("=== SETTING UP NEW REALTIME SUBSCRIPTIONS ===");
-    
-    // Create realtime channel with unique identifier
-    const channelName = `${channelKey}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const channel = supabase.channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${userId}`
-        },
-        (payload) => {
-          if (!mountedRef.current) return;
-          console.log("Profile balance updated:", payload);
-          if (payload.new && 'v3_coins_balance' in payload.new) {
-            const newBalance = payload.new.v3_coins_balance as number;
-            setBalance(newBalance);
-            lastUpdateRef.current = Date.now();
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'v3c_transactions',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          if (!mountedRef.current) return;
-          console.log("Transaction updated:", payload);
-          // Refresh transactions when any change occurs
-          fetchTransactions(true);
-        }
-      )
-      .subscribe((status) => {
-        if (!mountedRef.current) return;
-        console.log("Realtime status:", status);
-        setRealtimeConnected(status === 'SUBSCRIBED');
-      });
+    if (!userId) return;
 
-    channelRef.current = channel;
-    activeChannels.set(channelKey, channel);
+    // Only create a new channel if we don't have one
+    if (!channelRef.current) {
+      console.log("=== SETTING UP NEW REALTIME SUBSCRIPTIONS ===");
+      
+      // Create realtime channel with unique identifier
+      const channelName = `v3c_user_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const channel = supabase.channel(channelName);
+      
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${userId}`
+          },
+          (payload) => {
+            if (!mountedRef.current) return;
+            console.log("Profile balance updated:", payload);
+            if (payload.new && 'v3_coins_balance' in payload.new) {
+              const newBalance = payload.new.v3_coins_balance as number;
+              setBalance(newBalance);
+              lastUpdateRef.current = Date.now();
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'v3c_transactions',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            if (!mountedRef.current) return;
+            console.log("Transaction updated:", payload);
+            // Refresh transactions when any change occurs
+            fetchTransactions(true);
+          }
+        )
+        .subscribe((status) => {
+          if (!mountedRef.current) return;
+          console.log("Realtime status:", status);
+          setRealtimeConnected(status === 'SUBSCRIBED');
+        });
+
+      channelRef.current = channel;
+    }
 
     return () => {
       console.log("=== CLEANING UP REALTIME SUBSCRIPTIONS ===");
       mountedRef.current = false;
       
       if (channelRef.current) {
-        // Remove from active channels tracking
-        activeChannels.delete(channelKey);
-        
         // Unsubscribe and remove the channel
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -243,7 +241,6 @@ export function useV3CoinsEnhanced(userId?: string) {
     await Promise.all([fetchBalance(), fetchTransactions()]);
   }, [userId, fetchBalance, fetchTransactions]);
 
-  // Process transaction with new enhanced function
   const processTransaction = async ({
     amount,
     type,
@@ -297,7 +294,6 @@ export function useV3CoinsEnhanced(userId?: string) {
     }
   };
 
-  // Send/donate coins with new enhanced function
   const sendCoins = async ({
     toUserId,
     amount,
