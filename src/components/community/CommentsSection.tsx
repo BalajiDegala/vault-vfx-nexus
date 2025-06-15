@@ -90,9 +90,16 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       
       if (success) {
         setNewComment('');
-        // Reload comments immediately after successful submission
-        await loadComments();
-        console.log('CommentsSection: Comment added successfully, comments reloaded');
+        // Add a small delay to ensure database consistency
+        setTimeout(async () => {
+          try {
+            await loadComments();
+            console.log('CommentsSection: Comment added successfully, comments reloaded');
+          } catch (reloadError) {
+            console.error('CommentsSection: Error reloading comments after submission:', reloadError);
+            // Don't show error to user for reload failures, the comment was added successfully
+          }
+        }, 100);
       } else {
         console.error('CommentsSection: Failed to add comment (addComment returned false)');
         setError('Failed to post comment. Please try again.');
