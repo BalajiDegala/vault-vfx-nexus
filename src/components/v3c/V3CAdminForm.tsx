@@ -16,9 +16,15 @@ interface V3CAdminFormProps {
   adminUserId: string;
   selectedUser: UserProfileLite | null;
   onSelectUser: (user: UserProfileLite | null) => void;
+  onTransactionComplete?: () => void;
 }
 
-const V3CAdminForm: React.FC<V3CAdminFormProps> = ({ adminUserId, selectedUser, onSelectUser }) => {
+const V3CAdminForm: React.FC<V3CAdminFormProps> = ({ 
+  adminUserId, 
+  selectedUser, 
+  onSelectUser,
+  onTransactionComplete 
+}) => {
   const [amount, setAmount] = useState("");
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
@@ -30,34 +36,57 @@ const V3CAdminForm: React.FC<V3CAdminFormProps> = ({ adminUserId, selectedUser, 
 
   const performTransaction = async (type: "earn" | "spend") => {
     if (!selectedUser || !amount) return;
+    
+    const amountNum = Number(amount);
+    if (amountNum <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Amount must be greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setProcessing(true);
 
     try {
+      console.log(`Admin ${adminUserId} performing ${type} transaction of ${amountNum} V3C for user ${selectedUser.id}`);
+      
       const { error } = await (supabase as any).rpc("process_v3c_transaction", {
         p_user_id: selectedUser.id,
-        p_amount: Number(amount),
+        p_amount: amountNum,
         p_type: type,
         p_metadata: {
           admin_action: true,
           admin_id: adminUserId,
-          reason: type === "earn" ? "Admin allocation" : "Admin deduction"
+          reason: type === "earn" ? "Admin allocation" : "Admin deduction",
+          admin_added: type === "earn"
         }
       });
 
       if (error) {
+        console.error("Transaction error:", error);
         toast({
           title: "Transaction failed",
           description: error.message,
           variant: "destructive"
         });
       } else {
+        console.log("Transaction successful");
         toast({
           title: "V3C Transaction",
           description: `Successfully ${type === "earn" ? "added" : "removed"} ${amount} V3C ${type === "earn" ? "to" : "from"} ${selectedUser.display}`
         });
+        
+        // Call callback to refresh data
+        if (onTransactionComplete) {
+          onTransactionComplete();
+        }
+        
         resetForm();
       }
     } catch (err) {
+      console.error("Unexpected error:", err);
       toast({
         title: "Transaction failed",
         description: "An unexpected error occurred.",

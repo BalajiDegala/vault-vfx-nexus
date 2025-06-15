@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,21 +28,25 @@ export function useV3Coins(userId?: string) {
   // Fetch balance from profile
   const fetchBalance = useCallback(async () => {
     if (!userId) return;
+    console.log("Fetching balance for user:", userId);
     const { data, error } = await supabase
       .from("profiles")
       .select("v3_coins_balance")
       .eq("id", userId)
       .maybeSingle();
     if (error) {
+      console.error("Balance fetch error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    console.log("Balance data:", data);
     setBalance(data?.v3_coins_balance ?? 0);
   }, [userId, toast]);
 
   // Fetch transaction history
   const fetchTransactions = useCallback(async () => {
     if (!userId) return;
+    console.log("Fetching transactions for user:", userId);
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("v3c_transactions")
@@ -49,10 +54,12 @@ export function useV3Coins(userId?: string) {
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (error) {
+      console.error("Transactions fetch error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       setLoading(false);
       return;
     }
+    console.log("Transactions data:", data);
     // Defensive parse as V3CTransactionRow[]
     setTransactions((data as V3CTransactionRow[]) || []);
     setLoading(false);
@@ -61,6 +68,20 @@ export function useV3Coins(userId?: string) {
   useEffect(() => {
     fetchBalance();
     fetchTransactions();
+  }, [fetchBalance, fetchTransactions]);
+
+  // Listen for custom events to refresh data
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log("Refreshing V3C data due to transaction completion");
+      fetchBalance();
+      fetchTransactions();
+    };
+
+    window.addEventListener('v3c-transaction-complete', handleRefresh);
+    return () => {
+      window.removeEventListener('v3c-transaction-complete', handleRefresh);
+    };
   }, [fetchBalance, fetchTransactions]);
 
   // Send/donate coins to another user

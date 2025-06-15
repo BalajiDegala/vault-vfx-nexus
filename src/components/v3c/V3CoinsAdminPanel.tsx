@@ -12,6 +12,7 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
     id: string;
     display: string;
   } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleUserSelect = (profile: {
     id: string;
@@ -30,8 +31,16 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
     setShowDropdown(false);
   };
 
+  const handleTransactionComplete = () => {
+    // Force refresh by incrementing key
+    setRefreshKey(prev => prev + 1);
+    
+    // Also trigger a custom event that other components can listen to
+    window.dispatchEvent(new CustomEvent('v3c-transaction-complete'));
+  };
+
   return (
-    <Card className="bg-gray-900/80 border-blue-500/20 mb-8">
+    <Card className="bg-gray-900/80 border-blue-500/20 mb-8" key={refreshKey}>
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Coins className="h-5 w-5 text-yellow-400" />
@@ -58,6 +67,7 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
           adminUserId={adminUserId}
           selectedUser={selectedUser}
           onSelectUser={setSelectedUser}
+          onTransactionComplete={handleTransactionComplete}
         />
       </CardContent>
     </Card>
