@@ -54,7 +54,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
       if (projectsError) throw projectsError;
 
       const totalProjects = projects?.length || 0;
-      const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
+      const activeProjects = projects?.filter(p => p.status === 'in_progress').length || 0;
       const completedProjects = projects?.filter(p => p.status === 'completed').length || 0;
       const totalBudget = projects?.reduce((sum, p) => sum + (p.budget_max || 0), 0) || 0;
 
@@ -225,7 +225,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
+                    <Badge variant={project.status === 'in_progress' ? 'default' : 'secondary'}>
                       {project.status}
                     </Badge>
                     <span className="text-gray-400 text-sm">
