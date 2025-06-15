@@ -44,6 +44,9 @@ function convertToTransactionResult(data: any): V3CTransactionResult {
   return data;
 }
 
+// Global channel tracking to prevent duplicates across hook instances
+const activeChannels = new Map<string, RealtimeChannel>();
+
 export function useV3CoinsEnhanced(userId?: string) {
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<V3CTransaction[]>([]);
@@ -53,11 +56,11 @@ export function useV3CoinsEnhanced(userId?: string) {
   
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<number>(0);
-  const subscriptionInitialized = useRef(false);
+  const mountedRef = useRef(true);
 
   // Fetch balance with optimistic locking
   const fetchBalance = useCallback(async (silent = false) => {
-    if (!userId) return;
+    if (!userId || !mountedRef.current) return;
     
     if (!silent) {
       console.log("=== FETCHING BALANCE ===");
@@ -82,8 +85,8 @@ export function useV3CoinsEnhanced(userId?: string) {
       const newBalance = data?.v3_coins_balance ?? 0;
       const updateTime = new Date(data?.updated_at || 0).getTime();
       
-      // Only update if this is newer data
-      if (updateTime > lastUpdateRef.current) {
+      // Only update if this is newer data and component is still mounted
+      if (updateTime > lastUpdateRef.current && mountedRef.current) {
         setBalance(newBalance);
         lastUpdateRef.current = updateTime;
         
@@ -93,7 +96,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       }
     } catch (err) {
       console.error("Unexpected error fetching balance:", err);
-      if (!silent) {
+      if (!silent && mountedRef.current) {
         toast({ title: "Error", description: "Failed to fetch balance", variant: "destructive" });
       }
     }
@@ -101,7 +104,7 @@ export function useV3CoinsEnhanced(userId?: string) {
 
   // Fetch transactions
   const fetchTransactions = useCallback(async (silent = false) => {
-    if (!userId) return;
+    if (!userId || !mountedRef.current) return;
     
     if (!silent) {
       console.log("=== FETCHING TRANSACTIONS ===");
@@ -118,34 +121,46 @@ export function useV3CoinsEnhanced(userId?: string) {
         
       if (error) {
         console.error("Transactions fetch error:", error);
-        if (!silent) {
+        if (!silent && mountedRef.current) {
           toast({ title: "Error", description: error.message, variant: "destructive" });
         }
         return;
       }
       
-      setTransactions((data as V3CTransaction[]) || []);
+      if (mountedRef.current) {
+        setTransactions((data as V3CTransaction[]) || []);
+      }
     } catch (err) {
       console.error("Unexpected error fetching transactions:", err);
-      if (!silent) {
+      if (!silent && mountedRef.current) {
         toast({ title: "Error", description: "Failed to fetch transactions", variant: "destructive" });
       }
     } finally {
-      if (!silent) {
+      if (!silent && mountedRef.current) {
         setLoading(false);
       }
     }
   }, [userId, toast]);
 
-  // Setup real-time subscriptions - Fixed to prevent multiple subscriptions
+  // Setup real-time subscriptions with improved duplicate prevention
   useEffect(() => {
-    if (!userId || subscriptionInitialized.current) return;
+    if (!userId) return;
 
-    console.log("=== SETTING UP REALTIME SUBSCRIPTIONS ===");
-    subscriptionInitialized.current = true;
+    const channelKey = `v3c_user_${userId}`;
     
-    // Create realtime channel with unique name
-    const channelName = `v3c_user_${userId}_${Date.now()}`;
+    // Check if there's already an active channel for this user
+    if (activeChannels.has(channelKey)) {
+      console.log("=== REUSING EXISTING REALTIME CHANNEL ===");
+      const existingChannel = activeChannels.get(channelKey)!;
+      channelRef.current = existingChannel;
+      setRealtimeConnected(true);
+      return;
+    }
+
+    console.log("=== SETTING UP NEW REALTIME SUBSCRIPTIONS ===");
+    
+    // Create realtime channel with unique identifier
+    const channelName = `${channelKey}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase.channel(channelName)
       .on(
         'postgres_changes',
@@ -156,6 +171,7 @@ export function useV3CoinsEnhanced(userId?: string) {
           filter: `id=eq.${userId}`
         },
         (payload) => {
+          if (!mountedRef.current) return;
           console.log("Profile balance updated:", payload);
           if (payload.new && 'v3_coins_balance' in payload.new) {
             const newBalance = payload.new.v3_coins_balance as number;
@@ -173,32 +189,47 @@ export function useV3CoinsEnhanced(userId?: string) {
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
+          if (!mountedRef.current) return;
           console.log("Transaction updated:", payload);
           // Refresh transactions when any change occurs
           fetchTransactions(true);
         }
       )
       .subscribe((status) => {
+        if (!mountedRef.current) return;
         console.log("Realtime status:", status);
         setRealtimeConnected(status === 'SUBSCRIBED');
       });
 
     channelRef.current = channel;
+    activeChannels.set(channelKey, channel);
 
     return () => {
       console.log("=== CLEANING UP REALTIME SUBSCRIPTIONS ===");
+      mountedRef.current = false;
+      
       if (channelRef.current) {
+        // Remove from active channels tracking
+        activeChannels.delete(channelKey);
+        
+        // Unsubscribe and remove the channel
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      subscriptionInitialized.current = false;
       setRealtimeConnected(false);
     };
   }, [userId, fetchTransactions]);
 
+  // Component unmount cleanup
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   // Initial data fetch
   useEffect(() => {
-    if (userId) {
+    if (userId && mountedRef.current) {
       console.log("=== INITIAL DATA FETCH ===");
       Promise.all([fetchBalance(), fetchTransactions()]);
     }
@@ -207,7 +238,7 @@ export function useV3CoinsEnhanced(userId?: string) {
   // Force refresh function
   const forceRefresh = useCallback(async () => {
     console.log("=== FORCE REFRESH TRIGGERED ===");
-    if (!userId) return;
+    if (!userId || !mountedRef.current) return;
     
     await Promise.all([fetchBalance(), fetchTransactions()]);
   }, [userId, fetchBalance, fetchTransactions]);
@@ -253,7 +284,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       toast({ title: "V3C Transaction", description: `Successfully ${type} ${amount} V3C` });
       
       // Real-time will handle the updates, but we can optimistically update
-      if (result.new_balance !== undefined) {
+      if (result.new_balance !== undefined && mountedRef.current) {
         setBalance(result.new_balance);
       }
       
@@ -316,7 +347,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       toast({ title: "V3C Sent!", description: `Successfully sent ${amount} V3C` });
       
       // Optimistically update balance
-      if (result.sender_new_balance !== undefined) {
+      if (result.sender_new_balance !== undefined && mountedRef.current) {
         setBalance(result.sender_new_balance);
       }
       
