@@ -23,7 +23,8 @@ import {
   Settings, 
   LogOut,
   User as UserIcon,
-  Bell
+  Bell,
+  HardDrive
 } from "lucide-react";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 
@@ -79,6 +80,7 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
       badge: unreadCount > 0 ? unreadCount : undefined
     },
     { label: "Machines", icon: Server, path: "/machine-rental" },
+    { label: "Storage", icon: HardDrive, path: "/storage-management" },
     { label: "Marketplace", icon: ShoppingCart, path: "/marketplace" },
   ];
 

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import Marketplace from "./pages/Marketplace";
 import TestUsers from "./pages/TestUsers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import StorageManagement from "./pages/StorageManagement";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +39,7 @@ const App = () => (
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/community" element={<Community />} />
           <Route path="/machine-rental" element={<MachineRental />} />
+          <Route path="/storage-management" element={<StorageManagement />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/test-users" element={<TestUsers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
