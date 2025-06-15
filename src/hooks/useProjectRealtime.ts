@@ -53,7 +53,9 @@ export const useProjectRealtime = (projectId: string, userId: string, username: 
         
         Object.entries(newState).forEach(([key, presences]) => {
           if (presences && presences.length > 0) {
-            presenceMap[key] = presences[0] as ProjectPresence;
+            // Properly type the presence data
+            const presenceData = presences[0] as unknown as ProjectPresence;
+            presenceMap[key] = presenceData;
           }
         });
         
