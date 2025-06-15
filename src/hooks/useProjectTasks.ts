@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Using any[] and Record<string, any[]> to avoid deep typing that causes TS errors
 export const useProjectTasks = (studioId: string) => {
   const [projects, setProjects] = useState<any[]>([]);
   const [tasksByProject, setTasksByProject] = useState<Record<string, any[]>>({});
@@ -15,7 +16,7 @@ export const useProjectTasks = (studioId: string) => {
 
   const fetchStudioProjectsAndTasks = async () => {
     setLoading(true);
-    // 1. Get all projects where client_id = studioId
+    // Get all projects where client_id = studioId
     const { data: projectsData, error } = await supabase
       .from("projects")
       .select("id, title")
@@ -28,7 +29,7 @@ export const useProjectTasks = (studioId: string) => {
     }
     setProjects(projectsData);
 
-    // 2. For each project, get tasks
+    // Gather tasks for each project ID
     const tasksResult: Record<string, any[]> = {};
     for (const project of projectsData) {
       const { data: tasks } = await supabase
