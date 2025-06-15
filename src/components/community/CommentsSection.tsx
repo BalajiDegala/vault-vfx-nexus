@@ -32,58 +32,29 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   const [loading, setLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { fetchComments, addComment } = useCommunityPosts();
 
-  // Debug authentication state
+  // Check authentication state
   useEffect(() => {
-    const checkAuthState = async () => {
+    const checkAuth = async () => {
       try {
-        console.log('CommentsSection: Checking authentication state...');
-        
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('CommentsSection: Session check result:', { session: !!session, sessionError });
-        
-        if (session?.user) {
-          console.log('CommentsSection: User authenticated:', {
-            userId: session.user.id,
-            email: session.user.email,
-            metadata: session.user.user_metadata
-          });
-          
-          // Check if user has a profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          console.log('CommentsSection: Profile check result:', { profile, profileError });
-          
-          setAuthDebugInfo({
-            authenticated: true,
-            userId: session.user.id,
-            email: session.user.email,
-            hasProfile: !!profile,
-            profileError: profileError?.message
-          });
-        } else {
-          console.log('CommentsSection: User not authenticated');
-          setAuthDebugInfo({
-            authenticated: false,
-            sessionError: sessionError?.message
-          });
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session?.user);
       } catch (error) {
         console.error('CommentsSection: Auth check error:', error);
-        setAuthDebugInfo({
-          authenticated: false,
-          checkError: error instanceof Error ? error.message : 'Unknown error'
-        });
+        setIsAuthenticated(false);
       }
     };
     
-    checkAuthState();
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const loadComments = async () => {
@@ -110,15 +81,13 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('CommentsSection: Comment submission started');
-    console.log('CommentsSection: Auth debug info:', authDebugInfo);
     
     if (!newComment.trim() || !postId) {
       console.log('CommentsSection: Submission aborted - empty comment or no postId');
       return;
     }
 
-    if (!authDebugInfo?.authenticated) {
+    if (!isAuthenticated) {
       console.error('CommentsSection: User not authenticated, cannot submit comment');
       setError('You must be logged in to comment');
       return;
@@ -126,11 +95,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
     setLoading(true);
     setError(null);
-    console.log('CommentsSection: Submitting comment:', {
-      postId,
-      content: newComment,
-      userId: authDebugInfo.userId
-    });
+    console.log('CommentsSection: Submitting comment:', { postId, content: newComment });
     
     try {
       const success = await addComment(postId, newComment);
@@ -142,7 +107,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
         console.log('CommentsSection: Comment added successfully, comments reloaded');
       } else {
         console.error('CommentsSection: Failed to add comment (addComment returned false)');
-        setError('Failed to post comment. Please check your authentication and try again.');
+        setError('Failed to post comment. Please try again.');
       }
     } catch (error) {
       console.error('CommentsSection: Comment submission error:', error);
@@ -173,17 +138,13 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
   return (
     <ErrorBoundary>
       <div className="space-y-4">
-        {/* Auth Debug Info (only show if there's an issue) */}
-        {authDebugInfo && !authDebugInfo.authenticated && (
-          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400">
+        {!isAuthenticated && (
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 text-yellow-400">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-4 w-4" />
-              <span className="font-medium">Authentication Issue</span>
+              <span className="font-medium">Authentication Required</span>
             </div>
             <p className="text-sm">You must be logged in to comment on posts.</p>
-            {authDebugInfo.sessionError && (
-              <p className="text-xs mt-1">Error: {authDebugInfo.sessionError}</p>
-            )}
           </div>
         )}
 
@@ -198,16 +159,16 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
         <form onSubmit={handleSubmitComment} className="flex gap-2">
           <Textarea
-            placeholder={authDebugInfo?.authenticated ? "Write a comment..." : "Please log in to comment"}
+            placeholder={isAuthenticated ? "Write a comment..." : "Please log in to comment"}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="bg-gray-800 border-gray-600 text-white resize-none"
             rows={2}
-            disabled={loading || !authDebugInfo?.authenticated}
+            disabled={loading || !isAuthenticated}
           />
           <Button
             type="submit"
-            disabled={!newComment.trim() || loading || !authDebugInfo?.authenticated}
+            disabled={!newComment.trim() || loading || !isAuthenticated}
             className="bg-blue-600 hover:bg-blue-700 self-end"
           >
             {loading ? (
