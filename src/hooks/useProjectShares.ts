@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,19 +40,19 @@ export const useProjectShares = (userId?: string) => {
         .from('project_shares')
         .select(`
           *,
-          producer_profile:profiles!project_shares_producer_id_fkey(
+          producer_profile:profiles!producer_id(
             first_name,
             last_name,
             email,
             username
           ),
-          studio_profile:profiles!project_shares_studio_id_fkey (
+          studio_profile:profiles!studio_id (
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects!project_shares_project_id_fkey (
+          project:projects!project_id (
             title,
             description,
             status
