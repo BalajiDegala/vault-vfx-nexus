@@ -6,17 +6,75 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RefreshCw, Plus } from 'lucide-react';
+import { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState as useStateEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
 import VMInstanceCard from '@/components/vm/VMInstanceCard';
 import VMPlanCard from '@/components/vm/VMPlanCard';
 import { useVMInstances } from '@/hooks/useVMInstances';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const MachineRental = () => {
   const { vmInstances, vmPlans, loading, launchVM, terminateVM, refetch } = useVMInstances();
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [vmName, setVmName] = useState('');
   const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/login");
+          return;
+        }
+
+        setUser(session.user);
+
+        // Get user roles
+        const { data: rolesData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+
+        if (roleError || !rolesData || rolesData.length === 0) {
+          console.error("Role fetch error:", roleError);
+          navigate("/login");
+          return;
+        }
+
+        // Use first available role
+        const roles = rolesData.map(r => r.role);
+        let selectedRole: AppRole = roles[0];
+
+        // Prioritize roles: admin > producer > studio > artist
+        if (roles.includes('admin')) selectedRole = 'admin';
+        else if (roles.includes('producer')) selectedRole = 'producer';
+        else if (roles.includes('studio')) selectedRole = 'studio';
+        else if (roles.includes('artist')) selectedRole = 'artist';
+
+        setUserRole(selectedRole);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        navigate("/login");
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const handleLaunchVM = async () => {
     if (!selectedPlan) {
@@ -48,8 +106,25 @@ const MachineRental = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !userRole) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      <DashboardNavbar user={user} userRole={userRole} />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Virtual Machine Rental</h1>
