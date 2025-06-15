@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,13 +35,13 @@ export const useProjectBids = (projectId?: string) => {
         .from('project_bids')
         .select(`
           *,
-          bidder_profile:profiles (
+          bidder_profile:profiles!bidder_id(
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects (
+          project:projects!project_id(
             title,
             description
           )
@@ -48,11 +49,14 @@ export const useProjectBids = (projectId?: string) => {
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching project bids:", error);
+        throw error;
+      }
       
       setBids((data || []) as ProjectBidWithProfile[]);
     } catch (error) {
-      console.error('Error fetching project bids:', error);
+      console.error('Error processing project bids:', error);
       toast({
         title: "Error",
         description: "Failed to load project bids",
