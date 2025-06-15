@@ -269,6 +269,72 @@ export type Database = {
         }
         Relationships: []
       }
+      infrastructure_billing: {
+        Row: {
+          billing_period_end: string
+          billing_period_start: string
+          billing_type: string
+          charged_at: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          rate: number
+          resource_id: string
+          status: string
+          total_cost: number
+          transaction_id: string | null
+          usage_amount: number
+          user_id: string
+        }
+        Insert: {
+          billing_period_end: string
+          billing_period_start: string
+          billing_type: string
+          charged_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          rate: number
+          resource_id: string
+          status?: string
+          total_cost: number
+          transaction_id?: string | null
+          usage_amount: number
+          user_id: string
+        }
+        Update: {
+          billing_period_end?: string
+          billing_period_start?: string
+          billing_type?: string
+          charged_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          rate?: number
+          resource_id?: string
+          status?: string
+          total_cost?: number
+          transaction_id?: string | null
+          usage_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "infrastructure_billing_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v3c_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infrastructure_billing_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_items: {
         Row: {
           category: Database["public"]["Enums"]["marketplace_category"]
@@ -479,6 +545,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      physical_machines: {
+        Row: {
+          available_ram_gb: number
+          available_storage_gb: number
+          cpu_cores: number
+          created_at: string | null
+          dcv_enabled: boolean | null
+          gpu_memory_gb: number | null
+          gpu_model: string | null
+          hostname: string
+          id: string
+          ip_address: unknown
+          location: string | null
+          name: string
+          status: string
+          total_ram_gb: number
+          total_storage_gb: number
+          updated_at: string | null
+        }
+        Insert: {
+          available_ram_gb: number
+          available_storage_gb: number
+          cpu_cores: number
+          created_at?: string | null
+          dcv_enabled?: boolean | null
+          gpu_memory_gb?: number | null
+          gpu_model?: string | null
+          hostname: string
+          id?: string
+          ip_address: unknown
+          location?: string | null
+          name: string
+          status?: string
+          total_ram_gb: number
+          total_storage_gb: number
+          updated_at?: string | null
+        }
+        Update: {
+          available_ram_gb?: number
+          available_storage_gb?: number
+          cpu_cores?: number
+          created_at?: string | null
+          dcv_enabled?: boolean | null
+          gpu_memory_gb?: number | null
+          gpu_model?: string | null
+          hostname?: string
+          id?: string
+          ip_address?: unknown
+          location?: string | null
+          name?: string
+          status?: string
+          total_ram_gb?: number
+          total_storage_gb?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       portfolio_items: {
         Row: {
@@ -1141,6 +1264,158 @@ export type Database = {
           },
         ]
       }
+      storage_allocations: {
+        Row: {
+          access_key: string | null
+          allocation_name: string
+          created_at: string | null
+          endpoint_url: string | null
+          id: string
+          monthly_rate: number
+          secret_key: string | null
+          size_gb: number
+          status: string
+          storage_type: string
+          terminated_at: string | null
+          used_gb: number | null
+          user_id: string
+        }
+        Insert: {
+          access_key?: string | null
+          allocation_name: string
+          created_at?: string | null
+          endpoint_url?: string | null
+          id?: string
+          monthly_rate: number
+          secret_key?: string | null
+          size_gb: number
+          status?: string
+          storage_type?: string
+          terminated_at?: string | null
+          used_gb?: number | null
+          user_id: string
+        }
+        Update: {
+          access_key?: string | null
+          allocation_name?: string
+          created_at?: string | null
+          endpoint_url?: string | null
+          id?: string
+          monthly_rate?: number
+          secret_key?: string | null
+          size_gb?: number
+          status?: string
+          storage_type?: string
+          terminated_at?: string | null
+          used_gb?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_allocations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storage_plans: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          display_name: string
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_size_gb: number
+          min_size_gb: number
+          monthly_rate_per_gb: number
+          name: string
+          sort_order: number | null
+          storage_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          display_name: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_size_gb: number
+          min_size_gb: number
+          monthly_rate_per_gb: number
+          name: string
+          sort_order?: number | null
+          storage_type: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          display_name?: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_size_gb?: number
+          min_size_gb?: number
+          monthly_rate_per_gb?: number
+          name?: string
+          sort_order?: number | null
+          storage_type?: string
+        }
+        Relationships: []
+      }
+      storage_usage_logs: {
+        Row: {
+          created_at: string | null
+          daily_cost: number
+          date: string
+          id: string
+          monthly_rate: number
+          storage_allocation_id: string
+          used_gb: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_cost: number
+          date: string
+          id?: string
+          monthly_rate: number
+          storage_allocation_id: string
+          used_gb: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_cost?: number
+          date?: string
+          id?: string
+          monthly_rate?: number
+          storage_allocation_id?: string
+          used_gb?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_usage_logs_storage_allocation_id_fkey"
+            columns: ["storage_allocation_id"]
+            isOneToOne: false
+            referencedRelation: "storage_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storage_usage_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           actual_hours: number | null
@@ -1296,6 +1571,192 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vm_instances: {
+        Row: {
+          cpu_cores: number
+          created_at: string | null
+          dcv_connection_url: string | null
+          dcv_session_id: string | null
+          gpu_allocated: boolean | null
+          hourly_rate: number
+          id: string
+          last_activity: string | null
+          physical_machine_id: string
+          ram_gb: number
+          status: string
+          storage_gb: number
+          terminated_at: string | null
+          total_cost: number | null
+          user_id: string
+          vm_name: string
+          vm_plan_name: string
+        }
+        Insert: {
+          cpu_cores: number
+          created_at?: string | null
+          dcv_connection_url?: string | null
+          dcv_session_id?: string | null
+          gpu_allocated?: boolean | null
+          hourly_rate: number
+          id?: string
+          last_activity?: string | null
+          physical_machine_id: string
+          ram_gb: number
+          status?: string
+          storage_gb: number
+          terminated_at?: string | null
+          total_cost?: number | null
+          user_id: string
+          vm_name: string
+          vm_plan_name: string
+        }
+        Update: {
+          cpu_cores?: number
+          created_at?: string | null
+          dcv_connection_url?: string | null
+          dcv_session_id?: string | null
+          gpu_allocated?: boolean | null
+          hourly_rate?: number
+          id?: string
+          last_activity?: string | null
+          physical_machine_id?: string
+          ram_gb?: number
+          status?: string
+          storage_gb?: number
+          terminated_at?: string | null
+          total_cost?: number | null
+          user_id?: string
+          vm_name?: string
+          vm_plan_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vm_instances_physical_machine_id_fkey"
+            columns: ["physical_machine_id"]
+            isOneToOne: false
+            referencedRelation: "physical_machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vm_instances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vm_plans: {
+        Row: {
+          cpu_cores: number
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          display_name: string
+          gpu_included: boolean | null
+          gpu_model: string | null
+          hourly_rate: number
+          id: string
+          is_active: boolean | null
+          max_instances_per_user: number | null
+          name: string
+          ram_gb: number
+          sort_order: number | null
+          storage_gb: number
+          updated_at: string | null
+        }
+        Insert: {
+          cpu_cores: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          display_name: string
+          gpu_included?: boolean | null
+          gpu_model?: string | null
+          hourly_rate: number
+          id?: string
+          is_active?: boolean | null
+          max_instances_per_user?: number | null
+          name: string
+          ram_gb: number
+          sort_order?: number | null
+          storage_gb: number
+          updated_at?: string | null
+        }
+        Update: {
+          cpu_cores?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          display_name?: string
+          gpu_included?: boolean | null
+          gpu_model?: string | null
+          hourly_rate?: number
+          id?: string
+          is_active?: boolean | null
+          max_instances_per_user?: number | null
+          name?: string
+          ram_gb?: number
+          sort_order?: number | null
+          storage_gb?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vm_usage_logs: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          hourly_rate: number
+          id: string
+          start_time: string
+          status: string
+          user_id: string
+          vm_instance_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          hourly_rate: number
+          id?: string
+          start_time: string
+          status: string
+          user_id: string
+          vm_instance_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          hourly_rate?: number
+          id?: string
+          start_time?: string
+          status?: string
+          user_id?: string
+          vm_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vm_usage_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vm_usage_logs_vm_instance_id_fkey"
+            columns: ["vm_instance_id"]
+            isOneToOne: false
+            referencedRelation: "vm_instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

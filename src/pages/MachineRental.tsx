@@ -1,188 +1,177 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Server, Cpu, HardDrive, Zap, Clock } from "lucide-react";
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RefreshCw, Plus } from 'lucide-react';
+import VMInstanceCard from '@/components/vm/VMInstanceCard';
+import VMPlanCard from '@/components/vm/VMPlanCard';
+import { useVMInstances } from '@/hooks/useVMInstances';
+import { useToast } from '@/hooks/use-toast';
 
 const MachineRental = () => {
-  const vmPlans = [
-    {
-      id: 1,
-      name: "Basic VFX",
-      cpu: "8 cores",
-      ram: "32 GB",
-      storage: "500 GB SSD",
-      gpu: "RTX 3060",
-      price: "50 V3C/hour",
-      status: "available",
-      description: "Perfect for basic compositing and motion graphics"
-    },
-    {
-      id: 2,
-      name: "Pro Studio",
-      cpu: "16 cores",
-      ram: "64 GB",
-      storage: "1 TB SSD",
-      gpu: "RTX 4080",
-      price: "120 V3C/hour",
-      status: "available",
-      description: "High-performance for complex VFX and 3D rendering"
-    },
-    {
-      id: 3,
-      name: "Enterprise Render",
-      cpu: "32 cores",
-      ram: "128 GB",
-      storage: "2 TB NVMe",
-      gpu: "RTX 4090",
-      price: "250 V3C/hour",
-      status: "limited",
-      description: "Maximum power for large-scale productions"
+  const { vmInstances, vmPlans, loading, launchVM, terminateVM, refetch } = useVMInstances();
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [vmName, setVmName] = useState('');
+  const [isLaunchDialogOpen, setIsLaunchDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleLaunchVM = async () => {
+    if (!selectedPlan) {
+      toast({
+        title: "Error",
+        description: "Please select a VM plan",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
+
+    try {
+      await launchVM(selectedPlan, vmName || undefined);
+      setIsLaunchDialogOpen(false);
+      setVmName('');
+      setSelectedPlan('');
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
+  const handleConnectToVM = (dcvUrl: string) => {
+    window.open(dcvUrl, '_blank');
+  };
+
+  const handleTerminateVM = async (vmId: string) => {
+    if (window.confirm('Are you sure you want to terminate this VM? This action cannot be undone.')) {
+      await terminateVM(vmId);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
+    <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
-        </Link>
-
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Cloud VM Rental
-          </h1>
-          <p className="text-gray-400 text-lg">
-            High-performance virtual machines optimized for VFX, rendering, and creative workflows
-          </p>
-        </div>
-
-        {/* VM Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {vmPlans.map((plan) => (
-            <Card key={plan.id} className="bg-gray-900/80 border-blue-500/20 hover:border-blue-500/40 transition-colors">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-white">{plan.name}</CardTitle>
-                  <Badge 
-                    variant={plan.status === "available" ? "default" : "secondary"}
-                    className={plan.status === "available" ? "bg-green-600" : "bg-yellow-600"}
-                  >
-                    {plan.status}
-                  </Badge>
-                </div>
-                <p className="text-gray-400 text-sm">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Cpu className="h-4 w-4 text-blue-400" />
-                    <span className="text-gray-300">{plan.cpu}</span>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Virtual Machine Rental</h1>
+          <div className="flex gap-4">
+            <Button onClick={refetch} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Dialog open={isLaunchDialogOpen} onOpenChange={setIsLaunchDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Launch VM
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-800 border-gray-700">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Launch New Virtual Machine</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="vm-name" className="text-gray-300">VM Name (optional)</Label>
+                    <Input
+                      id="vm-name"
+                      value={vmName}
+                      onChange={(e) => setVmName(e.target.value)}
+                      placeholder="Enter custom VM name"
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Server className="h-4 w-4 text-green-400" />
-                    <span className="text-gray-300">{plan.ram} RAM</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <HardDrive className="h-4 w-4 text-purple-400" />
-                    <span className="text-gray-300">{plan.storage}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Zap className="h-4 w-4 text-yellow-400" />
-                    <span className="text-gray-300">{plan.gpu}</span>
-                  </div>
-                </div>
-                
-                <div className="border-t border-gray-700 pt-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-400">Hourly Rate</span>
+                  <div>
+                    <Label className="text-gray-300">Select VM Plan</Label>
+                    <div className="grid gap-3 mt-2 max-h-60 overflow-y-auto">
+                      {vmPlans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedPlan === plan.name
+                              ? 'border-blue-500 bg-blue-500/20'
+                              : 'border-gray-600 hover:border-gray-500'
+                          }`}
+                          onClick={() => setSelectedPlan(plan.name)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium text-white">{plan.display_name}</h4>
+                              <p className="text-sm text-gray-400">
+                                {plan.cpu_cores} cores, {plan.ram_gb} GB RAM, {plan.storage_gb} GB storage
+                              </p>
+                            </div>
+                            <span className="text-yellow-400 font-semibold">
+                              {plan.hourly_rate} V3C/hr
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <span className="text-xl font-bold text-blue-400">{plan.price}</span>
                   </div>
-                  
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    disabled={plan.status !== "available"}
-                  >
-                    {plan.status === "available" ? "Launch VM" : "Notify When Available"}
+                  <Button onClick={handleLaunchVM} className="w-full">
+                    Launch Virtual Machine
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        {/* Features Section */}
-        <div className="grid md:grid-cols-2 gap-8">
-          <Card className="bg-gray-900/80 border-blue-500/20">
-            <CardHeader>
-              <CardTitle className="text-white">Why Choose V3 Cloud VMs?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
-                <div>
-                  <h4 className="text-white font-medium">Pre-configured for VFX</h4>
-                  <p className="text-gray-400 text-sm">Industry-standard software pre-installed</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
-                <div>
-                  <h4 className="text-white font-medium">Scalable Performance</h4>
-                  <p className="text-gray-400 text-sm">Scale up or down based on project needs</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-purple-400 rounded-full mt-2"></div>
-                <div>
-                  <h4 className="text-white font-medium">Secure Cloud Storage</h4>
-                  <p className="text-gray-400 text-sm">Encrypted storage with automatic backups</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="instances" className="space-y-6">
+          <TabsList className="bg-gray-800 border-gray-700">
+            <TabsTrigger value="instances" className="data-[state=active]:bg-gray-700">
+              My VMs ({vmInstances.length})
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="data-[state=active]:bg-gray-700">
+              Available Plans
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="bg-gray-900/80 border-blue-500/20">
-            <CardHeader>
-              <CardTitle className="text-white">Getting Started</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
-                <div>
-                  <h4 className="text-white font-medium">Select Your VM</h4>
-                  <p className="text-gray-400 text-sm">Choose the configuration that fits your project</p>
-                </div>
+          <TabsContent value="instances">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400">Loading VM instances...</div>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">2</div>
-                <div>
-                  <h4 className="text-white font-medium">Launch & Connect</h4>
-                  <p className="text-gray-400 text-sm">VM launches in under 60 seconds</p>
-                </div>
+            ) : vmInstances.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">No virtual machines found</div>
+                <p className="text-sm text-gray-500 mb-6">
+                  Launch your first VM to get started with cloud computing
+                </p>
+                <Button onClick={() => setIsLaunchDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Launch Your First VM
+                </Button>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">3</div>
-                <div>
-                  <h4 className="text-white font-medium">Start Creating</h4>
-                  <p className="text-gray-400 text-sm">Begin your VFX work immediately</p>
-                </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {vmInstances.map((vm) => (
+                  <VMInstanceCard
+                    key={vm.id}
+                    vm={vm}
+                    onTerminate={handleTerminateVM}
+                    onConnect={handleConnectToVM}
+                  />
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </TabsContent>
 
-        <div className="mt-8 text-center">
-          <p className="text-gray-400 mb-4">Need a custom configuration or have questions?</p>
-          <Button variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white">
-            Contact Support
-          </Button>
-        </div>
+          <TabsContent value="plans">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {vmPlans.map((plan) => (
+                <VMPlanCard
+                  key={plan.id}
+                  plan={plan}
+                  onLaunch={(planName) => {
+                    setSelectedPlan(planName);
+                    setIsLaunchDialogOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
