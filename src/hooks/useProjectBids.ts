@@ -9,10 +9,10 @@ type ProjectBidInsert = Database["public"]["Tables"]["project_bids"]["Insert"];
 
 interface ProjectBidWithProfile extends ProjectBid {
   bidder_profile?: {
-    first_name: string;
-    last_name: string;
+    first_name: string | null;
+    last_name: string | null;
     email: string;
-    username: string;
+    username: string | null;
   } | null;
   project?: {
     title: string;
@@ -31,16 +31,11 @@ export const useProjectBids = (projectId?: string) => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First, fetch the bids and the related project info
+      const { data: bidsData, error: bidsError } = await supabase
         .from('project_bids')
         .select(`
           *,
-          bidder_profile:profiles!project_bids_bidder_id_fkey(
-            first_name,
-            last_name,
-            email,
-            username
-          ),
           project:projects!project_id(
             title,
             description
@@ -49,12 +44,47 @@ export const useProjectBids = (projectId?: string) => {
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching project bids:", error);
-        throw error;
+      if (bidsError) {
+        console.error("Error fetching project bids:", bidsError);
+        throw bidsError;
+      }
+
+      if (!bidsData || bidsData.length === 0) {
+        setBids([]);
+        setLoading(false);
+        return;
       }
       
-      setBids((data || []) as ProjectBidWithProfile[]);
+      // Extract bidder IDs to fetch profiles in a second query
+      const bidderIds = bidsData.map(bid => bid.bidder_id).filter(id => id);
+
+      if (bidderIds.length === 0) {
+        setBids(bidsData as ProjectBidWithProfile[]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch profiles for all bidders
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, username')
+        .in('id', bidderIds);
+
+      if (profilesError) {
+        console.error("Error fetching bidder profiles:", profilesError);
+        throw profilesError;
+      }
+
+      // Create a map for easy profile lookup
+      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+      
+      // Combine bids with their bidder profiles
+      const combinedBids = bidsData.map(bid => ({
+        ...bid,
+        bidder_profile: profilesMap.get(bid.bidder_id) || null,
+      }));
+      
+      setBids(combinedBids as ProjectBidWithProfile[]);
     } catch (error) {
       console.error('Error processing project bids:', error);
       toast({
