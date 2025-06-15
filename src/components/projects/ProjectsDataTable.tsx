@@ -17,6 +17,7 @@ import { useProjectActions } from "@/hooks/useProjectActions";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type SortColumn = "title" | "status" | "budget" | "deadline" | "assigned_to" | "security_level" | "project_type";
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface ProjectsDataTableProps {
   loading: boolean;
@@ -37,6 +38,9 @@ interface ProjectsDataTableProps {
   onSelectAllFiltered?: () => void;
   selectAllActive?: boolean;
   totalFilteredCount?: number;
+  onProjectUpdate?: () => void;
+  userRole?: AppRole | null;
+  userId?: string;
 }
 
 const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
@@ -47,6 +51,9 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
   onSelectAllFiltered,
   selectAllActive,
   totalFilteredCount,
+  onProjectUpdate,
+  userRole,
+  userId,
 }) => {
   const {
     deleteDialogOpen,
@@ -113,6 +120,9 @@ const ProjectsDataTable: React.FC<ProjectsDataTableProps> = ({
                 statusColor={statusColor}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onProjectUpdate={onProjectUpdate}
+                userRole={userRole}
+                userId={userId}
                 isSelected={selectedIds.includes(project.id)}
                 onSelectChange={checked => {
                   setSelectedIds(checked

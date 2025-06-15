@@ -3,16 +3,21 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-import { Loader2 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import ProjectStatusChanger from "./ProjectStatusChanger";
+import ProjectStatusHistory from "./ProjectStatusHistory";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface ProjectRowProps {
   project: Project;
   statusColor: Record<string, string>;
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  onProjectUpdate?: () => void;
+  userRole?: AppRole | null;
+  userId?: string;
   // Bulk selection
   isSelected?: boolean;
   onSelectChange?: (checked: boolean) => void;
@@ -23,6 +28,9 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
   statusColor,
   onEdit,
   onDelete,
+  onProjectUpdate,
+  userRole,
+  userId,
   isSelected = false,
   onSelectChange,
 }) => (
@@ -52,9 +60,21 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
     </td>
     <td className="font-medium text-white">{project.title}</td>
     <td>
-      <Badge className={statusColor[project.status ?? "draft"] ?? "bg-gray-500/20 text-gray-400"}>
-        {project.status}
-      </Badge>
+      <div className="flex items-center gap-2">
+        {userRole && userId ? (
+          <ProjectStatusChanger
+            project={project}
+            userRole={userRole}
+            userId={userId}
+            onStatusChanged={() => onProjectUpdate?.()}
+          />
+        ) : (
+          <Badge className={statusColor[project.status ?? "draft"] ?? "bg-gray-500/20 text-gray-400"}>
+            {project.status}
+          </Badge>
+        )}
+        <ProjectStatusHistory projectId={project.id} />
+      </div>
     </td>
     <td>
       {project.budget_min && project.budget_max

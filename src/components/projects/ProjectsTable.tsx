@@ -10,17 +10,10 @@ import { useProjectFilters } from "@/hooks/useProjectFilters";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useProjectSorting } from "@/hooks/useProjectSorting";
 import { useProjectBulkActions } from "@/hooks/useProjectBulkActions";
+import { useProjectStatuses } from "@/hooks/useProjectStatuses";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
-
-const statusColor: Record<string, string> = {
-  completed: "bg-blue-500/20 text-blue-400",
-  open: "bg-green-500/20 text-green-400",
-  draft: "bg-yellow-500/20 text-yellow-400",
-  cancelled: "bg-red-500/20 text-red-400",
-  review: "bg-cyan-500/20 text-cyan-400",
-  in_progress: "bg-purple-500/20 text-purple-400",
-};
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const statusOptions = [
   { value: "all", label: "All" },
@@ -40,13 +33,20 @@ const typeOptions = [
   { value: "test", label: "Test" },
 ];
 
-const ProjectsTable = () => {
+interface ProjectsTableProps {
+  userRole?: AppRole | null;
+  userId?: string;
+}
+
+const ProjectsTable: React.FC<ProjectsTableProps> = ({ userRole, userId }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [pipelineOpen, setPipelineOpen] = useState(false);
 
   // Custom hooks for functionality
+  const { getStatusColor } = useProjectStatuses();
+  
   const {
     statusFilter,
     typeFilter,
@@ -85,17 +85,17 @@ const ProjectsTable = () => {
   } = useProjectBulkActions(setProjects, selectedIds, handleDeselectAll);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*");
-      if (!error && data) setProjects(data);
-      setLoading(false);
-    };
-
     fetchProjects();
   }, []);
+
+  const fetchProjects = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*");
+    if (!error && data) setProjects(data);
+    setLoading(false);
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -106,6 +106,16 @@ const ProjectsTable = () => {
   useEffect(() => {
     handleDeselectAll();
   }, [projects]);
+
+  // Create dynamic status color mapping using custom statuses
+  const statusColor: Record<string, string> = {
+    completed: "bg-blue-500/20 text-blue-400",
+    open: "bg-green-500/20 text-green-400",
+    draft: "bg-yellow-500/20 text-yellow-400",
+    cancelled: "bg-red-500/20 text-red-400",
+    review: "bg-cyan-500/20 text-cyan-400",
+    in_progress: "bg-purple-500/20 text-purple-400",
+  };
 
   const isAllOnPageSelected = pagedProjects.length > 0 && pagedProjects.every(p => selectedIds.includes(p.id));
   const isIndeterminate = selectedIds.length > 0 && !isAllOnPageSelected;
@@ -147,6 +157,9 @@ const ProjectsTable = () => {
         onSelectAllFiltered={handleSelectAllFiltered}
         selectAllActive={selectAllActive}
         totalFilteredCount={filteredProjects.length}
+        onProjectUpdate={fetchProjects}
+        userRole={userRole}
+        userId={userId}
       />
       <ProjectsPagination
         pageCount={pageCount}

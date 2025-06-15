@@ -864,6 +864,116 @@ export type Database = {
           },
         ]
       }
+      project_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          project_id: string
+          reason: string | null
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          reason?: string | null
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          reason?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_status_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_status_transitions: {
+        Row: {
+          allowed_roles: string[] | null
+          auto_notification: boolean | null
+          created_at: string
+          from_status: string
+          id: string
+          requires_approval: boolean | null
+          to_status: string
+        }
+        Insert: {
+          allowed_roles?: string[] | null
+          auto_notification?: boolean | null
+          created_at?: string
+          from_status: string
+          id?: string
+          requires_approval?: boolean | null
+          to_status: string
+        }
+        Update: {
+          allowed_roles?: string[] | null
+          auto_notification?: boolean | null
+          created_at?: string
+          from_status?: string
+          id?: string
+          requires_approval?: boolean | null
+          to_status?: string
+        }
+        Relationships: []
+      }
+      project_statuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_system_status: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_status?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_status?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           assigned_to: string | null
@@ -1309,6 +1419,15 @@ export type Database = {
       update_hashtag_count: {
         Args: { hashtag_name: string }
         Returns: undefined
+      }
+      validate_project_status_transition: {
+        Args: {
+          p_project_id: string
+          p_from_status: string
+          p_to_status: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
