@@ -9,6 +9,10 @@ import { Send, MessageCircle } from "lucide-react";
 import { useProjectMessages } from "@/hooks/useProjectMessages";
 import { format } from "date-fns";
 
+function generateTempId() {
+  return `temp-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 interface ProjectChatProps {
   projectId: string;
   userId: string;
@@ -20,17 +24,55 @@ const ProjectChat = ({ projectId, userId }: ProjectChatProps) => {
   const { messages, loading, sendMessage } = useProjectMessages(projectId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Local state for optimistic (pending) messages
+  const [pendingMessages, setPendingMessages] = useState<
+    { id: string; content: string; created_at: string; }[]
+  >([]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, pendingMessages]);
+
+  // Remove pending if confirmed arrives (matched by content, sender, and very close created_at)
+  useEffect(() => {
+    if (pendingMessages.length === 0) return;
+    setPendingMessages(prev => {
+      const confirmedContents = new Set(
+        messages
+          .filter((msg) => msg.sender_id === userId)
+          .map((msg) => `${msg.content}|${msg.created_at}`)
+      );
+      return prev.filter(
+        (pending) => {
+          // Match only if same content and timestamp within 5 seconds
+          return !messages.some(
+            (serverMsg) =>
+              serverMsg.sender_id === userId &&
+              serverMsg.content === pending.content &&
+              Math.abs(new Date(serverMsg.created_at).getTime() - new Date(pending.created_at).getTime()) < 5000
+          );
+        }
+      );
+    });
+  }, [messages, userId, pendingMessages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
+    // Optimistically add a pending message
+    const tempId = generateTempId();
+    const tempMsg = {
+      id: tempId,
+      content: newMessage.trim(),
+      created_at: new Date().toISOString(),
+    };
+    setPendingMessages((prev) => [...prev, tempMsg]);
+
+    // Send to server (no change needed)
     await sendMessage(newMessage.trim());
     setNewMessage('');
   };
@@ -80,13 +122,26 @@ const ProjectChat = ({ projectId, userId }: ProjectChatProps) => {
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         {loading ? (
           <div className="text-center text-gray-400">Loading messages...</div>
-        ) : messages.length === 0 ? (
+        ) : messages.length === 0 && pendingMessages.length === 0 ? (
           <div className="text-center text-gray-400">No messages yet. Start the conversation!</div>
         ) : (
           <div className="space-y-3">
-            {messages.map((message) => {
+            {[...messages, ...pendingMessages.map(pm => ({
+              id: pm.id,
+              sender_id: userId,
+              content: pm.content,
+              created_at: pm.created_at,
+              message_type: "text",
+              metadata: {},
+              profiles: undefined,
+              pending: true,
+            }))].sort((a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            ).map((message: any) => {
               const isOwn = message.sender_id === userId;
-              const fullName = `${message.profiles?.first_name || ''} ${message.profiles?.last_name || ''}`.trim();
+              const fullName = message.profiles
+                ? `${message.profiles?.first_name || ''} ${message.profiles?.last_name || ''}`.trim()
+                : 'You';
               const initials = fullName
                 .split(' ')
                 .map(n => n[0])
@@ -96,7 +151,7 @@ const ProjectChat = ({ projectId, userId }: ProjectChatProps) => {
               return (
                 <div
                   key={message.id}
-                  className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}
+                  className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : ''} ${message.pending ? 'opacity-60' : ''}`}
                 >
                   {!isOwn && (
                     <Avatar className="h-6 w-6">
@@ -117,6 +172,9 @@ const ProjectChat = ({ projectId, userId }: ProjectChatProps) => {
                         <Badge variant="outline" className="mt-1 text-xs">
                           {message.message_type.replace('_', ' ')}
                         </Badge>
+                      )}
+                      {message.pending && (
+                        <span className="ml-2 text-xs text-gray-400 animate-pulse">Sending…</span>
                       )}
                     </div>
                     
