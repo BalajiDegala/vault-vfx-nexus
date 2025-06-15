@@ -12,7 +12,7 @@ interface TaskBidWithProfile extends TaskBid {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
 }
 
 export const useTaskBids = (taskId?: string) => {
@@ -30,7 +30,7 @@ export const useTaskBids = (taskId?: string) => {
         .from('task_bids')
         .select(`
           *,
-          profiles:bidder_id (
+          profiles!task_bids_bidder_id_fkey (
             first_name,
             last_name,
             email
@@ -40,7 +40,10 @@ export const useTaskBids = (taskId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBids(data || []);
+      
+      // Type assertion to ensure compatibility
+      const typedData = (data || []) as TaskBidWithProfile[];
+      setBids(typedData);
     } catch (error) {
       console.error('Error fetching task bids:', error);
       toast({

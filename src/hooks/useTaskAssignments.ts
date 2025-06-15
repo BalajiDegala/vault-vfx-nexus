@@ -12,17 +12,17 @@ interface TaskAssignmentWithProfiles extends TaskAssignment {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
   studio_profile?: {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
   task_bids?: {
     amount: number;
     currency: string;
     proposal: string;
-  };
+  } | null;
 }
 
 export const useTaskAssignments = (userId?: string) => {
@@ -39,17 +39,17 @@ export const useTaskAssignments = (userId?: string) => {
         .from('task_assignments')
         .select(`
           *,
-          artist_profile:artist_id (
+          artist_profile:profiles!task_assignments_artist_id_fkey (
             first_name,
             last_name,
             email
           ),
-          studio_profile:studio_id (
+          studio_profile:profiles!task_assignments_studio_id_fkey (
             first_name,
             last_name,
             email
           ),
-          task_bids:bid_id (
+          task_bids:task_bids!task_assignments_bid_id_fkey (
             amount,
             currency,
             proposal
@@ -59,7 +59,10 @@ export const useTaskAssignments = (userId?: string) => {
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      setAssignments(data || []);
+      
+      // Type assertion to ensure compatibility
+      const typedData = (data || []) as TaskAssignmentWithProfiles[];
+      setAssignments(typedData);
     } catch (error) {
       console.error('Error fetching task assignments:', error);
       toast({
