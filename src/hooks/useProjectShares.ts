@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +8,12 @@ type ProjectShare = Database["public"]["Tables"]["project_shares"]["Row"];
 type ProjectShareInsert = Database["public"]["Tables"]["project_shares"]["Insert"];
 
 interface ProjectShareWithProfiles extends ProjectShare {
+  producer_profile?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    username: string;
+  } | null;
   studio_profile?: {
     first_name: string;
     last_name: string;
@@ -34,13 +41,19 @@ export const useProjectShares = (userId?: string) => {
         .from('project_shares')
         .select(`
           *,
-          studio_profile:profiles!studio_id (
+          producer_profile:profiles!project_shares_producer_id_fkey(
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects!project_id (
+          studio_profile:profiles!project_shares_studio_id_fkey (
+            first_name,
+            last_name,
+            email,
+            username
+          ),
+          project:projects!project_shares_project_id_fkey (
             title,
             description,
             status
