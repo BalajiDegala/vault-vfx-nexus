@@ -1314,10 +1314,10 @@ export type Database = {
           sender_id: string
           receiver_id: string
           v3c_amount: number
-          tx_type: string
+          tx_type?: string
           meta?: Json
         }
-        Returns: undefined
+        Returns: Json
       }
       process_v3c_transaction: {
         Args: {
@@ -1325,8 +1325,9 @@ export type Database = {
           p_amount: number
           p_type: string
           p_metadata?: Json
+          p_transaction_id?: string
         }
-        Returns: undefined
+        Returns: Json
       }
       update_hashtag_count: {
         Args: { hashtag_name: string }

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserSearchDropdown from "./UserSearchDropdown";
-import V3CAdminForm from "./V3CAdminForm";
+import V3CAdminFormEnhanced from "./V3CAdminFormEnhanced";
 import { Coins } from "lucide-react";
 
 export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
@@ -11,10 +11,11 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
   const [selectedUser, setSelectedUser] = useState<{
     id: string;
     display: string;
+    currentBalance?: number;
   } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleUserSelect = (profile: {
+  const handleUserSelect = async (profile: {
     id: string;
     username: string | null;
     email: string;
@@ -26,7 +27,26 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
       profile.username ||
       `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
       profile.email;
-    setSelectedUser({ id: profile.id, display });
+    
+    // Fetch current balance for the selected user
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("profiles")
+        .select("v3_coins_balance")
+        .eq("id", profile.id)
+        .single();
+      
+      setSelectedUser({ 
+        id: profile.id, 
+        display,
+        currentBalance: data?.v3_coins_balance || 0
+      });
+    } catch (error) {
+      console.error("Error fetching user balance:", error);
+      setSelectedUser({ id: profile.id, display });
+    }
+    
     setRecipientSearch(display);
     setShowDropdown(false);
   };
@@ -35,8 +55,14 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
     // Force refresh by incrementing key
     setRefreshKey(prev => prev + 1);
     
-    // Also trigger a custom event that other components can listen to
-    window.dispatchEvent(new CustomEvent('v3c-transaction-complete'));
+    // Trigger refresh events for other components
+    window.dispatchEvent(new CustomEvent('v3c-admin-transaction-complete', { 
+      detail: { 
+        userId: selectedUser?.id,
+        adminId: adminUserId,
+        timestamp: Date.now()
+      } 
+    }));
   };
 
   return (
@@ -47,9 +73,9 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
           Admin V3C Management
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div>
-          <label className="block text-gray-300 mb-2">Select User:</label>
+          <label className="block text-gray-300 mb-2 font-medium">Select User:</label>
           <UserSearchDropdown
             search={recipientSearch}
             onChange={v => {
@@ -63,7 +89,8 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
             loadingHint="Searching users..."
           />
         </div>
-        <V3CAdminForm
+        
+        <V3CAdminFormEnhanced
           adminUserId={adminUserId}
           selectedUser={selectedUser}
           onSelectUser={setSelectedUser}
