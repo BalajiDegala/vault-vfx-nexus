@@ -40,19 +40,19 @@ export const useProjectShares = (userId?: string) => {
         .from('project_shares')
         .select(`
           *,
-          producer_profile:profiles!producer_id(
+          producer_profile:profiles!project_shares_producer_id_fkey(
             first_name,
             last_name,
             email,
             username
           ),
-          studio_profile:profiles!studio_id (
+          studio_profile:profiles!project_shares_studio_id_fkey (
             first_name,
             last_name,
             email,
             username
           ),
-          project:projects!project_id (
+          project:projects!project_shares_project_id_fkey (
             title,
             description,
             status
