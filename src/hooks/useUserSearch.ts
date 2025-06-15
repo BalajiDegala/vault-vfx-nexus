@@ -16,7 +16,7 @@ export function useUserSearch(query: string, excludeUserId?: string) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
       setResults([]);
       return;
     }
@@ -25,17 +25,31 @@ export function useUserSearch(query: string, excludeUserId?: string) {
     setLoading(true);
 
     (async () => {
-      const { data, error } = await supabase
+      console.log("Searching for:", query);
+      
+      let queryBuilder = supabase
         .from("profiles")
-        .select("id, username, email, avatar_url, first_name, last_name")
-        .or(
-          `username.ilike.%${query}%,email.ilike.%${query}%`
-        )
-        .neq("id", excludeUserId ?? "");
+        .select("id, username, email, avatar_url, first_name, last_name");
+
+      // Build the search filter - make it more flexible
+      const searchQuery = `%${query.toLowerCase()}%`;
+      queryBuilder = queryBuilder.or(
+        `username.ilike.${searchQuery},email.ilike.${searchQuery},first_name.ilike.${searchQuery},last_name.ilike.${searchQuery}`
+      );
+
+      // Only exclude user if excludeUserId is provided and not empty
+      if (excludeUserId && excludeUserId.trim() !== "") {
+        queryBuilder = queryBuilder.neq("id", excludeUserId);
+      }
+
+      const { data, error } = await queryBuilder.limit(10);
+
+      console.log("Search results:", data, "Error:", error);
 
       if (!isMounted) return;
 
       if (error) {
+        console.error("Search error:", error);
         setResults([]);
       } else {
         setResults(data ?? []);
