@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast'; // Corrected path based on shadcn context
+import { useToast } from '@/hooks/use-toast';
 import { useMessageSubscriptionManager } from './useMessageSubscriptionManager';
 
-export interface DirectMessage { // Added export
+export interface DirectMessage {
   id: string;
   sender_id: string;
   receiver_id: string;
@@ -19,17 +20,17 @@ export interface DirectMessage { // Added export
 export const useDirectMessages = (
   currentUserId: string, 
   recipientId: string,
-  onRecipientTyping: (isTyping: boolean) => void // Callback from component
+  onRecipientTyping: (isTyping: boolean) => void
 ) => {
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [typing, setTyping] = useState(false); // Current user's typing state
+  const [typing, setTyping] = useState(false);
   const { toast } = useToast();
 
   const fetchMessages = useCallback(async () => {
     if (!currentUserId || !recipientId) return;
     
-    console.log(`Fetching messages between ${currentUserId} and ${recipientId}`);
+    console.log(`📥 Fetching messages between ${currentUserId} and ${recipientId}`);
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -54,6 +55,7 @@ export const useDirectMessages = (
           : msg.sender_profile
       }));
       
+      console.log(`📥 Loaded ${transformedMessages.length} messages`);
       setMessages(transformedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -70,6 +72,7 @@ export const useDirectMessages = (
   const sendMessage = async (content: string) => {
     if (!content.trim() || !currentUserId || !recipientId) return false;
 
+    console.log(`📤 Sending message from ${currentUserId} to ${recipientId}`);
     try {
       const { error } = await supabase
         .from('direct_messages')
@@ -80,8 +83,9 @@ export const useDirectMessages = (
         });
 
       if (error) throw error;
-      // New messages will be fetched via subscription, or manually if needed
-      // fetchMessages(); // Optionally, fetch immediately for quicker update
+      
+      console.log('✅ Message sent successfully');
+      // Note: Real-time subscription will handle updating the UI
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -98,28 +102,27 @@ export const useDirectMessages = (
   const { broadcastTyping: broadcastUserTypingActivity } = useMessageSubscriptionManager(
     currentUserId,
     recipientId,
-    fetchMessages, // Callback when a new message is received
-    onRecipientTyping // Callback when recipient's typing status changes
+    fetchMessages, // This will be called when new messages are received
+    onRecipientTyping // This will be called when recipient typing status changes
   );
 
   useEffect(() => {
     if (!currentUserId || !recipientId) {
-      setMessages([]); // Clear messages if IDs are not valid
+      setMessages([]);
       return;
     }
     
-    console.log('useDirectMessages effect: Initial fetch for', currentUserId, recipientId);
+    console.log('🔄 useDirectMessages effect: Initial fetch for', currentUserId, recipientId);
     fetchMessages();
-    // Subscriptions are handled by useMessageSubscriptionManager's internal useEffect
   }, [currentUserId, recipientId, fetchMessages]);
 
   return {
     messages,
     loading,
-    typing, // Current user's typing state
-    setTyping, // Setter for current user's typing state
+    typing,
+    setTyping,
     sendMessage,
-    broadcastTyping: broadcastUserTypingActivity, // Expose the broadcast function from the manager
+    broadcastTyping: broadcastUserTypingActivity,
     refreshMessages: fetchMessages
   };
 };

@@ -36,6 +36,7 @@ const DirectMessaging = ({
     broadcastTyping,
   } = useDirectMessages(currentUserId, recipientId, setOtherUserTyping);
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -55,6 +56,7 @@ const DirectMessaging = ({
     e.preventDefault();
     if (!newMessage.trim()) return;
 
+    console.log('📤 Sending message:', newMessage);
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
@@ -91,6 +93,7 @@ const DirectMessaging = ({
 
   return (
     <Dialog open={open} onOpenChange={(newOpenState) => {
+      console.log('🔄 Dialog state changing to:', newOpenState);
       onOpenChange(newOpenState);
       if (!newOpenState) {
         setOtherUserTyping(false); 
