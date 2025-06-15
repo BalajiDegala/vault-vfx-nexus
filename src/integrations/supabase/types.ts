@@ -47,6 +47,51 @@ export type Database = {
           },
         ]
       }
+      bid_negotiations: {
+        Row: {
+          bid_id: string
+          created_at: string
+          id: string
+          message: string
+          proposed_amount: number | null
+          proposed_timeline_days: number | null
+          sender_id: string
+        }
+        Insert: {
+          bid_id: string
+          created_at?: string
+          id?: string
+          message: string
+          proposed_amount?: number | null
+          proposed_timeline_days?: number | null
+          sender_id: string
+        }
+        Update: {
+          bid_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          proposed_amount?: number | null
+          proposed_timeline_days?: number | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_negotiations_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "task_bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bid_negotiations_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_post_bookmarks: {
         Row: {
           created_at: string
@@ -983,6 +1028,64 @@ export type Database = {
           },
         ]
       }
+      project_shares: {
+        Row: {
+          access_level: string
+          id: string
+          notes: string | null
+          producer_id: string
+          project_id: string
+          responded_at: string | null
+          shared_at: string
+          status: string
+          studio_id: string
+        }
+        Insert: {
+          access_level?: string
+          id?: string
+          notes?: string | null
+          producer_id: string
+          project_id: string
+          responded_at?: string | null
+          shared_at?: string
+          status?: string
+          studio_id: string
+        }
+        Update: {
+          access_level?: string
+          id?: string
+          notes?: string | null
+          producer_id?: string
+          project_id?: string
+          responded_at?: string | null
+          shared_at?: string
+          status?: string
+          studio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_shares_producer_id_fkey"
+            columns: ["producer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_shares_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_shares_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_status_history: {
         Row: {
           changed_by: string | null
@@ -1460,6 +1563,140 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_assignments: {
+        Row: {
+          agreed_amount: number
+          agreed_currency: string
+          agreed_timeline_days: number | null
+          artist_id: string
+          assigned_at: string
+          bid_id: string | null
+          completed_date: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          start_date: string | null
+          status: string
+          studio_id: string
+          task_id: string
+        }
+        Insert: {
+          agreed_amount: number
+          agreed_currency?: string
+          agreed_timeline_days?: number | null
+          artist_id: string
+          assigned_at?: string
+          bid_id?: string | null
+          completed_date?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          studio_id: string
+          task_id: string
+        }
+        Update: {
+          agreed_amount?: number
+          agreed_currency?: string
+          agreed_timeline_days?: number | null
+          artist_id?: string
+          assigned_at?: string
+          bid_id?: string | null
+          completed_date?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          studio_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "task_bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_bids: {
+        Row: {
+          amount: number
+          bidder_id: string
+          created_at: string
+          currency: string
+          id: string
+          proposal: string | null
+          status: string
+          task_id: string
+          timeline_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bidder_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          proposal?: string | null
+          status?: string
+          task_id: string
+          timeline_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bidder_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          proposal?: string | null
+          status?: string
+          task_id?: string
+          timeline_days?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_bids_bidder_id_fkey"
+            columns: ["bidder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_bids_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
