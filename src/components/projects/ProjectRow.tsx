@@ -37,17 +37,19 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const handleProjectNameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/projects/${project.id}`);
+  };
+
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/projects/${project.id}`);
+  };
+
   return (
     <tr
-      className="hover:bg-gray-800/50 transition-colors cursor-pointer"
-      onClick={() => {
-        if ((window as any)._actionClick) {
-          (window as any)._actionClick = false;
-          return;
-        }
-        // handled outside for opening pipeline
-      }}
-      data-project-id={project.id}
+      className="hover:bg-gray-800/50 transition-colors"
     >
       {/* Bulk checkbox */}
       <td className="w-8 text-center p-0">
@@ -62,7 +64,14 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
           />
         ) : null}
       </td>
-      <td className="font-medium text-white">{project.title}</td>
+      <td className="font-medium text-white">
+        <button
+          onClick={handleProjectNameClick}
+          className="text-left hover:text-blue-400 transition-colors underline-offset-2 hover:underline"
+        >
+          {project.title}
+        </button>
+      </td>
       <td>
         <div className="flex items-center gap-2">
           {userRole && userId ? (
@@ -101,11 +110,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
             variant="ghost"
             size="icon"
             aria-label={`View ${project.title}`}
-            onClick={e => {
-              e.stopPropagation();
-              (window as any)._actionClick = true;
-              navigate(`/projects/${project.id}`);
-            }}
+            onClick={handleViewClick}
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -115,7 +120,6 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
             aria-label={`Edit ${project.title}`}
             onClick={e => {
               e.stopPropagation();
-              (window as any)._actionClick = true;
               onEdit(project);
             }}
           >
@@ -127,7 +131,6 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
             aria-label={`Delete ${project.title}`}
             onClick={e => {
               e.stopPropagation();
-              (window as any)._actionClick = true;
               onDelete(project);
             }}
           >

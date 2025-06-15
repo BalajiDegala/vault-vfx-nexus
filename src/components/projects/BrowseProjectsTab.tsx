@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, DollarSign, Calendar, MapPin, Briefcase, Eye } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import BidModal from "./BidModal";
+import { useNavigate } from "react-router-dom";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -18,6 +19,7 @@ interface BrowseProjectsTabProps {
 }
 
 const BrowseProjectsTab = ({ projects, userRole, onUpdate }: BrowseProjectsTabProps) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [showBidModal, setShowBidModal] = useState(false);
@@ -41,6 +43,14 @@ const BrowseProjectsTab = ({ projects, userRole, onUpdate }: BrowseProjectsTabPr
   const handleBidClick = (project: Project) => {
     setSelectedProject(project);
     setShowBidModal(true);
+  };
+
+  const handleViewDetails = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
+
+  const handleProjectTitleClick = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
   };
 
   return (
@@ -103,7 +113,12 @@ const BrowseProjectsTab = ({ projects, userRole, onUpdate }: BrowseProjectsTabPr
             >
               <CardContent className="p-6 space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-2">{project.title}</h3>
+                  <button
+                    onClick={() => handleProjectTitleClick(project.id)}
+                    className="text-lg font-bold text-white mb-2 hover:text-blue-400 transition-colors text-left underline-offset-2 hover:underline"
+                  >
+                    {project.title}
+                  </button>
                   <p className="text-gray-300 text-sm line-clamp-3">
                     {project.description}
                   </p>
@@ -165,6 +180,7 @@ const BrowseProjectsTab = ({ projects, userRole, onUpdate }: BrowseProjectsTabPr
                     variant="outline"
                     size="sm"
                     className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                    onClick={() => handleViewDetails(project.id)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
