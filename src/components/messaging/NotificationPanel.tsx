@@ -44,7 +44,7 @@ const NotificationPanel = ({ isOpen, onClose, currentUserId, unreadCount, onMark
           sender_id,
           content,
           created_at,
-          sender_profile:profiles!sender_id (
+          profiles!direct_messages_sender_id_fkey (
             first_name,
             last_name,
             avatar_url
@@ -55,7 +55,22 @@ const NotificationPanel = ({ isOpen, onClose, currentUserId, unreadCount, onMark
         .limit(20);
 
       if (error) throw error;
-      setNotifications(data || []);
+      
+      const formattedNotifications = (data || [])
+        .filter(message => message.profiles) // Only include messages with valid profile data
+        .map(message => ({
+          id: message.id,
+          sender_id: message.sender_id,
+          content: message.content,
+          created_at: message.created_at,
+          sender_profile: {
+            first_name: message.profiles?.first_name || '',
+            last_name: message.profiles?.last_name || '',
+            avatar_url: message.profiles?.avatar_url || ''
+          }
+        }));
+      
+      setNotifications(formattedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {

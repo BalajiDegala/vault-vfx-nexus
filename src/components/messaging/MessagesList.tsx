@@ -51,14 +51,14 @@ const MessagesList = ({ currentUserId }: MessagesListProps) => {
           receiver_id,
           content,
           created_at,
-          sender_profile:profiles!sender_id (
+          sender_profile:profiles!direct_messages_sender_id_fkey (
             id,
             first_name,
             last_name,
             username,
             avatar_url
           ),
-          receiver_profile:profiles!receiver_id (
+          receiver_profile:profiles!direct_messages_receiver_id_fkey (
             id,
             first_name,
             last_name,

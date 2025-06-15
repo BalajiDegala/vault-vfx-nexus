@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +20,7 @@ export const useCommunityPostsData = () => {
         .from('community_posts')
         .select(`
           *,
-          author_profile:profiles!author_id (
+          profiles!community_posts_author_id_fkey (
             first_name,
             last_name,
             avatar_url
@@ -63,15 +64,22 @@ export const useCommunityPostsData = () => {
       
       console.log('Fetched posts:', postsData);
       
-      const formattedPosts: CommunityPost[] = postsData?.map(post => ({
-        ...post,
-        attachments: post.attachments ? 
-          (Array.isArray(post.attachments) ? post.attachments : JSON.parse(post.attachments as string)) as UploadedFile[] 
-          : [],
-        is_bookmarked: user ? bookmarkedPostIds.has(post.id) : false,
-        is_liked: user ? likedPostIds.has(post.id) : false, // Add is_liked status
-        bookmarks_count: typeof post.bookmarks_count === 'number' ? post.bookmarks_count : 0,
-      })) || [];
+      const formattedPosts: CommunityPost[] = postsData
+        ?.filter(post => post.profiles) // Only include posts with valid profile data
+        ?.map(post => ({
+          ...post,
+          author_profile: {
+            first_name: post.profiles?.first_name || '',
+            last_name: post.profiles?.last_name || '',
+            avatar_url: post.profiles?.avatar_url || ''
+          },
+          attachments: post.attachments ? 
+            (Array.isArray(post.attachments) ? post.attachments : JSON.parse(post.attachments as string)) as UploadedFile[] 
+            : [],
+          is_bookmarked: user ? bookmarkedPostIds.has(post.id) : false,
+          is_liked: user ? likedPostIds.has(post.id) : false, // Add is_liked status
+          bookmarks_count: typeof post.bookmarks_count === 'number' ? post.bookmarks_count : 0,
+        })) || [];
       
       setPosts(formattedPosts);
     } catch (error) {
@@ -94,7 +102,7 @@ export const useCommunityPostsData = () => {
         .from('community_post_comments')
         .select(`
           *,
-          author_profile:profiles!author_id (
+          profiles!community_post_comments_author_id_fkey (
             first_name,
             last_name,
             avatar_url
@@ -109,7 +117,19 @@ export const useCommunityPostsData = () => {
       }
       
       console.log('Fetched comments:', data);
-      return data || [];
+      
+      const formattedComments = (data || [])
+        .filter(comment => comment.profiles) // Only include comments with valid profile data
+        .map(comment => ({
+          ...comment,
+          author_profile: {
+            first_name: comment.profiles?.first_name || '',
+            last_name: comment.profiles?.last_name || '',
+            avatar_url: comment.profiles?.avatar_url || ''
+          }
+        }));
+      
+      return formattedComments;
     } catch (error) {
       console.error('Error fetching comments:', error);
       return [];

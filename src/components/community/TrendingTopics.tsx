@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +55,7 @@ const TrendingTopics = () => {
           likes_count,
           comments_count,
           created_at,
-          author_profile:profiles!author_id (
+          profiles!community_posts_author_id_fkey (
             first_name,
             last_name
           )
@@ -66,7 +65,20 @@ const TrendingTopics = () => {
         .limit(5);
 
       if (postsData) {
-        setTrendingPosts(postsData);
+        const formattedPosts = postsData
+          .filter(post => post.profiles) // Only include posts with valid profile data
+          .map(post => ({
+            id: post.id,
+            content: post.content,
+            likes_count: post.likes_count,
+            comments_count: post.comments_count,
+            created_at: post.created_at,
+            author_profile: {
+              first_name: post.profiles?.first_name || '',
+              last_name: post.profiles?.last_name || ''
+            }
+          }));
+        setTrendingPosts(formattedPosts);
       }
       
     } catch (error) {
