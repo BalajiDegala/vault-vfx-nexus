@@ -26,7 +26,7 @@ export interface StoragePlan {
   min_size_gb: number;
   max_size_gb: number;
   monthly_rate_per_gb: number;
-  features: any[];
+  features: any;
   is_active: boolean;
 }
 
