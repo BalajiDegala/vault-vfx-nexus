@@ -3,7 +3,7 @@ import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageItem from './MessageItem';
-import type { DirectMessage } from "@/hooks/useDirectMessages";
+import type { DirectMessage } from "@/hooks/useSimpleDirectMessages";
 import { getInitials } from '@/utils/messagingUtils';
 
 interface MessageListAreaProps {

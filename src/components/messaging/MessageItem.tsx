@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { DirectMessage } from "@/hooks/useDirectMessages"; // Assuming DirectMessage is exported
+import type { DirectMessage } from "@/hooks/useSimpleDirectMessages";
 import { getInitials, formatMessageTime } from '@/utils/messagingUtils';
 
 interface MessageItemProps {
