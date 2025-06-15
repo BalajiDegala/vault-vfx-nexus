@@ -35,7 +35,7 @@ export const useProjectBids = (projectId?: string) => {
         .from('project_bids')
         .select(`
           *,
-          bidder_profile:profiles!bidder_id(
+          bidder_profile:profiles!project_bids_bidder_id_fkey(
             first_name,
             last_name,
             email,
