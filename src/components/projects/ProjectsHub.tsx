@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import BrowseProjectsTab from "./BrowseProjectsTab";
 import MyWorkTab from "./MyWorkTab";
 import EnhancedProjectsTable from "./EnhancedProjectsTable";
 import DashboardCustomizer from "../dashboard/DashboardCustomizer";
+import ProjectRealtimeWrapper from "./ProjectRealtimeWrapper";
 import { useDashboardCustomization } from "@/hooks/useDashboardCustomization";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
