@@ -1,17 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { 
-  Search, 
-  Filter, 
   Plus, 
   Briefcase, 
   Clock, 
   Users, 
   Star,
-  Calendar,
   DollarSign,
   Loader2
 } from "lucide-react";
@@ -21,7 +18,7 @@ import { Database } from "@/integrations/supabase/types";
 import CreateProjectModal from "./CreateProjectModal";
 import BrowseProjectsTab from "./BrowseProjectsTab";
 import MyWorkTab from "./MyWorkTab";
-import ProjectsTable from "./ProjectsTable";
+import EnhancedProjectsTable from "./EnhancedProjectsTable";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -33,7 +30,6 @@ interface ProjectsHubProps {
 
 const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,10 +146,10 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
   };
 
   const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.title.toLowerCase().includes("") ||
+    project.description?.toLowerCase().includes("") ||
     project.skills_required?.some(skill => 
-      skill.toLowerCase().includes(searchQuery.toLowerCase())
+      skill.toLowerCase().includes("")
     )
   );
 
@@ -172,8 +168,8 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Projects Table (global overview) */}
-      <ProjectsTable />
+      {/* Enhanced Projects Table (global overview) */}
+      <EnhancedProjectsTable userRole={userRole} userId={userId} />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -181,7 +177,7 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
             VFX Projects Hub
           </h1>
-          <p className="text-gray-400">Discover and manage VFX projects</p>
+          <p className="text-gray-400">Discover and manage VFX projects with advanced filtering</p>
         </div>
         {canCreateProject && (
           <Button 
@@ -192,23 +188,6 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
             Create Project
           </Button>
         )}
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search projects, skills, or keywords..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-800/50 border-gray-600 text-white"
-          />
-        </div>
-        <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
-        </Button>
       </div>
 
       {/* Stats Cards */}
