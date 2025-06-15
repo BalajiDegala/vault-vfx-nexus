@@ -16,7 +16,7 @@ export function V3CoinsSendForm({ userId }: { userId: string }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [amount, setAmount] = useState("");
   const [sending, setSending] = useState(false);
-  const { results, loading } = useUserSearch(recipientSearch, userId);
+  const { searchResults, loading, searchUsers } = useUserSearch("", userId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +38,13 @@ export function V3CoinsSendForm({ userId }: { userId: string }) {
   };
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setRecipientSearch(e.target.value);
+    const value = e.target.value;
+    setRecipientSearch(value);
     setShowDropdown(true);
     setSelectedUserId(null);
+    if (value.length > 0) {
+      searchUsers(value);
+    }
   }
 
   function handleSelectUser(profile: { 
@@ -94,11 +98,11 @@ export function V3CoinsSendForm({ userId }: { userId: string }) {
                     Searching...
                   </div>
                 )}
-                {!loading && results.length === 0 && (
+                {!loading && searchResults.length === 0 && (
                   <div className="p-3 text-gray-300 text-sm">No users found.</div>
                 )}
                 {!loading &&
-                  results.map((user) => (
+                  searchResults.map((user) => (
                     <button
                       key={user.id}
                       type="button"

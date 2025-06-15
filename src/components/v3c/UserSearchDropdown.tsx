@@ -36,11 +36,15 @@ function getInitials(profile: UserProfile) {
 const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
   search, onChange, onSelect, showDropdown, setShowDropdown, loadingHint
 }) => {
-  const { results, loading, error } = useUserSearch(search);
+  const { searchResults, loading, error, searchUsers } = useUserSearch();
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    onChange(e.target.value);
+    const value = e.target.value;
+    onChange(value);
     setShowDropdown(true);
+    if (value.length > 0) {
+      searchUsers(value);
+    }
   }
 
   const hasSearched = search.length > 0;
@@ -68,7 +72,7 @@ const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
               Error: {error}. Please try again.
             </div>
           )}
-          {!loading && !error && results.length === 0 && (
+          {!loading && !error && searchResults.length === 0 && (
             <div className="p-3 text-gray-300 text-sm">
               <div className="mb-2">No users found for "{search}"</div>
               <div className="text-xs text-gray-500">
@@ -82,7 +86,7 @@ const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
             </div>
           )}
           {!loading && !error &&
-            results.map((user) => (
+            searchResults.map((user) => (
               <button
                 key={user.id}
                 type="button"

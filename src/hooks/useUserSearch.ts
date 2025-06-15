@@ -11,7 +11,7 @@ export interface UserProfile {
   last_name: string | null;
 }
 
-export function useUserSearch() {
+export function useUserSearch(initialQuery: string = "", excludeUserId?: string) {
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +39,11 @@ export function useUserSearch() {
         `username.ilike.${searchQuery},email.ilike.${searchQuery},first_name.ilike.${searchQuery},last_name.ilike.${searchQuery}`
       );
 
+      // Exclude specific user if provided
+      if (excludeUserId) {
+        queryBuilder = queryBuilder.neq('id', excludeUserId);
+      }
+
       // Filter by user type if specified
       if (userType === 'studio') {
         // Add any studio-specific filtering here if needed
@@ -65,6 +70,13 @@ export function useUserSearch() {
       setLoading(false);
     }
   };
+
+  // Search on mount if initial query provided
+  useEffect(() => {
+    if (initialQuery) {
+      searchUsers(initialQuery);
+    }
+  }, [initialQuery]);
 
   return { searchResults, loading, error, searchUsers };
 }
