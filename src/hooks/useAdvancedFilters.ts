@@ -50,14 +50,17 @@ export const useAdvancedFilters = (projects: Project[]) => {
 
   const loadSavedPresets = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
-        .from("filter_presets")
+        .from("filter_presets" as any)
         .select("*")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSavedPresets(data || []);
+      setSavedPresets((data as SavedFilterPreset[]) || []);
     } catch (error) {
       console.error("Error loading filter presets:", error);
     }
@@ -69,7 +72,7 @@ export const useAdvancedFilters = (projects: Project[]) => {
       if (!user) throw new Error("User not authenticated");
 
       const { error } = await supabase
-        .from("filter_presets")
+        .from("filter_presets" as any)
         .insert({
           name,
           filters,
@@ -105,7 +108,7 @@ export const useAdvancedFilters = (projects: Project[]) => {
   const deleteFilterPreset = async (presetId: string) => {
     try {
       const { error } = await supabase
-        .from("filter_presets")
+        .from("filter_presets" as any)
         .delete()
         .eq("id", presetId);
 
