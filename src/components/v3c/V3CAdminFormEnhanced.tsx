@@ -23,6 +23,22 @@ interface V3CAdminFormEnhancedProps {
   onTransactionComplete?: () => void;
 }
 
+// Type guard to validate V3CTransactionResult
+function isV3CTransactionResult(data: any): data is V3CTransactionResult {
+  return data && typeof data === 'object' && typeof data.success === 'boolean';
+}
+
+// Safe conversion from Json to V3CTransactionResult
+function convertToTransactionResult(data: any): V3CTransactionResult {
+  if (!isV3CTransactionResult(data)) {
+    return {
+      success: false,
+      error: "Invalid response format from database"
+    };
+  }
+  return data;
+}
+
 const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({ 
   adminUserId, 
   selectedUser, 
@@ -102,7 +118,7 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
         return;
       }
 
-      const result = data as V3CTransactionResult;
+      const result = convertToTransactionResult(data);
       setLastResult(result);
 
       if (!result.success) {

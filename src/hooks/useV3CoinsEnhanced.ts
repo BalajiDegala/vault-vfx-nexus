@@ -28,6 +28,22 @@ export interface V3CTransactionResult {
   error_code?: string;
 }
 
+// Type guard to validate V3CTransactionResult
+function isV3CTransactionResult(data: any): data is V3CTransactionResult {
+  return data && typeof data === 'object' && typeof data.success === 'boolean';
+}
+
+// Safe conversion from Json to V3CTransactionResult
+function convertToTransactionResult(data: any): V3CTransactionResult {
+  if (!isV3CTransactionResult(data)) {
+    return {
+      success: false,
+      error: "Invalid response format from database"
+    };
+  }
+  return data;
+}
+
 export function useV3CoinsEnhanced(userId?: string) {
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<V3CTransaction[]>([]);
@@ -220,7 +236,7 @@ export function useV3CoinsEnhanced(userId?: string) {
         return { success: false, error: error.message };
       }
 
-      const result = data as V3CTransactionResult;
+      const result = convertToTransactionResult(data);
       
       if (!result.success) {
         toast({ title: "Transaction failed", description: result.error, variant: "destructive" });
@@ -278,7 +294,12 @@ export function useV3CoinsEnhanced(userId?: string) {
         return { success: false, error: error.message };
       }
 
+      // Handle the donation response which has a different structure
       const result = data as any;
+      
+      if (!result || typeof result.success !== 'boolean') {
+        return { success: false, error: "Invalid response format" };
+      }
       
       if (!result.success) {
         toast({ title: "Transaction failed", description: result.error, variant: "destructive" });
