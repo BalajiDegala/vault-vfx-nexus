@@ -25,12 +25,14 @@ export function useV3Coins(userId?: string) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch balance from profile with timestamp to prevent caching
+  // Fetch balance from profile with cache busting
   const fetchBalance = useCallback(async () => {
     if (!userId) return;
-    console.log("Fetching balance for user:", userId, "at", new Date().toISOString());
+    console.log("=== FETCHING BALANCE ===");
+    console.log("User ID:", userId);
+    console.log("Timestamp:", new Date().toISOString());
     
-    // Add timestamp to prevent caching
+    // Add random query param to bust cache
     const { data, error } = await supabase
       .from("profiles")
       .select("v3_coins_balance")
@@ -44,16 +46,19 @@ export function useV3Coins(userId?: string) {
     }
     
     const newBalance = data?.v3_coins_balance ?? 0;
-    console.log("Fresh balance data:", data, "New balance:", newBalance, "Previous balance:", balance);
+    console.log("Raw database response:", data);
+    console.log("Extracted balance:", newBalance);
+    console.log("Previous balance:", balance);
     
-    // Force update even if the same value to ensure UI refreshes
     setBalance(newBalance);
+    console.log("=== BALANCE FETCH COMPLETE ===");
   }, [userId, toast]);
 
-  // Fetch transaction history with timestamp
+  // Fetch transaction history with cache busting
   const fetchTransactions = useCallback(async () => {
     if (!userId) return;
-    console.log("Fetching transactions for user:", userId, "at", new Date().toISOString());
+    console.log("=== FETCHING TRANSACTIONS ===");
+    console.log("User ID:", userId);
     setLoading(true);
     
     const { data, error } = await (supabase as any)
@@ -72,51 +77,59 @@ export function useV3Coins(userId?: string) {
     console.log("Fresh transactions data:", data);
     setTransactions((data as V3CTransactionRow[]) || []);
     setLoading(false);
+    console.log("=== TRANSACTIONS FETCH COMPLETE ===");
   }, [userId, toast]);
 
   // Force refresh both balance and transactions
   const forceRefresh = useCallback(async () => {
     console.log("=== FORCE REFRESH TRIGGERED ===");
+    console.log("User ID:", userId);
     if (!userId) return;
     
-    // Clear current data first to force UI update
+    // Clear current data first
     setBalance(null);
     setTransactions([]);
     
-    // Wait a bit then fetch fresh data
-    setTimeout(async () => {
-      await Promise.all([fetchBalance(), fetchTransactions()]);
-      console.log("=== FORCE REFRESH COMPLETED ===");
-    }, 100);
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Fetch fresh data
+    await Promise.all([fetchBalance(), fetchTransactions()]);
+    console.log("=== FORCE REFRESH COMPLETED ===");
   }, [userId, fetchBalance, fetchTransactions]);
 
   useEffect(() => {
     if (userId) {
-      console.log("Initial data fetch for user:", userId);
+      console.log("=== INITIAL DATA FETCH ===");
+      console.log("User ID:", userId);
       fetchBalance();
       fetchTransactions();
     }
   }, [fetchBalance, fetchTransactions, userId]);
 
-  // Listen for custom events to refresh data
+  // Listen for refresh events
   useEffect(() => {
-    const handleRefresh = () => {
-      console.log("Custom event refresh triggered");
+    const handleRefresh = (event: Event) => {
+      console.log("=== REFRESH EVENT RECEIVED ===");
+      console.log("Event type:", event.type);
       forceRefresh();
     };
 
     const handleStorageChange = () => {
-      console.log("Storage change detected, refreshing data");
+      console.log("=== STORAGE CHANGE DETECTED ===");
       forceRefresh();
     };
 
+    // Listen to multiple refresh events
     window.addEventListener('v3c-transaction-complete', handleRefresh);
     window.addEventListener('v3c-force-refresh', handleRefresh);
+    window.addEventListener('admin-v3c-update', handleRefresh);
     window.addEventListener('storage', handleStorageChange);
     
     return () => {
       window.removeEventListener('v3c-transaction-complete', handleRefresh);
       window.removeEventListener('v3c-force-refresh', handleRefresh);
+      window.removeEventListener('admin-v3c-update', handleRefresh);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [forceRefresh]);
@@ -137,6 +150,9 @@ export function useV3Coins(userId?: string) {
     if (amount <= 0) return { error: "Amount must be positive." };
     if (!toUserId || toUserId === userId) return { error: "Invalid recipient" };
 
+    console.log("=== SENDING COINS ===");
+    console.log("From:", userId, "To:", toUserId, "Amount:", amount);
+
     const { data, error } = await (supabase as any).rpc("process_v3c_donation", {
       sender_id: userId,
       receiver_id: toUserId,
@@ -146,9 +162,11 @@ export function useV3Coins(userId?: string) {
     });
 
     if (error) {
+      console.error("Send coins error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return { error: error.message };
     } else {
+      console.log("Send coins success:", data);
       toast({ title: "V3C Sent!", description: "Transaction successful." });
       await forceRefresh();
       return { data };
@@ -168,16 +186,23 @@ export function useV3Coins(userId?: string) {
     if (!userId) return { error: "Not authenticated" };
     if (amount <= 0) return { error: "Amount must be positive." };
 
+    console.log("=== ADDING TRANSACTION ===");
+    console.log("User:", userId, "Amount:", amount, "Type:", type);
+
     const { error } = await (supabase as any).rpc("process_v3c_transaction", {
       p_user_id: userId,
       p_amount: amount,
       p_type: type,
       p_metadata: metadata ?? {},
     });
+    
     if (error) {
+      console.error("Add transaction error:", error);
       toast({ title: "Transaction failed", description: error.message, variant: "destructive" });
       return { error: error.message };
     }
+    
+    console.log("Add transaction success");
     toast({ title: "V3C Transaction", description: "Balance updated." });
     await forceRefresh();
     return { ok: true };

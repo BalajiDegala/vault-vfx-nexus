@@ -13,16 +13,21 @@ export function V3CoinsWallet({ userId }: { userId: string }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
-    console.log("Manual refresh button clicked");
+    console.log("=== MANUAL REFRESH CLICKED ===");
+    console.log("User ID:", userId);
     setRefreshing(true);
-    await forceRefresh();
-    setRefreshing(false);
+    try {
+      await forceRefresh();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  // Additional refresh mechanism for admin panel
+  // Listen for admin panel updates
   useEffect(() => {
     const handleAdminRefresh = () => {
-      console.log("Admin panel refresh event received");
+      console.log("=== ADMIN PANEL UPDATE EVENT ===");
+      console.log("User ID:", userId);
       handleRefresh();
     };
 
@@ -30,7 +35,16 @@ export function V3CoinsWallet({ userId }: { userId: string }) {
     return () => {
       window.removeEventListener('admin-v3c-update', handleAdminRefresh);
     };
-  }, []);
+  }, [userId]);
+
+  // Force refresh on mount to ensure fresh data
+  useEffect(() => {
+    console.log("=== WALLET COMPONENT MOUNTED ===");
+    console.log("User ID:", userId);
+    if (userId) {
+      forceRefresh();
+    }
+  }, [userId, forceRefresh]);
 
   return (
     <Card className="bg-gray-900/90 border-blue-700/20 mb-6 w-full max-w-xl">
@@ -41,7 +55,9 @@ export function V3CoinsWallet({ userId }: { userId: string }) {
           <span className="text-gray-400">Current Balance:</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-yellow-300">{balance ?? "--"} V3C</span>
+          <span className="text-2xl font-bold text-yellow-300">
+            {balance !== null ? `${balance} V3C` : "--"}
+          </span>
           <Button
             variant="ghost"
             size="sm"
