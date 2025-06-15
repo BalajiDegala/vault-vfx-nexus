@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// This hook is intentionally fully type-agnostic to avoid TypeScript recursion/depth inference issues.
+// Intentionally keep everything type-agnostic to avoid TS recursion issues.
 export const useProjectTasks = (studioId: any): any => {
   const [projects, setProjects] = useState<any[]>([]);
   const [tasksByProject, setTasksByProject] = useState<Record<string, any[]>>({});
@@ -18,11 +17,14 @@ export const useProjectTasks = (studioId: any): any => {
   const fetchStudioProjectsAndTasks = async (): Promise<any> => {
     setLoading(true);
 
-    // Fetch projects for this studio
-    const { data: projectsData, error } = await supabase
+    // Fetch projects for this studio and immediately cast results as any[]
+    const fetchProjects = await supabase
       .from("projects")
       .select("id, title")
-      .eq("client_id", studioId) as any;
+      .eq("client_id", studioId);
+
+    const projectsData: any[] = (fetchProjects && fetchProjects.data) ? (fetchProjects.data as any[]) : [];
+    const error: any = fetchProjects && fetchProjects.error ? fetchProjects.error : null;
 
     if (error || !projectsData) {
       setProjects([]);
@@ -30,16 +32,17 @@ export const useProjectTasks = (studioId: any): any => {
       setLoading(false);
       return;
     }
-    setProjects(projectsData as any[]);
+    setProjects(projectsData);
 
     const tasksResult: Record<string, any[]> = {};
-    // Type everything inside this as any, too
-    for (const project of projectsData as any[]) {
-      const { data: tasks } = await supabase
+    for (const project of projectsData) {
+      const fetchTasks = await supabase
         .from("tasks")
         .select("id, name, description, task_type, status, priority")
-        .eq("project_id", project.id) as any;
-      tasksResult[project.id] = (tasks ?? []) as any[];
+        .eq("project_id", project.id);
+
+      const tasks: any[] = (fetchTasks && fetchTasks.data) ? (fetchTasks.data as any[]) : [];
+      tasksResult[project.id] = tasks;
     }
     setTasksByProject(tasksResult);
     setLoading(false);
