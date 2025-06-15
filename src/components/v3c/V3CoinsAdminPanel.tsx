@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useV3Coins } from "@/hooks/useV3Coins";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,59 +8,72 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserSearch } from "@/hooks/useUserSearch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Coins, Plus, Minus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
-  const { addTransaction } = useV3Coins(adminUserId);
   const [recipientSearch, setRecipientSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserDisplay, setSelectedUserDisplay] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [amount, setAmount] = useState("");
   const [processing, setProcessing] = useState(false);
+  const { toast } = useToast();
 
   // Don't exclude any users - admin should be able to add coins to anyone including themselves
   const { results, loading } = useUserSearch(recipientSearch);
 
-  const handleAddCoins = async () => {
+  const performTransaction = async (type: "earn" | "spend") => {
     if (!selectedUserId || !amount) return;
     setProcessing(true);
     
-    await addTransaction({
-      amount: Number(amount),
-      type: "earn",
-      metadata: { 
-        admin_added: true, 
-        admin_id: adminUserId,
-        reason: "Admin allocation"
-      },
-    });
-    
-    setProcessing(false);
-    setAmount("");
-    setSelectedUserId(null);
-    setRecipientSearch("");
-    setSelectedUserDisplay("");
+    try {
+      const { error } = await (supabase as any).rpc("process_v3c_transaction", {
+        p_user_id: selectedUserId,
+        p_amount: Number(amount),
+        p_type: type,
+        p_metadata: { 
+          admin_action: true, 
+          admin_id: adminUserId,
+          reason: type === "earn" ? "Admin allocation" : "Admin deduction"
+        },
+      });
+
+      if (error) {
+        toast({ 
+          title: "Transaction failed", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ 
+          title: "V3C Transaction", 
+          description: `Successfully ${type === "earn" ? "added" : "removed"} ${amount} V3C ${type === "earn" ? "to" : "from"} ${selectedUserDisplay}` 
+        });
+        
+        // Reset form
+        setAmount("");
+        setSelectedUserId(null);
+        setRecipientSearch("");
+        setSelectedUserDisplay("");
+      }
+    } catch (error) {
+      console.error("Transaction error:", error);
+      toast({ 
+        title: "Transaction failed", 
+        description: "An unexpected error occurred", 
+        variant: "destructive" 
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleAddCoins = async () => {
+    await performTransaction("earn");
   };
 
   const handleRemoveCoins = async () => {
-    if (!selectedUserId || !amount) return;
-    setProcessing(true);
-    
-    await addTransaction({
-      amount: Number(amount),
-      type: "spend",
-      metadata: { 
-        admin_removed: true, 
-        admin_id: adminUserId,
-        reason: "Admin deduction"
-      },
-    });
-    
-    setProcessing(false);
-    setAmount("");
-    setSelectedUserId(null);
-    setRecipientSearch("");
-    setSelectedUserDisplay("");
+    await performTransaction("spend");
   };
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
