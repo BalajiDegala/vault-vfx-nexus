@@ -1,17 +1,12 @@
-
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Calendar, 
-  Clock, 
   DollarSign, 
   Users, 
   Eye, 
-  MessageSquare,
-  Star,
-  ArrowRight
+  MessageSquare
 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
@@ -45,7 +40,8 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -76,7 +72,14 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
     navigate(`/projects/${project.id}`);
   };
 
-  // Calculate budget display value
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    navigate(`/projects/${project.id}`);
+  };
+
   const getBudgetDisplay = () => {
     if (project.budget_min && project.budget_max) {
       if (project.budget_min === project.budget_max) {
@@ -96,98 +99,76 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
   const budgetDisplay = getBudgetDisplay();
 
   return (
-    <Card className="bg-gray-900/50 border-gray-700 hover:border-gray-600 transition-all duration-200 hover:shadow-lg">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Star className="h-4 w-4 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white line-clamp-1">{project.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className={`${getStatusColor(project.status)} text-xs capitalize`}>
-                  {project.status?.replace('_', ' ')}
-                </Badge>
-              </div>
-            </div>
+    <Card 
+      className="bg-gray-900/50 border-gray-700 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+      onClick={handleCardClick}
+    >
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-xl font-bold text-white line-clamp-1">{project.title}</CardTitle>
+            <CardDescription className="text-gray-400 mt-1 line-clamp-2">
+              {project.description || "No description provided"}
+            </CardDescription>
           </div>
+
+          {showActions && (
+             <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleViewProject}
+                className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View
+              </Button>
+          )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Description */}
-        <p className="text-gray-300 text-sm line-clamp-2 leading-relaxed">
-          {project.description || 'No description provided'}
-        </p>
-
-        {/* Progress */}
+      <CardContent className="text-gray-300 space-y-4">
         {project.deadline && (
           <div>
-            <div className="flex justify-between text-xs mb-2">
-              <span className="text-gray-400">Progress</span>
+            <div className="flex justify-between text-xs mb-1 text-gray-400">
+              <span >Progress</span>
               <span className="text-white">{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-1.5" />
           </div>
         )}
-
-        {/* Project Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            {budgetDisplay ? (
-              <>
-                <DollarSign className="h-4 w-4 text-green-400" />
-                <span className="text-green-400 text-sm font-medium">
-                  {budgetDisplay}
-                </span>
-              </>
-            ) : (
-              <>
-                <DollarSign className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-400 text-sm">Budget TBD</span>
-              </>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-300 text-sm">
-              {formatDate(project.created_at)}
-            </span>
-          </div>
-        </div>
-
-        {/* Skills */}
+        
         {project.skills_required && project.skills_required.length > 0 && (
           <div>
-            <p className="text-gray-400 text-xs mb-2">Skills Required</p>
-            <div className="flex flex-wrap gap-1">
-              {project.skills_required.slice(0, 3).map((skill, index) => (
-                <Badge key={index} variant="outline" className="text-xs text-blue-400 border-blue-500/30">
+            <p className="text-sm text-gray-400 mb-2">Skills Required:</p>
+            <div className="flex flex-wrap gap-2">
+              {project.skills_required.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">
                   {skill}
                 </Badge>
               ))}
-              {project.skills_required.length > 3 && (
-                <Badge variant="outline" className="text-xs text-gray-400 border-gray-500/30">
-                  +{project.skills_required.length - 3}
-                </Badge>
-              )}
             </div>
           </div>
         )}
 
-        {/* Deadline */}
-        {project.deadline && (
-          <div className="flex items-center gap-2 text-orange-400">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm">Due {formatDate(project.deadline)}</span>
+        {budgetDisplay && (
+          <div className="flex items-center gap-2 text-green-400">
+            <DollarSign className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {budgetDisplay}
+            </span>
           </div>
         )}
 
-        {/* Actions */}
-        {showActions && (
-          <div className="pt-2 border-t border-gray-700">
+        <div className="mt-3">
+          <Badge className={`${getStatusColor(project.status || '')} capitalize`}>
+            {project.status?.replace('_', ' ')}
+          </Badge>
+        </div>
+      </CardContent>
+
+      <CardFooter className="text-sm text-gray-500">
+        <div className="flex flex-col w-full gap-3">
+          {showActions && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 text-gray-400">
@@ -203,18 +184,18 @@ const DynamicProjectCard = ({ project, showActions = true }: DynamicProjectCardP
                   <span className="text-xs">1 member</span>
                 </div>
               </div>
-              
-              <Button 
-                size="sm" 
-                onClick={handleViewProject}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                View <ArrowRight className="h-3 w-3 ml-1" />
-              </Button>
             </div>
+          )}
+          <div className="flex justify-between w-full">
+            <span>Created {formatDate(project.created_at)}</span>
+            {project.deadline && (
+              <span className="text-orange-400">
+                Due {formatDate(project.deadline)}
+              </span>
+            )}
           </div>
-        )}
-      </CardContent>
+        </div>
+      </CardFooter>
     </Card>
   );
 };

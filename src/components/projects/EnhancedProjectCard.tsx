@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,7 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, Trash2, Eye } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Eye, Users, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import UpdateProjectModal from "./UpdateProjectModal";
+import { Progress } from "@/components/ui/progress";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -98,6 +98,21 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }).format(amount);
   };
 
+  const calculateProgress = () => {
+    if (!project.deadline) return 0;
+    
+    const start = new Date(project.created_at);
+    const end = new Date(project.deadline);
+    const now = new Date();
+    
+    const totalDuration = end.getTime() - start.getTime();
+    const elapsed = now.getTime() - start.getTime();
+    
+    return Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+  };
+
+  const progress = calculateProgress();
+
   return (
     <Card 
       className="bg-gray-900/50 border-gray-700 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
@@ -167,6 +182,17 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
       </CardHeader>
 
       <CardContent className="text-gray-300">
+        {/* Progress bar */}
+        {project.deadline && (
+          <div className="mb-4">
+            <div className="flex justify-between text-xs mb-1 text-gray-400">
+              <span>Progress</span>
+              <span className="text-white">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-1.5" />
+          </div>
+        )}
+
         {/* Skills Required */}
         {project.skills_required && project.skills_required.length > 0 ? (
           <div className="space-y-2 mb-4">
@@ -218,13 +244,31 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
       </CardContent>
 
       <CardFooter className="text-sm text-gray-500">
-        <div className="flex justify-between w-full">
-          <span>Created {new Date(project.created_at).toLocaleDateString()}</span>
-          {project.deadline && (
-            <span className="text-orange-400">
-              Due {new Date(project.deadline).toLocaleDateString()}
-            </span>
-          )}
+        <div className="flex flex-col w-full gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-gray-400">
+                  <Eye className="h-4 w-4" />
+                  <span className="text-xs">0 views</span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-400">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-xs">0 comments</span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-400">
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs">1 member</span>
+                </div>
+            </div>
+          </div>
+          <div className="flex justify-between w-full">
+            <span>Created {new Date(project.created_at).toLocaleDateString()}</span>
+            {project.deadline && (
+              <span className="text-orange-400">
+                Due {new Date(project.deadline).toLocaleDateString()}
+              </span>
+            )}
+          </div>
         </div>
       </CardFooter>
 
