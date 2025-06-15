@@ -53,6 +53,7 @@ export function useV3CoinsEnhanced(userId?: string) {
   
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<number>(0);
+  const subscriptionInitialized = useRef(false);
 
   // Fetch balance with optimistic locking
   const fetchBalance = useCallback(async (silent = false) => {
@@ -136,14 +137,16 @@ export function useV3CoinsEnhanced(userId?: string) {
     }
   }, [userId, toast]);
 
-  // Setup real-time subscriptions
+  // Setup real-time subscriptions - Fixed to prevent multiple subscriptions
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || subscriptionInitialized.current) return;
 
     console.log("=== SETTING UP REALTIME SUBSCRIPTIONS ===");
+    subscriptionInitialized.current = true;
     
-    // Create realtime channel
-    const channel = supabase.channel(`v3c_user_${userId}`)
+    // Create realtime channel with unique name
+    const channelName = `v3c_user_${userId}_${Date.now()}`;
+    const channel = supabase.channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -186,7 +189,10 @@ export function useV3CoinsEnhanced(userId?: string) {
       console.log("=== CLEANING UP REALTIME SUBSCRIPTIONS ===");
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
+      subscriptionInitialized.current = false;
+      setRealtimeConnected(false);
     };
   }, [userId, fetchTransactions]);
 
