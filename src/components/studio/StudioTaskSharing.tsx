@@ -11,7 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Share2, UserCheck, UserX, Clock, Eye, Edit, MessageSquare } from 'lucide-react';
 import { useArtistLookup } from "@/hooks/useArtistLookup";
-import { useProjectTasks } from "@/hooks/useProjectTasks";
+// REMOVE the following line, which was causing duplicate import error:
+// import { useProjectTasks } from "@/hooks/useProjectTasks";
 
 interface StudioTaskSharingProps {
   userId: string;
