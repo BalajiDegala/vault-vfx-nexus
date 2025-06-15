@@ -46,10 +46,15 @@ const ProjectDetailsSection: React.FC<ProjectDetailsSectionProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="studio">Studio</SelectItem>
-              <SelectItem value="personal">Personal</SelectItem>
-              <SelectItem value="freelance">Freelance</SelectItem>
-              <SelectItem value="test">Test</SelectItem>
+              <SelectItem value="vfx">VFX</SelectItem>
+              <SelectItem value="animation">Animation</SelectItem>
+              <SelectItem value="compositing">Compositing</SelectItem>
+              <SelectItem value="modeling">Modeling</SelectItem>
+              <SelectItem value="rigging">Rigging</SelectItem>
+              <SelectItem value="lighting">Lighting</SelectItem>
+              <SelectItem value="texturing">Texturing</SelectItem>
+              <SelectItem value="simulation">Simulation</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>

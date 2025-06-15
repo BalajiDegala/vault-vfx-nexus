@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -36,7 +35,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     budget_max: "",
     currency: "V3C",
     deadline: "",
-    project_type: "studio",
+    project_type: "vfx",
     security_level: "Standard",
     skills_required: [] as string[],
     milestones: [] as Array<{ name: string; percentage: number; description: string }>,
@@ -54,7 +53,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       budget_max: template.defaultBudgetRange.max.toString(),
       currency: "V3C",
       deadline: new Date(Date.now() + template.defaultTimeline * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      project_type: "studio",
+      project_type: "vfx",
       security_level: template.securityLevel,
       skills_required: [...template.requiredSkills],
       milestones: [...template.defaultMilestones],
@@ -126,7 +125,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         budget_max: "",
         currency: "V3C",
         deadline: "",
-        project_type: "studio",
+        project_type: "vfx",
         security_level: "Standard",
         skills_required: [],
         milestones: [],
