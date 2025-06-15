@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -29,7 +28,7 @@ import {
   Shield,
   Tag
 } from "lucide-react";
-import { AdvancedFilters, SavedFilterPreset } from "@/hooks/useAdvancedFilters";
+import { AdvancedFilters, SavedFilterPreset } from "@/types/advancedFilters";
 
 interface AdvancedFiltersModalProps {
   filters: AdvancedFilters;
