@@ -36,12 +36,14 @@ function getInitials(profile: UserProfile) {
 const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
   search, onChange, onSelect, showDropdown, setShowDropdown, loadingHint
 }) => {
-  const { results, loading } = useUserSearch(search);
+  const { results, loading, error } = useUserSearch(search);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     onChange(e.target.value);
     setShowDropdown(true);
   }
+
+  const hasSearched = search.length > 0;
 
   return (
     <div className="relative">
@@ -49,26 +51,42 @@ const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
         placeholder="Search by name, username, or email..."
         value={search}
         onChange={handleInputChange}
-        className="bg-gray-800/40 text-white w-full rounded px-3 py-2 border border-blue-900"
+        className="bg-gray-800/40 text-white w-full rounded px-3 py-2 border border-blue-900 focus:border-blue-700 focus:outline-none"
         autoComplete="off"
-        onFocus={() => search.length > 0 && setShowDropdown(true)}
+        onFocus={() => hasSearched && setShowDropdown(true)}
       />
-      {showDropdown && search.length > 0 && (
+      {showDropdown && hasSearched && (
         <div className="absolute z-30 mt-1 w-full bg-gray-800 border border-blue-700 rounded-md shadow-lg max-h-60 overflow-auto">
           {loading && (
-            <div className="p-3 text-gray-400 text-sm">{loadingHint || "Searching users..."}</div>
-          )}
-          {!loading && results.length === 0 && (
-            <div className="p-3 text-gray-300 text-sm">
-              No users found. Try a different search term.
+            <div className="p-3 text-gray-400 text-sm flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+              {loadingHint || "Searching users..."}
             </div>
           )}
-          {!loading &&
+          {error && (
+            <div className="p-3 text-red-400 text-sm">
+              Error: {error}. Please try again.
+            </div>
+          )}
+          {!loading && !error && results.length === 0 && (
+            <div className="p-3 text-gray-300 text-sm">
+              <div className="mb-2">No users found for "{search}"</div>
+              <div className="text-xs text-gray-500">
+                Try searching by:
+                <ul className="mt-1 list-disc list-inside">
+                  <li>Username (e.g., "john")</li>
+                  <li>First or last name</li>
+                  <li>Email address</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          {!loading && !error &&
             results.map((user) => (
               <button
                 key={user.id}
                 type="button"
-                className="flex items-center w-full px-3 py-3 text-left hover:bg-blue-900/70 focus:outline-none transition border-b border-gray-700 last:border-b-0"
+                className="flex items-center w-full px-3 py-3 text-left hover:bg-blue-900/70 focus:outline-none focus:bg-blue-900/70 transition border-b border-gray-700 last:border-b-0"
                 onClick={() => {onSelect(user); setShowDropdown(false);}}
               >
                 <Avatar className="h-8 w-8 mr-3">
