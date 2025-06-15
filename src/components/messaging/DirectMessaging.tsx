@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useDirectMessages } from "@/hooks/useDirectMessages";
+import { useSimpleDirectMessages } from "@/hooks/useSimpleDirectMessages";
 import DirectMessagingHeader from './DirectMessagingHeader';
 import MessageListArea from './MessageListArea';
 import MessageInputForm from './MessageInputForm';
@@ -32,9 +32,10 @@ const DirectMessaging = ({
   const {
     messages,
     loading,
+    isRealtimeConnected,
     sendMessage,
     broadcastTyping,
-  } = useDirectMessages(currentUserId, recipientId, setOtherUserTyping);
+  } = useSimpleDirectMessages(currentUserId, recipientId, setOtherUserTyping);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -60,7 +61,7 @@ const DirectMessaging = ({
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
-      if (broadcastTyping) broadcastTyping(false); 
+      broadcastTyping(false); 
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -70,8 +71,6 @@ const DirectMessaging = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewMessage(value);
-
-    if (!broadcastTyping) return;
 
     if (value.trim()) {
       broadcastTyping(true);
@@ -97,7 +96,7 @@ const DirectMessaging = ({
       onOpenChange(newOpenState);
       if (!newOpenState) {
         setOtherUserTyping(false); 
-        if (broadcastTyping) broadcastTyping(false);
+        broadcastTyping(false);
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
@@ -109,6 +108,17 @@ const DirectMessaging = ({
           recipientAvatar={recipientAvatar}
           otherUserTyping={otherUserTyping}
         />
+        
+        {/* Connection status indicator */}
+        {!isRealtimeConnected && (
+          <div className="px-4 py-2 bg-yellow-600/20 border-b border-gray-700">
+            <div className="text-xs text-yellow-400 flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              Using backup sync (messages may be delayed)
+            </div>
+          </div>
+        )}
+        
         <MessageListArea
           messages={messages}
           loading={loading}
