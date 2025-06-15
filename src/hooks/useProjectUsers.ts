@@ -1,12 +1,17 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type UserForAssignment = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+  email: string;
+};
 
 export const useProjectUsers = () => {
-  const [users, setUsers] = useState<Profile[]>([]);
+  const [users, setUsers] = useState<UserForAssignment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +35,7 @@ export const useProjectUsers = () => {
     fetchUsers();
   }, []);
 
-  const getUserDisplayName = (user: Profile) => {
+  const getUserDisplayName = (user: UserForAssignment) => {
     if (user.first_name && user.last_name) {
       return `${user.first_name} ${user.last_name}`;
     }
