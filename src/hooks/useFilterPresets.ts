@@ -39,7 +39,7 @@ export const useFilterPresets = () => {
         .from("filter_presets")
         .insert({
           name,
-          filters,
+          filters: filters as any, // Cast to satisfy Supabase Json type
           user_id: user.id,
         });
 
