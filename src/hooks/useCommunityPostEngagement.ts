@@ -134,7 +134,7 @@ export const useCommunityPostEngagement = (refreshPosts: () => Promise<void>) =>
         title: "Success",
         description: "Comment added successfully!",
       });
-      await refreshPosts();
+      // Removed refreshPosts() call to prevent conflicts with local comment loading
       return true;
     } catch (error) {
       console.error('useCommunityPostEngagement: Catch block error adding comment:', error);

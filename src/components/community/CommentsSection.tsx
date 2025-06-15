@@ -48,11 +48,19 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       setError(null);
       console.log('CommentsSection: Loading comments for post:', postId);
       const fetchedComments = await fetchComments(postId);
-      setComments(fetchedComments);
-      console.log('CommentsSection: Comments loaded successfully:', fetchedComments.length);
+      
+      // Defensive programming: ensure we have valid comments array
+      if (Array.isArray(fetchedComments)) {
+        setComments(fetchedComments);
+        console.log('CommentsSection: Comments loaded successfully:', fetchedComments.length);
+      } else {
+        console.warn('CommentsSection: Invalid comments data received:', fetchedComments);
+        setComments([]);
+      }
     } catch (error) {
       console.error('CommentsSection: Error loading comments:', error);
       setError('Failed to load comments');
+      setComments([]); // Reset to empty array on error
     } finally {
       setCommentsLoading(false);
     }
@@ -82,6 +90,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       
       if (success) {
         setNewComment('');
+        // Reload comments immediately after successful submission
         await loadComments();
         console.log('CommentsSection: Comment added successfully, comments reloaded');
       } else {
@@ -100,6 +109,10 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     if (postId) {
       console.log('CommentsSection: postId changed, loading comments:', postId);
       loadComments();
+    } else {
+      // Reset state if no postId
+      setComments([]);
+      setCommentsLoading(false);
     }
   }, [postId]);
 
