@@ -50,6 +50,7 @@ const V3CAdminForm: React.FC<V3CAdminFormProps> = ({
     setProcessing(true);
 
     try {
+      console.log(`=== ADMIN TRANSACTION START ===`);
       console.log(`Admin ${adminUserId} performing ${type} transaction of ${amountNum} V3C for user ${selectedUser.id}`);
       
       const { error } = await (supabase as any).rpc("process_v3c_transaction", {
@@ -72,18 +73,27 @@ const V3CAdminForm: React.FC<V3CAdminFormProps> = ({
           variant: "destructive"
         });
       } else {
-        console.log("Transaction successful");
+        console.log("=== ADMIN TRANSACTION SUCCESS ===");
         toast({
           title: "V3C Transaction",
           description: `Successfully ${type === "earn" ? "added" : "removed"} ${amount} V3C ${type === "earn" ? "to" : "from"} ${selectedUser.display}`
         });
         
-        // Call callback to refresh data
+        // Multiple refresh mechanisms to ensure UI updates
         if (onTransactionComplete) {
           onTransactionComplete();
         }
         
+        // Broadcast multiple events to ensure all components refresh
+        window.dispatchEvent(new CustomEvent('v3c-transaction-complete'));
+        window.dispatchEvent(new CustomEvent('v3c-force-refresh'));
+        window.dispatchEvent(new CustomEvent('admin-v3c-update'));
+        
+        // Force storage event to trigger cross-tab updates if needed
+        localStorage.setItem('v3c-last-update', Date.now().toString());
+        
         resetForm();
+        console.log("=== ADMIN TRANSACTION COMPLETE ===");
       }
     } catch (err) {
       console.error("Unexpected error:", err);

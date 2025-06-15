@@ -8,17 +8,29 @@ import { Loader2, Coins, RefreshCw } from "lucide-react";
 
 // Receives userId (required)
 export function V3CoinsWallet({ userId }: { userId: string }) {
-  const { balance, transactions, loading, fetchTransactions, fetchBalance } = useV3Coins(userId);
+  const { balance, transactions, loading, forceRefresh } = useV3Coins(userId);
   const [showTx, setShowTx] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
-
   const handleRefresh = async () => {
+    console.log("Manual refresh button clicked");
     setRefreshing(true);
-    await Promise.all([fetchBalance(), fetchTransactions()]);
+    await forceRefresh();
     setRefreshing(false);
   };
+
+  // Additional refresh mechanism for admin panel
+  useEffect(() => {
+    const handleAdminRefresh = () => {
+      console.log("Admin panel refresh event received");
+      handleRefresh();
+    };
+
+    window.addEventListener('admin-v3c-update', handleAdminRefresh);
+    return () => {
+      window.removeEventListener('admin-v3c-update', handleAdminRefresh);
+    };
+  }, []);
 
   return (
     <Card className="bg-gray-900/90 border-blue-700/20 mb-6 w-full max-w-xl">
@@ -36,6 +48,7 @@ export function V3CoinsWallet({ userId }: { userId: string }) {
             onClick={handleRefresh}
             disabled={refreshing}
             className="h-8 w-8 p-0"
+            title="Force refresh balance"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
