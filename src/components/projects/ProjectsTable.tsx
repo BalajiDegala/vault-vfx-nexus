@@ -80,6 +80,7 @@ const ProjectsTable = () => {
   const {
     bulkActionLoading,
     handleBulkStatusChange,
+    handleBulkAssignment,
     handleBulkDelete
   } = useProjectBulkActions(setProjects, selectedIds, handleDeselectAll);
 
@@ -123,6 +124,7 @@ const ProjectsTable = () => {
           onDelete={handleBulkDelete}
           onDeselectAll={handleDeselectAll}
           onBulkStatusChange={handleBulkStatusChange}
+          onBulkAssignment={handleBulkAssignment}
           disabled={bulkActionLoading}
         />
       )}

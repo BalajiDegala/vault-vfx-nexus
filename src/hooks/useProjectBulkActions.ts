@@ -48,6 +48,39 @@ export const useProjectBulkActions = (
     }
   };
 
+  const handleBulkAssignment = async (assignedTo: string | null) => {
+    if (selectedIds.length === 0) return;
+    
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ assigned_to: assignedTo })
+        .in("id", selectedIds);
+        
+      if (!error) {
+        setProjects((prev) =>
+          prev.map((p) =>
+            selectedIds.includes(p.id) ? { ...p, assigned_to: assignedTo } : p
+          )
+        );
+        onDeselectAll();
+        toast({
+          title: "Assignment Updated",
+          description: `Successfully ${assignedTo ? 'assigned' : 'unassigned'} ${selectedIds.length} projects.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update project assignments.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     
@@ -76,6 +109,7 @@ export const useProjectBulkActions = (
   return {
     bulkActionLoading,
     handleBulkStatusChange,
+    handleBulkAssignment,
     handleBulkDelete
   };
 };
