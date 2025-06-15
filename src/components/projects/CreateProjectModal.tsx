@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X, FileTemplate } from "lucide-react";
+import { Plus, X, FileText } from "lucide-react";
 import { ProjectTemplate } from "@/types/projectTemplates";
 import ProjectTemplateModal from "./ProjectTemplateModal";
 
@@ -111,7 +111,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         project_type: formData.project_type,
         security_level: formData.security_level,
         skills_required: formData.skills_required.length > 0 ? formData.skills_required : null,
-        status: "draft",
+        status: "draft" as const,
         milestones: formData.milestones.length > 0 ? formData.milestones : null,
       };
 
@@ -168,7 +168,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 onClick={() => setShowTemplateModal(true)}
                 className="flex items-center gap-2"
               >
-                <FileTemplate className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 Use Template
               </Button>
             </div>

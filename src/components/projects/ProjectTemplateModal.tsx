@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Clock, DollarSign, Shield, Users, FileTemplate } from "lucide-react";
+import { Clock, DollarSign, Shield, Users, FileText } from "lucide-react";
 import { ProjectTemplate, DEFAULT_TEMPLATES } from "@/types/projectTemplates";
 
 interface ProjectTemplateModalProps {
@@ -51,7 +51,7 @@ const ProjectTemplateModal: React.FC<ProjectTemplateModalProps> = ({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileTemplate className="h-5 w-5" />
+            <FileText className="h-5 w-5" />
             Choose Project Template
           </DialogTitle>
         </DialogHeader>
