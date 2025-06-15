@@ -32,12 +32,19 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Authorized admin email
+  const ADMIN_EMAIL = "balajidaws@gmail.com";
+
   useEffect(() => {
     const roleFromUrl = searchParams.get("role") as AppRole;
-    if (roleFromUrl && ["artist", "studio", "producer"].includes(roleFromUrl)) {
+    if (roleFromUrl && ["artist", "studio", "producer", "admin"].includes(roleFromUrl)) {
       setSelectedRole(roleFromUrl);
     }
   }, [searchParams]);
+
+  const isAdminSignupAllowed = () => {
+    return formData.email === ADMIN_EMAIL;
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +58,7 @@ const Signup = () => {
       return;
     }
 
-    if (selectedRole === "admin") {
+    if (selectedRole === "admin" && !isAdminSignupAllowed()) {
       toast({
         title: "Signup Not Allowed",
         description: "You cannot sign up as an Admin. Please select another role.",
@@ -149,7 +156,9 @@ const Signup = () => {
 
       toast({
         title: "Welcome to V3!",
-        description: "Account created successfully! You can now log in.",
+        description: selectedRole === "admin" 
+          ? "Admin account created successfully! You now have full admin access." 
+          : "Account created successfully! You can now log in.",
       });
 
       // Navigate to login
@@ -186,9 +195,14 @@ const Signup = () => {
               selectedRole={selectedRole} 
               onRoleSelect={setSelectedRole} 
             />
-            {selectedRole === "admin" && (
+            {selectedRole === "admin" && !isAdminSignupAllowed() && (
               <div className="bg-red-800/50 border border-red-600 rounded px-4 py-2 text-red-200 text-sm">
                 Signup as <b>Admin</b> is not allowed. Please select another role.
+              </div>
+            )}
+            {selectedRole === "admin" && isAdminSignupAllowed() && (
+              <div className="bg-green-800/50 border border-green-600 rounded px-4 py-2 text-green-200 text-sm">
+                <b>Admin signup authorized</b> for this email address. You will have full admin access after signup.
               </div>
             )}
             <SignupForm
