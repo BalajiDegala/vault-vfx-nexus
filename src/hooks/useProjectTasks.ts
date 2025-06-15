@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Fetches studio projects and tasks and disables all type inference by using any everywhere.
  * This avoids TypeScript "excessively deep and possibly infinite" instantiation.
  */
-function useProjectTasks(studioId: any): any {
+export default function useProjectTasks(studioId: any): any {
   // All state is forced to any to stop TS recursion
   const [projects, setProjects] = useState<any>([]);
   const [tasksByProject, setTasksByProject] = useState<any>({});
@@ -55,12 +55,11 @@ function useProjectTasks(studioId: any): any {
   };
 
   // All returned values explicitly typed as any to avoid TS recursion.
-  return {
+  const result: any = {
     projects: projects as any,
     tasksByProject: tasksByProject as any,
     loading: loading as any,
     refetch: fetchStudioProjectsAndTasks as any,
-  } as any;
+  };
+  return result as any;
 }
-
-export { useProjectTasks };
