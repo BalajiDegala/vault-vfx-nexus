@@ -58,4 +58,3 @@ const StudioDashboard = ({ user }: StudioDashboardProps) => {
 };
 
 export default StudioDashboard;
-

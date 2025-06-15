@@ -5,6 +5,7 @@ import DashboardNavbar from "./DashboardNavbar";
 import ArtistTasksView from "@/components/artist/ArtistTasksView";
 import V3CoinsWallet from "@/components/v3c/V3CoinsWallet";
 import V3CoinsSendForm from "@/components/v3c/V3CoinsSendForm";
+import DynamicDashboard from "./DynamicDashboard";
 
 interface FreelancerDashboardProps {
   user: User;
@@ -29,6 +30,9 @@ const FreelancerDashboard = ({ user }: FreelancerDashboardProps) => {
           <p className="theme-text-muted">Unleash your creativity and collaborate on amazing VFX projects.</p>
         </div>
 
+        {/* Dynamic Dashboard Content */}
+        <DynamicDashboard user={user} userRole="artist" />
+
         <ArtistTasksView userId={user.id} />
       </div>
     </div>
@@ -36,4 +40,3 @@ const FreelancerDashboard = ({ user }: FreelancerDashboardProps) => {
 };
 
 export default FreelancerDashboard;
-
