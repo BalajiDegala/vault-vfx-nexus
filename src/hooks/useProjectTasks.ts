@@ -1,9 +1,11 @@
 
+// Simple, type-agnostic version to avoid TS depth errors
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Using any[] and Record<string, any[]> to avoid deep typing that causes TS errors
+// We're intentionally not using Supabase-generated types here to avoid recursive types
 export const useProjectTasks = (studioId: string) => {
+  // Use `any[]` for both projects and tasks to avoid type depth issues
   const [projects, setProjects] = useState<any[]>([]);
   const [tasksByProject, setTasksByProject] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
@@ -14,29 +16,31 @@ export const useProjectTasks = (studioId: string) => {
     // eslint-disable-next-line
   }, [studioId]);
 
+  // Explicitly type all returned objects as `any`
   const fetchStudioProjectsAndTasks = async () => {
     setLoading(true);
-    // Get all projects where client_id = studioId
+    // Fetch projects for this studio
     const { data: projectsData, error } = await supabase
       .from("projects")
       .select("id, title")
       .eq("client_id", studioId);
+
     if (error || !projectsData) {
       setProjects([]);
       setTasksByProject({});
       setLoading(false);
       return;
     }
-    setProjects(projectsData);
+    setProjects(projectsData as any[]);
 
-    // Gather tasks for each project ID
+    // For each project, fetch tasks (again, type as any)
     const tasksResult: Record<string, any[]> = {};
-    for (const project of projectsData) {
+    for (const project of projectsData as any[]) {
       const { data: tasks } = await supabase
         .from("tasks")
         .select("id, name, description, task_type, status, priority")
         .eq("project_id", project.id);
-      tasksResult[project.id] = tasks || [];
+      tasksResult[project.id] = (tasks ?? []) as any[];
     }
     setTasksByProject(tasksResult);
     setLoading(false);
@@ -44,3 +48,4 @@ export const useProjectTasks = (studioId: string) => {
 
   return { projects, tasksByProject, loading, refetch: fetchStudioProjectsAndTasks };
 };
+
