@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Intentionally keep everything type-agnostic to avoid TS recursion issues.
+// Completely type-agnostic to avoid recursion/deep inference
 export const useProjectTasks = (studioId: any): any => {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [tasksByProject, setTasksByProject] = useState<Record<string, any[]>>({});
-  const [loading, setLoading] = useState<boolean>(false);
+  // State fully typed as any
+  const [projects, setProjects] = useState<any>([]);
+  const [tasksByProject, setTasksByProject] = useState<any>({});
+  const [loading, setLoading] = useState<any>(false);
 
   useEffect(() => {
     if (!studioId) return;
@@ -13,17 +15,16 @@ export const useProjectTasks = (studioId: any): any => {
     // eslint-disable-next-line
   }, [studioId]);
 
-  // All objects/arrays/functions/data are typed as 'any' to avoid TS recursion
+  // All function args/results/state are typed as any
   const fetchStudioProjectsAndTasks = async (): Promise<any> => {
     setLoading(true);
 
-    // Fetch projects for this studio and immediately cast results as any[]
-    const fetchProjects = await supabase
+    // Get projects for this studio, cast all results to any
+    const fetchProjects: any = await supabase
       .from("projects")
       .select("id, title")
       .eq("client_id", studioId);
-
-    const projectsData: any[] = (fetchProjects && fetchProjects.data) ? (fetchProjects.data as any[]) : [];
+    const projectsData: any = fetchProjects && fetchProjects.data ? fetchProjects.data : [];
     const error: any = fetchProjects && fetchProjects.error ? fetchProjects.error : null;
 
     if (error || !projectsData) {
@@ -34,21 +35,20 @@ export const useProjectTasks = (studioId: any): any => {
     }
     setProjects(projectsData);
 
-    const tasksResult: Record<string, any[]> = {};
-    for (const project of projectsData) {
-      const fetchTasks = await supabase
+    const tasksResult: any = {};
+    for (const project of projectsData as any[]) {
+      const fetchTasks: any = await supabase
         .from("tasks")
         .select("id, name, description, task_type, status, priority")
         .eq("project_id", project.id);
-
-      const tasks: any[] = (fetchTasks && fetchTasks.data) ? (fetchTasks.data as any[]) : [];
+      const tasks: any = fetchTasks && fetchTasks.data ? fetchTasks.data : [];
       tasksResult[project.id] = tasks;
     }
     setTasksByProject(tasksResult);
     setLoading(false);
-    return undefined;
+    return undefined as any;
   };
 
-  // Explicitly type return as any!
+  // Return is forced to any
   return { projects, tasksByProject, loading, refetch: fetchStudioProjectsAndTasks } as any;
 };
