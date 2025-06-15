@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 // CHANGED: Use default import for useProjectTasks to fix import error
 import useProjectTasks from "@/hooks/useProjectTasks";
@@ -11,11 +12,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Share2, UserCheck, UserX, Clock, Eye, Edit, MessageSquare } from 'lucide-react';
 import { useArtistLookup } from "@/hooks/useArtistLookup";
+import UserSearchDropdown from '@/components/v3c/UserSearchDropdown';
 // REMOVE the following line, which was causing duplicate import error:
 // import { useProjectTasks } from "@/hooks/useProjectTasks";
 
 interface StudioTaskSharingProps {
   userId: string;
+}
+
+// Redefine here since it's not exported from a central place
+interface UserProfile {
+  id: string;
+  username: string | null;
+  email: string;
+  avatar_url: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 const StudioTaskSharing = ({ userId }: StudioTaskSharingProps) => {
@@ -25,36 +37,55 @@ const StudioTaskSharing = ({ userId }: StudioTaskSharingProps) => {
   const { projects, tasksByProject, loading: loadingProjects } = useProjectTasks(userId);
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTask, setSelectedTask] = useState<string>("");
-  const [artistEmail, setArtistEmail] = useState("");
+
+  // Artist selection state
+  const [artistSearch, setArtistSearch] = useState("");
+  const [selectedArtist, setSelectedArtist] = useState<UserProfile | null>(null);
+  const [showArtistDropdown, setShowArtistDropdown] = useState(true);
+  const [artistIdForShare, setArtistIdForShare] = useState<string | null>(null);
+  const { lookupArtistId, loading: artistLookupLoading, error: artistError } = useArtistLookup();
+  const [shareError, setShareError] = useState<string | null>(null);
+
   const [accessLevel, setAccessLevel] = useState<'view' | 'edit' | 'comment'>('view');
   const [notes, setNotes] = useState("");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-
-  const { artistId, error: artistError, loading: artistLookupLoading, lookupArtistId } = useArtistLookup();
-  const [shareError, setShareError] = useState<string | null>(null);
 
   // Reset task selection if project changes
   useEffect(() => {
     setSelectedTask('');
   }, [selectedProject]);
 
+  const handleSelectArtist = async (user: UserProfile) => {
+    setSelectedArtist(user);
+    setArtistSearch(`${user.first_name || ''} ${user.last_name || ''} (${user.email})`);
+    setShowArtistDropdown(false);
+    setShareError(null); // Clear previous error
+
+    // Verify if the selected user is an artist
+    const aid = await lookupArtistId(user.email);
+    if (!aid) {
+      setShareError(`User '${user.email}' is not registered as an artist.`);
+      setArtistIdForShare(null);
+    } else {
+      setArtistIdForShare(aid);
+    }
+  };
+
   const handleShareTask = async () => {
     setShareError(null);
-    if (!selectedProject || !selectedTask || !artistEmail) {
-      setShareError("Choose a project, task and artist email.");
+    if (!selectedProject || !selectedTask || !artistIdForShare) {
+      setShareError("Please choose a project, a task, and a valid artist.");
       return;
     }
-    // Lookup artistId
-    const aid = await lookupArtistId(artistEmail.trim());
-    if (!aid) {
-      setShareError("Artist with this email does not exist or is not an artist.");
-      return;
-    }
-    // Share!
-    await shareTaskWithArtist(selectedTask, aid, accessLevel, notes);
+    
+    await shareTaskWithArtist(selectedTask, artistIdForShare, accessLevel, notes);
+    
+    // Reset form
     setSelectedTask('');
     setSelectedProject('');
-    setArtistEmail('');
+    setArtistSearch('');
+    setSelectedArtist(null);
+    setArtistIdForShare(null);
     setAccessLevel('view');
     setNotes('');
     setShareDialogOpen(false);
@@ -138,16 +169,23 @@ const StudioTaskSharing = ({ userId }: StudioTaskSharingProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Artist Email */}
+              {/* Artist Search Dropdown */}
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">Artist Email</label>
-                <Input
-                  value={artistEmail}
-                  onChange={(e) => setArtistEmail(e.target.value)}
-                  placeholder="artist@example.com"
-                  className="bg-gray-800 border-gray-600 text-white"
+                <label className="text-sm font-medium text-gray-300 mb-2 block">Artist</label>
+                <UserSearchDropdown
+                  search={artistSearch}
+                  onChange={(value) => {
+                    setArtistSearch(value);
+                    if (!showArtistDropdown) setShowArtistDropdown(true);
+                    setArtistIdForShare(null);
+                    setSelectedArtist(null);
+                  }}
+                  onSelect={handleSelectArtist}
+                  showDropdown={showArtistDropdown}
+                  setShowDropdown={setShowArtistDropdown}
+                  loadingHint="Searching for artists..."
                 />
-                {artistLookupLoading && <div className="text-blue-400 text-xs mt-1">Looking up artist...</div>}
+                {artistLookupLoading && <div className="text-blue-400 text-xs mt-1">Verifying artist role...</div>}
                 {artistError && <div className="text-red-400 text-xs mt-1">{artistError}</div>}
               </div>
               {/* Access Level, Notes ... */}
@@ -180,7 +218,7 @@ const StudioTaskSharing = ({ userId }: StudioTaskSharingProps) => {
                 <Button 
                   onClick={handleShareTask} 
                   className="bg-blue-600 hover:bg-blue-700 flex-1"
-                  disabled={artistLookupLoading}
+                  disabled={artistLookupLoading || !artistIdForShare}
                 >
                   {sharingLoading ? "Sharing..." : "Share Task"}
                 </Button>
