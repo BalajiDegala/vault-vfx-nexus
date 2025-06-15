@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
@@ -9,7 +8,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectHeader from "@/components/projects/ProjectHeader";
 import ProjectOverview from "@/components/projects/ProjectOverview";
 import ProjectHierarchy from "@/components/projects/ProjectHierarchy";
-import ProjectDiscussion from "@/components/projects/ProjectDiscussion";
+import TeamDiscussion from "@/components/projects/TeamDiscussion";
 import ProjectFiles from "@/components/projects/ProjectFiles";
 import BidModal from "@/components/projects/BidModal";
 import PresenceIndicator from "@/components/collaboration/PresenceIndicator";
@@ -232,7 +231,7 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="discussion">
-            <ProjectDiscussion projectId={project.id} />
+            <TeamDiscussion projectId={project.id} userId={user.id} />
           </TabsContent>
 
           <TabsContent value="files">
