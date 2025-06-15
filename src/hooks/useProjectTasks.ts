@@ -1,62 +1,88 @@
 
-// @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
-/**
- * Fetches studio projects and tasks and disables all type inference by using any everywhere.
- * This avoids TypeScript "excessively deep and possibly infinite" instantiation.
- */
-export default function useProjectTasks(studioId: any): any {
-  const [projects, setProjects] = useState<any>([]);
-  const [tasksByProject, setTasksByProject] = useState<any>({});
-  const [loading, setLoading] = useState<any>(false);
+type Project = Pick<Database["public"]["Tables"]["projects"]["Row"], "id" | "title">;
+type Task = Database["public"]["Tables"]["tasks"]["Row"];
 
-  useEffect(() => {
-    if (!studioId) return;
-    fetchStudioProjectsAndTasks();
-    // eslint-disable-next-line
+interface UseProjectTasksResult {
+  projects: Project[];
+  tasksByProject: Record<string, Task[]>;
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
+
+export default function useProjectTasks(studioId: string | undefined): UseProjectTasksResult {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasksByProject, setTasksByProject] = useState<Record<string, Task[]>>({});
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchStudioProjectsAndTasks = useCallback(async (): Promise<void> => {
+    if (!studioId) {
+      setProjects([]);
+      setTasksByProject({});
+      return;
+    }
+    setLoading(true);
+
+    const { data: projectsWithHierarchy, error } = await supabase
+      .from('projects')
+      .select(`
+        id, 
+        title,
+        sequences:sequences (
+          id,
+          shots:shots (
+            id,
+            tasks:tasks!inner(
+              id, name, description, task_type, status, priority, shot_id
+            )
+          )
+        )
+      `)
+      .eq('client_id', studioId);
+
+    if (error) {
+      console.error("Error fetching projects and tasks:", error);
+      setProjects([]);
+      setTasksByProject({});
+      setLoading(false);
+      return;
+    }
+
+    if (!projectsWithHierarchy) {
+      setProjects([]);
+      setTasksByProject({});
+      setLoading(false);
+      return;
+    }
+
+    const processedProjects: Project[] = projectsWithHierarchy.map(p => ({ id: p.id, title: p.title || '' }));
+    const processedTasksByProject: Record<string, Task[]> = {};
+
+    for (const project of projectsWithHierarchy) {
+      // The "any" type is used here because Supabase's nested select types can be complex.
+      // This is a controlled use to process the fetched hierarchy.
+      const allTasks: Task[] = project.sequences.flatMap((seq: any) => 
+        (seq.shots || []).flatMap((shot: any) => shot.tasks || [])
+      );
+      processedTasksByProject[project.id] = allTasks;
+    }
+    
+    setProjects(processedProjects);
+    setTasksByProject(processedTasksByProject);
+    setLoading(false);
   }, [studioId]);
 
-  const fetchStudioProjectsAndTasks = async (): Promise<any> => {
-    setLoading(true as any);
+  useEffect(() => {
+    fetchStudioProjectsAndTasks();
+  }, [fetchStudioProjectsAndTasks]);
 
-    const fetchProjects: any = await supabase
-      .from("projects")
-      .select("id, title")
-      .eq("client_id", studioId);
-
-    const projectsData: any = fetchProjects && fetchProjects.data ? fetchProjects.data : [];
-    const error: any = fetchProjects && fetchProjects.error ? fetchProjects.error : null;
-
-    if (error || !projectsData) {
-      setProjects([] as any);
-      setTasksByProject({} as any);
-      setLoading(false as any);
-      return undefined as any;
-    }
-    setProjects(projectsData as any);
-
-    const tasksResult: any = {};
-    for (let i = 0; i < (projectsData as any).length; i++) {
-      const project: any = (projectsData as any)[i];
-      const fetchTasks: any = await supabase
-        .from("tasks")
-        .select("id, name, description, task_type, status, priority")
-        .eq("project_id", (project as any).id);
-      const tasks: any = fetchTasks && fetchTasks.data ? fetchTasks.data : [];
-      tasksResult[(project as any).id as any] = tasks as any;
-    }
-    setTasksByProject(tasksResult as any);
-    setLoading(false as any);
-    return undefined as any;
+  return {
+    projects,
+    tasksByProject,
+    loading,
+    refetch: fetchStudioProjectsAndTasks,
   };
-
-  const result: any = {
-    projects: projects as any,
-    tasksByProject: tasksByProject as any,
-    loading: loading as any,
-    refetch: fetchStudioProjectsAndTasks as any,
-  };
-  return result as any;
 }
