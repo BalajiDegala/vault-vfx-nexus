@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSharedTasks } from '@/hooks/useSharedTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,33 +8,54 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Share2, UserCheck, UserX, Clock, Eye, Edit, MessageSquare } from 'lucide-react';
+import { useArtistLookup } from "@/hooks/useArtistLookup";
+import { useProjectTasks } from "@/hooks/useProjectTasks";
 
 interface StudioTaskSharingProps {
   userId: string;
-  projectTasks?: any[];
 }
 
-const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps) => {
-  const { sharedTasks, shareTaskWithArtist, approveTaskAccess, loading } = useSharedTasks('studio', userId);
-  const [selectedTask, setSelectedTask] = useState<string>('');
-  const [artistEmail, setArtistEmail] = useState('');
+const StudioTaskSharing = ({ userId }: StudioTaskSharingProps) => {
+  const { sharedTasks, shareTaskWithArtist, approveTaskAccess, loading: sharingLoading } = useSharedTasks('studio', userId);
+
+  // Project & Task selection state
+  const { projects, tasksByProject, loading: loadingProjects } = useProjectTasks(userId);
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedTask, setSelectedTask] = useState<string>("");
+  const [artistEmail, setArtistEmail] = useState("");
   const [accessLevel, setAccessLevel] = useState<'view' | 'edit' | 'comment'>('view');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
-  const handleShareTask = async () => {
-    if (!selectedTask || !artistEmail) return;
+  const { artistId, error: artistError, loading: artistLookupLoading, lookupArtistId } = useArtistLookup();
+  const [shareError, setShareError] = useState<string | null>(null);
 
-    // In a real app, you'd look up the artist by email first
-    // For now, we'll assume you have the artist ID
-    // This would typically be done with a separate lookup
-    await shareTaskWithArtist(selectedTask, artistEmail, accessLevel, notes);
-    
+  // Reset task selection if project changes
+  useEffect(() => {
     setSelectedTask('');
+  }, [selectedProject]);
+
+  const handleShareTask = async () => {
+    setShareError(null);
+    if (!selectedProject || !selectedTask || !artistEmail) {
+      setShareError("Choose a project, task and artist email.");
+      return;
+    }
+    // Lookup artistId
+    const aid = await lookupArtistId(artistEmail.trim());
+    if (!aid) {
+      setShareError("Artist with this email does not exist or is not an artist.");
+      return;
+    }
+    // Share!
+    await shareTaskWithArtist(selectedTask, aid, accessLevel, notes);
+    setSelectedTask('');
+    setSelectedProject('');
     setArtistEmail('');
     setAccessLevel('view');
     setNotes('');
     setShareDialogOpen(false);
+    setShareError(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -81,22 +101,41 @@ const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps
               <DialogTitle className="text-white">Share Task with Artist</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Project Selector */}
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">Select Task</label>
-                <Select value={selectedTask} onValueChange={setSelectedTask}>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject} disabled={loadingProjects}>
                   <SelectTrigger className="bg-gray-800 border-gray-600">
-                    <SelectValue placeholder="Choose a task to share" />
+                    <SelectValue placeholder="Choose a project" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
-                    {projectTasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id} className="text-white">
-                        {task.name} ({task.task_type})
-                      </SelectItem>
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-white">{p.title}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
+              {/* Task Selector */}
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">Select Task</label>
+                <Select value={selectedTask} onValueChange={setSelectedTask} disabled={!selectedProject || loadingProjects}>
+                  <SelectTrigger className="bg-gray-800 border-gray-600">
+                    <SelectValue placeholder={selectedProject ? "Choose a task to share" : "Select project first"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    {(selectedProject && tasksByProject[selectedProject]?.length > 0) ? (
+                      tasksByProject[selectedProject].map((task) => (
+                        <SelectItem key={task.id} value={task.id} className="text-white">
+                          {task.name} ({task.task_type})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="text-gray-400 px-2 py-1">No tasks found.</div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Artist Email */}
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">Artist Email</label>
                 <Input
@@ -105,11 +144,13 @@ const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps
                   placeholder="artist@example.com"
                   className="bg-gray-800 border-gray-600 text-white"
                 />
+                {artistLookupLoading && <div className="text-blue-400 text-xs mt-1">Looking up artist...</div>}
+                {artistError && <div className="text-red-400 text-xs mt-1">{artistError}</div>}
               </div>
-
+              {/* Access Level, Notes ... */}
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">Access Level</label>
-                <Select value={accessLevel} onValueChange={(value: 'view' | 'edit' | 'comment') => setAccessLevel(value)}>
+                <Select value={accessLevel} onValueChange={(value: any) => setAccessLevel(value)}>
                   <SelectTrigger className="bg-gray-800 border-gray-600">
                     <SelectValue />
                   </SelectTrigger>
@@ -120,7 +161,6 @@ const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">Notes for Artist</label>
                 <Textarea
@@ -131,10 +171,15 @@ const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps
                   rows={3}
                 />
               </div>
-
+              {/* Error */}
+              {shareError && <div className="text-red-500 text-sm">{shareError}</div>}
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleShareTask} className="bg-blue-600 hover:bg-blue-700 flex-1">
-                  Share Task
+                <Button 
+                  onClick={handleShareTask} 
+                  className="bg-blue-600 hover:bg-blue-700 flex-1"
+                  disabled={artistLookupLoading}
+                >
+                  {sharingLoading ? "Sharing..." : "Share Task"}
                 </Button>
                 <Button variant="outline" onClick={() => setShareDialogOpen(false)} className="border-gray-600">
                   Cancel
@@ -149,7 +194,7 @@ const StudioTaskSharing = ({ userId, projectTasks = [] }: StudioTaskSharingProps
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Shared Tasks</h3>
         
-        {loading ? (
+        {sharingLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
           </div>
