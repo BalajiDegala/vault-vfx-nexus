@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Monitor, Cpu, HardDrive, Zap, MapPin } from 'lucide-react';
+import { Cpu, Monitor, HardDrive, Zap, MapPin } from 'lucide-react';
 import type { VMInstance } from '@/hooks/useVMInstances';
+import DCVConnectionStatus from './DCVConnectionStatus';
 
 interface VMInstanceCardProps {
   vm: VMInstance;
@@ -86,26 +87,24 @@ const VMInstanceCard: React.FC<VMInstanceCardProps> = ({ vm, onTerminate, onConn
           </div>
         )}
 
-        <div className="flex gap-2">
-          {vm.status === 'running' && vm.dcv_connection_url && (
-            <Button 
-              onClick={() => onConnect(vm.dcv_connection_url!)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Connect
-            </Button>
-          )}
-          {vm.status !== 'terminated' && (
-            <Button 
-              onClick={() => onTerminate(vm.id)}
-              variant="destructive"
-              className="flex-1"
-            >
-              Terminate
-            </Button>
-          )}
-        </div>
+        {/* DCV Connection Status */}
+        <DCVConnectionStatus
+          vmId={vm.id}
+          vmStatus={vm.status}
+          dcvUrl={vm.dcv_connection_url}
+          onConnect={() => onConnect(vm.dcv_connection_url!)}
+        />
+
+        {/* Terminate Button */}
+        {vm.status !== 'terminated' && (
+          <Button 
+            onClick={() => onTerminate(vm.id)}
+            variant="destructive"
+            className="w-full"
+          >
+            Terminate VM
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
