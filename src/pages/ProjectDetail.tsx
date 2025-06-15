@@ -16,7 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProjectPresence } from "@/hooks/useProjectPresence";
-import { Loader2, Users, MessageSquare, FolderOpen, Files, DollarSign } from "lucide-react";
+import { Loader2, Users, MessageSquare, FolderOpen, Files, DollarSign, Share2 } from "lucide-react";
+import ProjectSharesManagement from "@/components/projects/ProjectSharesManagement";
+import ProjectBiddingModal from "@/components/projects/ProjectBiddingModal";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -30,6 +32,7 @@ const ProjectDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showBidModal, setShowBidModal] = useState(false);
+  const [showProjectBidModal, setShowProjectBidModal] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
 
@@ -120,19 +123,16 @@ const ProjectDetail = () => {
     }
   }, [id, authChecked, navigate, toast]);
 
-  // Check authentication on mount
   useEffect(() => {
     checkUser();
   }, [checkUser]);
 
-  // Fetch project when auth is ready and ID is available
   useEffect(() => {
     if (authChecked && user && id) {
       fetchProject();
     }
   }, [authChecked, user, id, fetchProject]);
 
-  // Update presence when tab changes (only after user is loaded)
   useEffect(() => {
     if (user && id) {
       updatePresence(activeTab);
@@ -158,6 +158,7 @@ const ProjectDetail = () => {
   }
 
   const canBid = userRole === "artist" || userRole === "studio";
+  const canBidOnProject = userRole === "studio" && project.status === "open";
   const isOwner = project.client_id === user.id;
   const isAssigned = project.assigned_to === user.id;
 
@@ -180,7 +181,17 @@ const ProjectDetail = () => {
                   className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
-                  Place Bid
+                  Place Task Bid
+                </Button>
+              )}
+
+              {!isOwner && canBidOnProject && (
+                <Button 
+                  onClick={() => setShowProjectBidModal(true)}
+                  className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Bid on Project
                 </Button>
               )}
               
@@ -216,6 +227,10 @@ const ProjectDetail = () => {
               <Files className="h-4 w-4 mr-2" />
               Files
             </TabsTrigger>
+            <TabsTrigger value="sharing" className="data-[state=active]:bg-blue-600">
+              <Share2 className="h-4 w-4 mr-2" />
+              Project Sharing
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -237,17 +252,36 @@ const ProjectDetail = () => {
           <TabsContent value="files">
             <ProjectFiles projectId={project.id} userRole={userRole} />
           </TabsContent>
+
+          <TabsContent value="sharing">
+            <ProjectSharesManagement 
+              project={project} 
+              userRole={userRole || "artist"} 
+              userId={user.id} 
+            />
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Bid Modal */}
+      {/* Task Bid Modal */}
       <BidModal 
         isOpen={showBidModal}
         onClose={() => setShowBidModal(false)}
         projectId={project.id}
         onSuccess={() => {
           setShowBidModal(false);
-          toast({ title: "Bid submitted successfully!" });
+          toast({ title: "Task bid submitted successfully!" });
+        }}
+      />
+
+      {/* Project Bid Modal */}
+      <ProjectBiddingModal 
+        isOpen={showProjectBidModal}
+        onClose={() => setShowProjectBidModal(false)}
+        project={project}
+        onBidSubmitted={() => {
+          setShowProjectBidModal(false);
+          toast({ title: "Project bid submitted successfully!" });
         }}
       />
     </div>
