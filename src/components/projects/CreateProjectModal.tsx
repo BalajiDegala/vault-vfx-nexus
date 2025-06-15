@@ -1,133 +1,144 @@
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-const createProjectSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  budget_min: z.number().optional(),
-  budget_max: z.number().optional(),
-  deadline: z.string().optional(),
-  security_level: z.string().optional(),
-});
-
-type CreateProjectForm = z.infer<typeof createProjectSchema>;
+import { useToast } from "@/hooks/use-toast";
+import { Plus, X, FileTemplate } from "lucide-react";
+import { ProjectTemplate } from "@/types/projectTemplates";
+import ProjectTemplateModal from "./ProjectTemplateModal";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
-const CreateProjectModal = ({ isOpen, onClose, onSuccess }: CreateProjectModalProps) => {
+const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    budget_min: "",
+    budget_max: "",
+    currency: "V3C",
+    deadline: "",
+    project_type: "studio",
+    security_level: "Standard",
+    skills_required: [] as string[],
+    milestones: [] as Array<{ name: string; percentage: number; description: string }>,
+  });
+  const [skillInput, setSkillInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [skills, setSkills] = useState<string[]>([]);
-  const [currentSkill, setCurrentSkill] = useState("");
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<CreateProjectForm>({
-    resolver: zodResolver(createProjectSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      budget_min: undefined,
-      budget_max: undefined,
-      deadline: "",
-      security_level: "Standard",
-    },
-  });
+  const handleSelectTemplate = (template: ProjectTemplate) => {
+    setFormData({
+      title: template.name,
+      description: template.description,
+      budget_min: template.defaultBudgetRange.min.toString(),
+      budget_max: template.defaultBudgetRange.max.toString(),
+      currency: "V3C",
+      deadline: new Date(Date.now() + template.defaultTimeline * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      project_type: "studio",
+      security_level: template.securityLevel,
+      skills_required: [...template.requiredSkills],
+      milestones: [...template.defaultMilestones],
+    });
+  };
 
-  const addSkill = () => {
-    if (currentSkill.trim() && !skills.includes(currentSkill.trim())) {
-      setSkills(prev => [...prev, currentSkill.trim()]);
-      setCurrentSkill("");
+  const addSkill = (skill: string) => {
+    if (skill && !formData.skills_required.includes(skill)) {
+      setFormData({
+        ...formData,
+        skills_required: [...formData.skills_required, skill],
+      });
     }
+    setSkillInput("");
   };
 
   const removeSkill = (skillToRemove: string) => {
-    setSkills(prev => prev.filter(skill => skill !== skillToRemove));
+    setFormData({
+      ...formData,
+      skills_required: formData.skills_required.filter(skill => skill !== skillToRemove),
+    });
   };
 
-  const onSubmit = async (data: CreateProjectForm) => {
-    console.log("Starting project creation with data:", data);
-    setLoading(true);
-    
-    try {
-      // Check authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Session check:", session ? "Session found" : "No session");
-      
-      if (!session?.user) {
-        console.error("No authenticated user found");
-        throw new Error("You must be logged in to create a project");
-      }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Project title is required",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      console.log("Creating project for user:", session.user.id);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       const projectData = {
-        title: data.title,
-        description: data.description || null,
-        budget_min: data.budget_min || null,
-        budget_max: data.budget_max || null,
-        deadline: data.deadline || null,
-        security_level: data.security_level || "Standard",
-        skills_required: skills.length > 0 ? skills : null,
-        client_id: session.user.id,
-        status: "open" as const,
-        currency: "V3C",
+        title: formData.title,
+        description: formData.description || null,
+        client_id: user.id,
+        budget_min: formData.budget_min ? parseFloat(formData.budget_min) : null,
+        budget_max: formData.budget_max ? parseFloat(formData.budget_max) : null,
+        currency: formData.currency,
+        deadline: formData.deadline || null,
+        project_type: formData.project_type,
+        security_level: formData.security_level,
+        skills_required: formData.skills_required.length > 0 ? formData.skills_required : null,
+        status: "draft",
+        milestones: formData.milestones.length > 0 ? formData.milestones : null,
       };
 
-      console.log("Project data to insert:", projectData);
+      const { error } = await supabase.from("projects").insert(projectData);
 
-      const { data: insertedProject, error } = await supabase
-        .from("projects")
-        .insert([projectData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Database error:", error);
-        throw error;
-      }
-
-      console.log("Project created successfully:", insertedProject);
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Project created successfully",
+        description: "Project created successfully!",
       });
 
       // Reset form
-      form.reset();
-      setSkills([]);
-      setCurrentSkill("");
-      
-      onSuccess?.();
-      onClose();
+      setFormData({
+        title: "",
+        description: "",
+        budget_min: "",
+        budget_max: "",
+        currency: "V3C",
+        deadline: "",
+        project_type: "studio",
+        security_level: "Standard",
+        skills_required: [],
+        milestones: [],
+      });
+
+      onSuccess();
     } catch (error: any) {
       console.error("Error creating project:", error);
       toast({
@@ -140,203 +151,211 @@ const CreateProjectModal = ({ isOpen, onClose, onSuccess }: CreateProjectModalPr
     }
   };
 
-  const handleClose = () => {
-    form.reset();
-    setSkills([]);
-    setCurrentSkill("");
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-600 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Create New VFX Project
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Create a new project and start collaborating with VFX artists
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Project Title *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Enter project title..."
-                      className="bg-gray-800/50 border-gray-600 text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Describe your project in detail..."
-                      rows={4}
-                      className="bg-gray-800/50 border-gray-600 text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="budget_min"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Min Budget (V3C)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="5000"
-                        className="bg-gray-800/50 border-gray-600 text-white"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="budget_max"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Max Budget (V3C)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="15000"
-                        className="bg-gray-800/50 border-gray-600 text-white"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Template Selection */}
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTemplateModal(true)}
+                className="flex items-center gap-2"
+              >
+                <FileTemplate className="h-4 w-4" />
+                Use Template
+              </Button>
             </div>
 
-            <FormField
-              control={form.control}
-              name="deadline"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Deadline</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      className="bg-gray-800/50 border-gray-600 text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="security_level"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Security Level</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Standard, High, or Confidential"
-                      className="bg-gray-800/50 border-gray-600 text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Skills Section */}
-            <div>
-              <FormLabel className="text-gray-300 mb-2 block">Required Skills</FormLabel>
-              <div className="flex gap-2 mb-3">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Project Title *</Label>
                 <Input
-                  value={currentSkill}
-                  onChange={(e) => setCurrentSkill(e.target.value)}
-                  placeholder="Add a required skill..."
-                  className="bg-gray-800/50 border-gray-600 text-white"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter project title"
+                  required
                 />
-                <Button type="button" onClick={addSkill} variant="outline" className="border-gray-600">
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe your project"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="budget_min">Min Budget</Label>
+                <Input
+                  id="budget_min"
+                  type="number"
+                  value={formData.budget_min}
+                  onChange={(e) => setFormData({ ...formData, budget_min: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="budget_max">Max Budget</Label>
+                <Input
+                  id="budget_max"
+                  type="number"
+                  value={formData.budget_max}
+                  onChange={(e) => setFormData({ ...formData, budget_max: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="currency">Currency</Label>
+                <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="V3C">V3C</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Project Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="project_type">Project Type</Label>
+                <Select value={formData.project_type} onValueChange={(value) => setFormData({ ...formData, project_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="studio">Studio</SelectItem>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    <SelectItem value="freelance">Freelance</SelectItem>
+                    <SelectItem value="test">Test</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Security Level */}
+            <div>
+              <Label htmlFor="security_level">Security Level</Label>
+              <Select value={formData.security_level} onValueChange={(value) => setFormData({ ...formData, security_level: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Standard">Standard</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Confidential">Confidential</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Skills */}
+            <div>
+              <Label>Skills Required</Label>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  placeholder="Add a skill..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSkill(skillInput);
+                    }
+                  }}
+                />
+                <Button type="button" onClick={() => addSkill(skillInput)} disabled={!skillInput}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill, index) => (
-                  <Badge key={index} variant="secondary" className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => removeSkill(skill)}
-                      className="ml-2 hover:text-red-400"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
+              {formData.skills_required.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.skills_required.map((skill) => (
+                    <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                      {skill}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSkill(skill)}
+                        className="p-0 h-auto text-white hover:text-red-300"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="flex gap-3 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
-                disabled={loading}
-              >
+            {/* Milestones */}
+            {formData.milestones.length > 0 && (
+              <div>
+                <Label>Project Milestones</Label>
+                <div className="space-y-2 mt-2">
+                  {formData.milestones.map((milestone, index) => (
+                    <div key={index} className="bg-gray-800/50 p-3 rounded border border-gray-700">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium">{milestone.name}</h4>
+                          <p className="text-sm text-gray-400">{milestone.description}</p>
+                        </div>
+                        <Badge variant="outline">{milestone.percentage}%</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Submit */}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Project"
-                )}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <ProjectTemplateModal
+        isOpen={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        onSelectTemplate={handleSelectTemplate}
+      />
+    </>
   );
 };
 

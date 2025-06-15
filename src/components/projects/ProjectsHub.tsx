@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +9,8 @@ import {
   Users, 
   Star,
   DollarSign,
-  Loader2
+  Loader2,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,8 @@ import CreateProjectModal from "./CreateProjectModal";
 import BrowseProjectsTab from "./BrowseProjectsTab";
 import MyWorkTab from "./MyWorkTab";
 import EnhancedProjectsTable from "./EnhancedProjectsTable";
+import DashboardCustomizer from "../dashboard/DashboardCustomizer";
+import { useDashboardCustomization } from "@/hooks/useDashboardCustomization";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -40,6 +42,15 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
     activeArtists: 0
   });
   const { toast } = useToast();
+  
+  const {
+    layout,
+    enabledWidgets,
+    isCustomizing,
+    setIsCustomizing,
+    toggleWidget,
+    resetToDefault
+  } = useDashboardCustomization(userId || '');
 
   const fetchProjects = async () => {
     try {
@@ -171,7 +182,7 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
       {/* Enhanced Projects Table (global overview) */}
       <EnhancedProjectsTable userRole={userRole} userId={userId} />
 
-      {/* Header */}
+      {/* Header with Dashboard Customization */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
@@ -179,40 +190,52 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
           </h1>
           <p className="text-gray-400">Discover and manage VFX projects with advanced filtering</p>
         </div>
-        {canCreateProject && (
-          <Button 
-            onClick={handleCreateProject}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4 md:mt-0"
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <Button
+            variant="outline"
+            onClick={() => setIsCustomizing(true)}
+            className="flex items-center gap-2"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Project
+            <Settings className="h-4 w-4" />
+            Customize Dashboard
           </Button>
-        )}
+          {canCreateProject && (
+            <Button 
+              onClick={handleCreateProject}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Project
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
-        <StatsCard 
-          icon={<Briefcase />} 
-          label="Total Projects" 
-          value={stats.totalProjects.toString()} 
-        />
-        <StatsCard 
-          icon={<Clock />} 
-          label="Open Projects" 
-          value={stats.openProjects.toString()} 
-        />
-        <StatsCard 
-          icon={<DollarSign />} 
-          label="Avg Budget" 
-          value={stats.avgBudget > 0 ? `$${stats.avgBudget.toLocaleString()}` : "N/A"} 
-        />
-        <StatsCard 
-          icon={<Users />} 
-          label="Active Artists" 
-          value={stats.activeArtists.toString()} 
-        />
-      </div>
+      {/* Customizable Stats Cards */}
+      {enabledWidgets.find(w => w.type === 'stats')?.enabled && (
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <StatsCard 
+            icon={<Briefcase />} 
+            label="Total Projects" 
+            value={stats.totalProjects.toString()} 
+          />
+          <StatsCard 
+            icon={<Clock />} 
+            label="Open Projects" 
+            value={stats.openProjects.toString()} 
+          />
+          <StatsCard 
+            icon={<DollarSign />} 
+            label="Avg Budget" 
+            value={stats.avgBudget > 0 ? `$${stats.avgBudget.toLocaleString()}` : "N/A"} 
+          />
+          <StatsCard 
+            icon={<Users />} 
+            label="Active Artists" 
+            value={stats.activeArtists.toString()} 
+          />
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -272,6 +295,15 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
           }}
         />
       )}
+
+      {/* Dashboard Customizer */}
+      <DashboardCustomizer
+        isOpen={isCustomizing}
+        onClose={() => setIsCustomizing(false)}
+        widgets={layout.widgets}
+        onToggleWidget={toggleWidget}
+        onResetToDefault={resetToDefault}
+      />
     </div>
   );
 };
