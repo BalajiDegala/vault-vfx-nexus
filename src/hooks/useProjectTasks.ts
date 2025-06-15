@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Completely type-agnostic to avoid recursion/deep inference
+// Strictly type EVERYTHING as any to avoid TS excessive type recursion.
 export const useProjectTasks = (studioId: any): any => {
-  // State fully typed as any
   const [projects, setProjects] = useState<any>([]);
   const [tasksByProject, setTasksByProject] = useState<any>({});
   const [loading, setLoading] = useState<any>(false);
@@ -15,15 +14,15 @@ export const useProjectTasks = (studioId: any): any => {
     // eslint-disable-next-line
   }, [studioId]);
 
-  // All function args/results/state are typed as any
+  // All data, args, and returns are explicitly "any"
   const fetchStudioProjectsAndTasks = async (): Promise<any> => {
     setLoading(true);
 
-    // Get projects for this studio, cast all results to any
     const fetchProjects: any = await supabase
       .from("projects")
       .select("id, title")
       .eq("client_id", studioId);
+
     const projectsData: any = fetchProjects && fetchProjects.data ? fetchProjects.data : [];
     const error: any = fetchProjects && fetchProjects.error ? fetchProjects.error : null;
 
@@ -31,12 +30,14 @@ export const useProjectTasks = (studioId: any): any => {
       setProjects([]);
       setTasksByProject({});
       setLoading(false);
-      return;
+      return undefined as any;
     }
     setProjects(projectsData);
 
+    // All types in this result are also just treated as any
     const tasksResult: any = {};
-    for (const project of projectsData as any[]) {
+    for (let i = 0; i < projectsData.length; i++) {
+      const project: any = projectsData[i];
       const fetchTasks: any = await supabase
         .from("tasks")
         .select("id, name, description, task_type, status, priority")
@@ -49,6 +50,6 @@ export const useProjectTasks = (studioId: any): any => {
     return undefined as any;
   };
 
-  // Return is forced to any
+  // Return is fully forced to any, so nothing is inferred
   return { projects, tasksByProject, loading, refetch: fetchStudioProjectsAndTasks } as any;
 };
