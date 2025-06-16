@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,9 +50,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
   const fetchSharedTasks = async () => {
     try {
+      console.log('Fetching shared tasks for user:', userId, 'role:', userRole);
+      
       let query = supabase.from('shared_tasks').select(`
         *,
-        tasks (
+        tasks!inner (
           id,
           name,
           description,
@@ -84,10 +85,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
       if (error) {
         console.error('Supabase error:', error);
-        // Don't throw error, just set empty array and continue
         setSharedTasks([]);
         return;
       }
+
+      console.log('Fetched shared tasks data:', data);
 
       if (!data) {
         setSharedTasks([]);
@@ -129,10 +131,10 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         };
       });
       
+      console.log('Transformed shared tasks:', transformedData);
       setSharedTasks(transformedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);
-      // Don't show error toast for missing tables/data
       setSharedTasks([]);
     } finally {
       setLoading(false);
