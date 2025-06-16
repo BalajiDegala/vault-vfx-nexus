@@ -77,8 +77,6 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       `);
 
       if (userRole === 'artist') {
-        // For artists, get tasks shared with them that are approved OR pending
-        // Remove the status filter to see all shared tasks initially
         query = query.eq('artist_id', userId);
         console.log('Artist query - looking for artist_id:', userId);
       } else if (userRole === 'studio') {
@@ -90,11 +88,16 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
       if (error) {
         console.error('Supabase error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch shared tasks",
+          variant: "destructive",
+        });
         setSharedTasks([]);
         return;
       }
 
-      console.log('Raw fetched shared tasks data:', data);
+      console.log('Raw shared tasks data:', data);
       console.log('Number of shared tasks found:', data?.length || 0);
 
       if (!data || data.length === 0) {
@@ -106,10 +109,10 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       // Get profile IDs based on user role
       let profileIds: string[] = [];
       if (userRole === 'artist') {
-        // For artists, we want to show studio profiles (who shared the task)
+        // For artists, show studio profiles (who shared the task)
         profileIds = [...new Set(data.map(item => item.studio_id))].filter(Boolean);
       } else if (userRole === 'studio') {
-        // For studios, we want to show artist profiles (who the task was shared with)
+        // For studios, show artist profiles (who the task was shared with)
         profileIds = [...new Set(data.map(item => item.artist_id))].filter(Boolean);
       }
       
@@ -144,12 +147,12 @@ export const useSharedTasks = (userRole: string, userId: string) => {
           task_id: item.task_id,
           studio_id: item.studio_id,
           artist_id: item.artist_id,
-          status: (item.status as 'pending' | 'approved' | 'rejected') || 'pending',
+          status: item.status as 'pending' | 'approved' | 'rejected',
           shared_at: item.shared_at,
           approved_at: item.approved_at,
           approved_by: item.approved_by,
           notes: item.notes,
-          access_level: (item.access_level as 'view' | 'edit' | 'comment') || 'view',
+          access_level: item.access_level as 'view' | 'edit' | 'comment',
           tasks: item.tasks,
           profiles: profileToShow ? {
             first_name: profileToShow.first_name || '',
@@ -162,6 +165,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       setSharedTasks(transformedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch shared tasks",
+        variant: "destructive",
+      });
       setSharedTasks([]);
     } finally {
       setLoading(false);

@@ -12,9 +12,11 @@ interface ArtistTasksViewProps {
 const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
   const { sharedTasks, loading } = useSharedTasks('artist', userId);
 
-  console.log('ArtistTasksView - sharedTasks:', sharedTasks);
-  console.log('ArtistTasksView - loading:', loading);
-  console.log('ArtistTasksView - userId:', userId);
+  console.log('=== ArtistTasksView Debug ===');
+  console.log('userId:', userId);
+  console.log('loading:', loading);
+  console.log('sharedTasks count:', sharedTasks.length);
+  console.log('sharedTasks data:', sharedTasks);
 
   const getTaskTypeIcon = (taskType: string) => {
     switch (taskType) {
@@ -132,14 +134,15 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
       <div className="grid gap-6">
         {sharedTasks.map((sharedTask) => {
           const task = sharedTask.tasks;
-          console.log('Rendering task:', task);
+          console.log('Rendering shared task:', sharedTask.id, 'task data:', task);
           
           if (!task) {
             console.log('No task data for shared task:', sharedTask.id);
             return (
               <Card key={sharedTask.id} className="bg-gray-900/50 border-gray-700">
                 <CardContent className="p-6">
-                  <p className="text-red-400">Task data not found</p>
+                  <p className="text-red-400">Task data not found for shared task ID: {sharedTask.id}</p>
+                  <p className="text-gray-400 text-sm mt-2">Task ID: {sharedTask.task_id}</p>
                 </CardContent>
               </Card>
             );
