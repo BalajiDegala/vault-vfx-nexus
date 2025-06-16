@@ -21,7 +21,7 @@ interface ShotTasksViewProps {
 
 const ShotTasksView = ({ shot, userRole, onShareTask }: ShotTasksViewProps) => {
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
-  const { tasks, loading, updateTaskStatus, assignTask, refetch } = useTasks(undefined, shot.id);
+  const { tasks, loading, updateTaskStatus, refetch } = useTasks(undefined, shot.id);
 
   const canCreateTasks = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
 
@@ -40,6 +40,11 @@ const ShotTasksView = ({ shot, userRole, onShareTask }: ShotTasksViewProps) => {
     in_progress: tasks.filter(t => t.status === 'in_progress'),
     review: tasks.filter(t => t.status === 'review'),
     completed: tasks.filter(t => t.status === 'completed')
+  };
+
+  const handleAssignTask = (taskId: string) => {
+    // Simple assignment logic - in a real app this would open a user selection modal
+    console.log('Assign task:', taskId);
   };
 
   return (
@@ -131,7 +136,7 @@ const ShotTasksView = ({ shot, userRole, onShareTask }: ShotTasksViewProps) => {
               <TaskCard
                 task={task}
                 onStatusChange={updateTaskStatus}
-                onAssign={assignTask}
+                onAssign={handleAssignTask}
                 showActions={canCreateTasks}
               />
               

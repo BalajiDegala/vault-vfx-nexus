@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
@@ -8,6 +9,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectHeader from "@/components/projects/ProjectHeader";
 import ProjectOverview from "@/components/projects/ProjectOverview";
 import ProjectHierarchy from "@/components/projects/ProjectHierarchy";
+import ProjectDetailWithTasks from "@/components/projects/ProjectDetailWithTasks";
 import TeamDiscussion from "@/components/projects/TeamDiscussion";
 import ProjectFiles from "@/components/projects/ProjectFiles";
 import BidModal from "@/components/projects/BidModal";
@@ -238,10 +240,10 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="tasks">
-            <ProjectHierarchy 
+            <ProjectDetailWithTasks 
               project={project} 
-              userRole={userRole || "artist"} 
-              userId={user.id} 
+              user={user}
+              userRole={userRole || "artist"}
             />
           </TabsContent>
 
