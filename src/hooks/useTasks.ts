@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
+type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 
 interface UseTasksResult {
   tasks: Task[];
@@ -12,7 +13,7 @@ interface UseTasksResult {
   error: string | null;
   updateTaskStatus: (taskId: string, status: string) => Promise<void>;
   assignTask: (taskId: string, userId: string) => Promise<void>;
-  createTask: (task: Partial<Task>) => Promise<void>;
+  createTask: (task: TaskInsert) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -122,7 +123,7 @@ export const useTasks = (projectId?: string, shotId?: string): UseTasksResult =>
     }
   };
 
-  const createTask = async (taskData: Partial<Task>) => {
+  const createTask = async (taskData: TaskInsert) => {
     try {
       const { data, error } = await supabase
         .from('tasks')
