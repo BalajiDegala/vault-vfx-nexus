@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -60,26 +59,12 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       console.log('📍 User ID:', userId);
       console.log('👤 User Role:', userRole);
       
-      // Check if user exists in shared_tasks table
-      console.log('🔍 Step 1: Checking if user has any shared tasks...');
-      const { data: userSharedTasks, error: userCheckError } = await supabase
-        .from('shared_tasks')
-        .select('*')
-        .eq('artist_id', userId);
-      
-      console.log('📊 User shared tasks count:', userSharedTasks?.length || 0);
-      console.log('📋 User shared tasks data:', userSharedTasks);
-      
-      if (userCheckError) {
-        console.error('❌ Error checking user shared tasks:', userCheckError);
-      }
-
-      // Now let's try the actual query
-      console.log('🔍 Step 2: Building main query...');
+      // Build the main query with left join instead of inner join
+      console.log('🔍 Building main query with left join...');
       
       let query = supabase.from('shared_tasks').select(`
         *,
-        tasks!inner (
+        tasks (
           id,
           name,
           description,
@@ -129,22 +114,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
 
       if (!data || data.length === 0) {
         console.log('⚠️ No shared tasks found for this user');
-        
-        // Let's also check with a simpler query
-        console.log('🔍 Step 3: Trying simplified query...');
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('shared_tasks')
-          .select('*')
-          .eq('artist_id', userId);
-        
-        console.log('📋 Simple query result:', simpleData);
-        console.log('❌ Simple query error:', simpleError);
-        
         setSharedTasks([]);
         return;
       }
 
-      console.log('🔧 Step 4: Processing shared tasks data...');
+      console.log('🔧 Processing shared tasks data...');
 
       // Get profile IDs based on user role
       let profileIds: string[] = [];
@@ -172,7 +146,7 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       }
 
       // Transform the data
-      console.log('🔄 Step 5: Transforming data...');
+      console.log('🔄 Transforming data...');
       const transformedData: SharedTask[] = data.map((item, index) => {
         console.log(`🔧 Processing shared task ${index + 1}:`, item);
         
