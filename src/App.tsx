@@ -33,7 +33,7 @@ function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/machine-rental" element={<MachineRental />} />
-        <Route path="/storage" element={<StorageManagement />} />
+        <Route path="/storage-management" element={<StorageManagement />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/profile-discovery" element={<ProfileDiscovery />} />
