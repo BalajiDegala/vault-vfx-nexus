@@ -96,22 +96,38 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         return;
       }
 
-      // Get unique studio IDs for profile lookup
-      const studioIds = [...new Set(data.map(item => item.studio_id))].filter(Boolean);
+      // Get profile IDs based on user role
+      let profileIds: string[] = [];
+      if (userRole === 'artist') {
+        // For artists, we want to show studio profiles (who shared the task)
+        profileIds = [...new Set(data.map(item => item.studio_id))].filter(Boolean);
+      } else if (userRole === 'studio') {
+        // For studios, we want to show artist profiles (who the task was shared with)
+        profileIds = [...new Set(data.map(item => item.artist_id))].filter(Boolean);
+      }
       
       let profiles: any[] = [];
-      if (studioIds.length > 0) {
+      if (profileIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, first_name, last_name')
-          .in('id', studioIds);
+          .in('id', profileIds);
         
         profiles = profilesData || [];
       }
 
       // Transform the data to match our interface
       const transformedData: SharedTask[] = data.map(item => {
-        const studioProfile = profiles.find(p => p.id === item.studio_id);
+        let profileToShow;
+        
+        if (userRole === 'artist') {
+          // For artists, show studio profile (who shared the task)
+          profileToShow = profiles.find(p => p.id === item.studio_id);
+        } else if (userRole === 'studio') {
+          // For studios, show artist profile (who the task was shared with)
+          profileToShow = profiles.find(p => p.id === item.artist_id);
+        }
+        
         return {
           id: item.id,
           task_id: item.task_id,
@@ -124,9 +140,9 @@ export const useSharedTasks = (userRole: string, userId: string) => {
           notes: item.notes,
           access_level: (item.access_level as 'view' | 'edit' | 'comment') || 'view',
           tasks: item.tasks,
-          profiles: studioProfile ? {
-            first_name: studioProfile.first_name || '',
-            last_name: studioProfile.last_name || ''
+          profiles: profileToShow ? {
+            first_name: profileToShow.first_name || '',
+            last_name: profileToShow.last_name || ''
           } : undefined
         };
       });
