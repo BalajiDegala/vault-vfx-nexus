@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -45,14 +44,29 @@ export const useSharedTasks = (userRole: string, userId: string) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('useSharedTasks: No userId provided');
+      return;
+    }
+    console.log('useSharedTasks: Starting fetch with userId:', userId, 'userRole:', userRole);
     fetchSharedTasks();
   }, [userId, userRole]);
 
   const fetchSharedTasks = async () => {
     try {
-      console.log('Fetching shared tasks for user:', userId, 'role:', userRole);
+      console.log('=== FETCHING SHARED TASKS ===');
+      console.log('User ID:', userId);
+      console.log('User Role:', userRole);
       
+      // First, let's check if there are ANY shared tasks in the database
+      const { data: allSharedTasks, error: countError } = await supabase
+        .from('shared_tasks')
+        .select('*');
+      
+      console.log('Total shared tasks in database:', allSharedTasks?.length || 0);
+      console.log('All shared tasks:', allSharedTasks);
+
+      // Now let's build our specific query
       let query = supabase.from('shared_tasks').select(`
         *,
         tasks!inner (
@@ -77,17 +91,23 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       `);
 
       if (userRole === 'artist') {
+        console.log('Building artist query for artist_id:', userId);
         query = query.eq('artist_id', userId);
-        console.log('Artist query - looking for artist_id:', userId);
       } else if (userRole === 'studio') {
+        console.log('Building studio query for studio_id:', userId);
         query = query.eq('studio_id', userId);
-        console.log('Studio query - looking for studio_id:', userId);
       }
 
+      console.log('Executing query...');
       const { data, error } = await query;
 
+      console.log('Query completed');
+      console.log('Error:', error);
+      console.log('Data:', data);
+      console.log('Data length:', data?.length || 0);
+
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase query error:', error);
         toast({
           title: "Error",
           description: "Failed to fetch shared tasks",
@@ -97,23 +117,33 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         return;
       }
 
-      console.log('Raw shared tasks data:', data);
-      console.log('Number of shared tasks found:', data?.length || 0);
-
       if (!data || data.length === 0) {
         console.log('No shared tasks found for this user');
+        console.log('Checking if user exists in shared_tasks table...');
+        
+        // Let's check if this user appears anywhere in shared_tasks
+        const { data: userCheck } = await supabase
+          .from('shared_tasks')
+          .select('*')
+          .or(`artist_id.eq.${userId},studio_id.eq.${userId}`);
+        
+        console.log('User appears in shared_tasks:', userCheck?.length || 0, 'times');
+        console.log('User shared_tasks data:', userCheck);
+        
         setSharedTasks([]);
         return;
       }
 
+      console.log('Processing', data.length, 'shared tasks...');
+
       // Get profile IDs based on user role
       let profileIds: string[] = [];
       if (userRole === 'artist') {
-        // For artists, show studio profiles (who shared the task)
         profileIds = [...new Set(data.map(item => item.studio_id))].filter(Boolean);
+        console.log('Need studio profiles for IDs:', profileIds);
       } else if (userRole === 'studio') {
-        // For studios, show artist profiles (who the task was shared with)
         profileIds = [...new Set(data.map(item => item.artist_id))].filter(Boolean);
+        console.log('Need artist profiles for IDs:', profileIds);
       }
       
       let profiles: any[] = [];
@@ -128,21 +158,20 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         console.log('Fetched profiles:', profiles);
       }
 
-      // Transform the data to match our interface
-      const transformedData: SharedTask[] = data.map(item => {
-        let profileToShow;
+      // Transform the data
+      const transformedData: SharedTask[] = data.map((item, index) => {
+        console.log(`Processing shared task ${index + 1}:`, item);
         
+        let profileToShow;
         if (userRole === 'artist') {
-          // For artists, show studio profile (who shared the task)
           profileToShow = profiles.find(p => p.id === item.studio_id);
+          console.log('Found studio profile:', profileToShow);
         } else if (userRole === 'studio') {
-          // For studios, show artist profile (who the task was shared with)
           profileToShow = profiles.find(p => p.id === item.artist_id);
+          console.log('Found artist profile:', profileToShow);
         }
         
-        console.log('Processing shared task:', item.id, 'with task:', item.tasks?.name, 'status:', item.status);
-        
-        return {
+        const transformed = {
           id: item.id,
           task_id: item.task_id,
           studio_id: item.studio_id,
@@ -159,12 +188,17 @@ export const useSharedTasks = (userRole: string, userId: string) => {
             last_name: profileToShow.last_name || ''
           } : undefined
         };
+        
+        console.log('Transformed shared task:', transformed);
+        return transformed;
       });
       
-      console.log('Final transformed shared tasks:', transformedData);
+      console.log('Final transformed data:', transformedData);
+      console.log('Setting sharedTasks with', transformedData.length, 'items');
       setSharedTasks(transformedData);
+      
     } catch (error) {
-      console.error('Error fetching shared tasks:', error);
+      console.error('Error in fetchSharedTasks:', error);
       toast({
         title: "Error",
         description: "Failed to fetch shared tasks",
@@ -172,6 +206,7 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       });
       setSharedTasks([]);
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
