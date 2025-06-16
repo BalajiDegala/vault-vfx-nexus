@@ -59,8 +59,43 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       console.log('📍 User ID:', userId);
       console.log('👤 User Role:', userRole);
       
+      // First, let's check what task IDs exist in shared_tasks
+      console.log('🔍 Step 1: Getting task IDs from shared_tasks...');
+      let sharedTasksQuery = supabase.from('shared_tasks').select('task_id');
+      
+      if (userRole === 'artist') {
+        sharedTasksQuery = sharedTasksQuery.eq('artist_id', userId);
+      } else if (userRole === 'studio') {
+        sharedTasksQuery = sharedTasksQuery.eq('studio_id', userId);
+      }
+      
+      const { data: taskIds, error: taskIdsError } = await sharedTasksQuery;
+      console.log('📋 Task IDs from shared_tasks:', taskIds);
+      
+      if (taskIdsError) {
+        console.error('❌ Error getting task IDs:', taskIdsError);
+      }
+      
+      // Now check which of these task IDs actually exist in the tasks table
+      if (taskIds && taskIds.length > 0) {
+        const taskIdArray = taskIds.map(t => t.task_id);
+        console.log('🔍 Step 2: Checking which task IDs exist in tasks table...');
+        
+        const { data: existingTasks, error: existingTasksError } = await supabase
+          .from('tasks')
+          .select('id, name, task_type, status')
+          .in('id', taskIdArray);
+          
+        console.log('📋 Existing tasks in tasks table:', existingTasks);
+        console.log('❌ Missing task IDs:', taskIdArray.filter(id => !existingTasks?.find(t => t.id === id)));
+        
+        if (existingTasksError) {
+          console.error('❌ Error checking existing tasks:', existingTasksError);
+        }
+      }
+      
       // Build the main query with left join instead of inner join
-      console.log('🔍 Building main query with left join...');
+      console.log('🔍 Step 3: Building main query with left join...');
       
       let query = supabase.from('shared_tasks').select(`
         *,
