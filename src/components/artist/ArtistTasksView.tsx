@@ -3,7 +3,7 @@ import { useSharedTasks } from '@/hooks/useSharedTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, PlayCircle, CheckCircle, FileText, Eye } from 'lucide-react';
+import { Clock, PlayCircle, CheckCircle, FileText, Eye, AlertCircle } from 'lucide-react';
 
 interface ArtistTasksViewProps {
   userId: string;
@@ -14,6 +14,7 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
 
   console.log('ArtistTasksView - sharedTasks:', sharedTasks);
   console.log('ArtistTasksView - loading:', loading);
+  console.log('ArtistTasksView - userId:', userId);
 
   const getTaskTypeIcon = (taskType: string) => {
     switch (taskType) {
@@ -62,6 +63,19 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
     }
   };
 
+  const getShareStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-600/20 text-yellow-400 border-yellow-500/30';
+      case 'approved':
+        return 'bg-green-600/20 text-green-400 border-green-500/30';
+      case 'rejected':
+        return 'bg-red-600/20 text-red-400 border-red-500/30';
+      default:
+        return 'bg-gray-600/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -78,17 +92,41 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
         <h3 className="text-xl font-semibold text-white mb-2">No Tasks Assigned</h3>
         <p className="text-gray-400 mb-6">You don't have any tasks shared with you yet.</p>
         <p className="text-sm text-gray-500">Studios will share specific tasks with you once they're ready for your contribution.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg max-w-md mx-auto">
+          <p className="text-blue-300 text-sm">
+            <strong>Debug Info:</strong> User ID: {userId}
+          </p>
+        </div>
       </div>
     );
   }
+
+  // Separate tasks by share status
+  const pendingTasks = sharedTasks.filter(t => t.status === 'pending');
+  const approvedTasks = sharedTasks.filter(t => t.status === 'approved');
+  const rejectedTasks = sharedTasks.filter(t => t.status === 'rejected');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Your Assigned Tasks</h2>
-        <Badge variant="outline" className="text-blue-400 border-blue-500/30">
-          {sharedTasks.length} Task{sharedTasks.length !== 1 ? 's' : ''}
-        </Badge>
+        <div className="flex gap-2">
+          {pendingTasks.length > 0 && (
+            <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">
+              {pendingTasks.length} Pending
+            </Badge>
+          )}
+          {approvedTasks.length > 0 && (
+            <Badge variant="outline" className="text-green-400 border-green-500/30">
+              {approvedTasks.length} Approved
+            </Badge>
+          )}
+          {rejectedTasks.length > 0 && (
+            <Badge variant="outline" className="text-red-400 border-red-500/30">
+              {rejectedTasks.length} Rejected
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -116,6 +154,11 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
                     <div>
                       <CardTitle className="text-white text-xl">{task.name}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="outline" className={getShareStatusColor(sharedTask.status)}>
+                          {sharedTask.status === 'pending' && <AlertCircle className="h-3 w-3 mr-1" />}
+                          {sharedTask.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
+                          Share {sharedTask.status}
+                        </Badge>
                         <Badge variant="outline" className={`${getStatusColor(task.status)} text-white`}>
                           {task.status.replace('_', ' ')}
                         </Badge>
@@ -136,6 +179,13 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
               </CardHeader>
 
               <CardContent className="space-y-6">
+                {sharedTask.status === 'pending' && (
+                  <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-yellow-400 mb-2">Pending Approval</h4>
+                    <p className="text-yellow-300 text-sm">This task share is waiting for approval. You can view details but may have limited access until approved.</p>
+                  </div>
+                )}
+
                 {task.description && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Description</h4>
@@ -201,18 +251,28 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Start Work
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
-                    <FileText className="h-4 w-4 mr-2" />
-                    View Files
-                  </Button>
-                  {task.status === 'in_progress' && (
-                    <Button size="sm" variant="outline" className="border-green-600 text-green-400">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Submit for Review
+                  {sharedTask.status === 'approved' && (
+                    <>
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Start Work
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Files
+                      </Button>
+                      {task.status === 'in_progress' && (
+                        <Button size="sm" variant="outline" className="border-green-600 text-green-400">
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Submit for Review
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {sharedTask.status === 'pending' && (
+                    <Button size="sm" variant="outline" className="border-yellow-600 text-yellow-400" disabled>
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Waiting for Approval
                     </Button>
                   )}
                 </div>

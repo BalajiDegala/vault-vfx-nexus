@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -76,9 +77,13 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       `);
 
       if (userRole === 'artist') {
-        query = query.eq('artist_id', userId).eq('status', 'approved');
+        // For artists, get tasks shared with them that are approved OR pending
+        // Remove the status filter to see all shared tasks initially
+        query = query.eq('artist_id', userId);
+        console.log('Artist query - looking for artist_id:', userId);
       } else if (userRole === 'studio') {
         query = query.eq('studio_id', userId);
+        console.log('Studio query - looking for studio_id:', userId);
       }
 
       const { data, error } = await query;
@@ -89,9 +94,11 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         return;
       }
 
-      console.log('Fetched shared tasks data:', data);
+      console.log('Raw fetched shared tasks data:', data);
+      console.log('Number of shared tasks found:', data?.length || 0);
 
-      if (!data) {
+      if (!data || data.length === 0) {
+        console.log('No shared tasks found for this user');
         setSharedTasks([]);
         return;
       }
@@ -108,12 +115,14 @@ export const useSharedTasks = (userRole: string, userId: string) => {
       
       let profiles: any[] = [];
       if (profileIds.length > 0) {
+        console.log('Fetching profiles for IDs:', profileIds);
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, first_name, last_name')
           .in('id', profileIds);
         
         profiles = profilesData || [];
+        console.log('Fetched profiles:', profiles);
       }
 
       // Transform the data to match our interface
@@ -127,6 +136,8 @@ export const useSharedTasks = (userRole: string, userId: string) => {
           // For studios, show artist profile (who the task was shared with)
           profileToShow = profiles.find(p => p.id === item.artist_id);
         }
+        
+        console.log('Processing shared task:', item.id, 'with task:', item.tasks?.name, 'status:', item.status);
         
         return {
           id: item.id,
@@ -147,7 +158,7 @@ export const useSharedTasks = (userRole: string, userId: string) => {
         };
       });
       
-      console.log('Transformed shared tasks:', transformedData);
+      console.log('Final transformed shared tasks:', transformedData);
       setSharedTasks(transformedData);
     } catch (error) {
       console.error('Error fetching shared tasks:', error);

@@ -2,10 +2,9 @@
 import { User } from "@supabase/supabase-js";
 import { useTheme } from "@/hooks/useTheme";
 import DashboardNavbar from "./DashboardNavbar";
-import ArtistTasksView from "@/components/artist/ArtistTasksView";
+import ArtistNavigation from "@/components/artist/ArtistNavigation";
 import V3CoinsWallet from "@/components/v3c/V3CoinsWallet";
 import V3CoinsSendForm from "@/components/v3c/V3CoinsSendForm";
-import DynamicDashboard from "./DynamicDashboard";
 
 interface FreelancerDashboardProps {
   user: User;
@@ -27,13 +26,11 @@ const FreelancerDashboard = ({ user }: FreelancerDashboardProps) => {
           <h1 className={`text-3xl font-bold bg-gradient-to-r ${themeColors.primary} bg-clip-text text-transparent mb-2`}>
             Artist Creative Hub
           </h1>
-          <p className="theme-text-muted">Unleash your creativity and collaborate on amazing VFX projects.</p>
+          <p className="theme-text-muted">Manage your assigned tasks and discover new project opportunities.</p>
         </div>
 
-        {/* Dynamic Dashboard Content */}
-        <DynamicDashboard user={user} userRole="artist" />
-
-        <ArtistTasksView userId={user.id} />
+        {/* Artist Navigation with Tasks and Browse */}
+        <ArtistNavigation userId={user.id} />
       </div>
     </div>
   );
