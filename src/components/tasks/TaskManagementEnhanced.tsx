@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
@@ -30,6 +29,7 @@ interface TaskManagementEnhancedProps {
 
 const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProps) => {
   const { sharedTasks, loading, refetch } = useSharedTasksWithProjects(userRole || "artist", userId);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -111,7 +111,7 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-96">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-gray-400">Loading your assignments...</span>
+          <span className="ml-2 text-gray-300">Loading your assignments...</span>
         </div>
       </div>
     );
@@ -123,7 +123,7 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
         <div className="text-center py-20">
           <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-white mb-4">No Assigned Tasks</h3>
-          <p className="text-gray-400">
+          <p className="text-gray-300">
             {userRole === "artist" 
               ? "You don't have any assigned tasks yet. Wait for studios to share tasks with you!" 
               : "You haven't shared any tasks yet. Go to your projects to share tasks with artists."}
@@ -133,23 +133,49 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
     );
   }
 
+  const projectsList = Object.entries(groupedTasks);
+  const filteredProjects = selectedProject 
+    ? projectsList.filter(([projectId]) => projectId === selectedProject)
+    : projectsList;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">
           {userRole === "artist" ? "My Assigned Tasks" : "Shared Tasks Management"}
         </h1>
-        <p className="text-gray-400">
+        <p className="text-gray-300">
           {userRole === "artist" 
             ? "View and work on tasks assigned to you from various projects" 
             : "Manage tasks you've shared with artists"}
         </p>
       </div>
 
+      {/* Project Filter Dropdown */}
+      {projectsList.length > 1 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-300">Filter by Project:</label>
+            <select
+              value={selectedProject || ""}
+              onChange={(e) => setSelectedProject(e.target.value || null)}
+              className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Projects ({projectsList.length})</option>
+              {projectsList.map(([projectId, projectData]: [string, any]) => (
+                <option key={projectId} value={projectId}>
+                  {projectData.project.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
-        {Object.entries(groupedTasks).map(([projectId, projectData]: [string, any]) => (
-          <Card key={projectId} className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
+        {filteredProjects.map(([projectId, projectData]: [string, any]) => (
+          <Card key={projectId} className="bg-gray-800 border-gray-600 shadow-xl">
+            <CardHeader className="border-b border-gray-600">
               <div className="flex items-center gap-3">
                 <Folder className="h-6 w-6 text-purple-400" />
                 <div>
@@ -157,51 +183,51 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
                     {projectData.project.title}
                   </CardTitle>
                   {projectData.project.project_code && (
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-gray-300 text-sm">
                       Project Code: {projectData.project.project_code}
                     </p>
                   )}
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {Object.entries(projectData.sequences).map(([sequenceId, sequenceData]: [string, any]) => (
-                  <div key={sequenceId} className="border border-gray-700 rounded-lg p-4">
+                  <div key={sequenceId} className="border border-gray-600 rounded-lg p-4 bg-gray-700/30">
                     <div className="flex items-center gap-2 mb-3">
                       <Video className="h-5 w-5 text-blue-400" />
-                      <h3 className="text-lg font-semibold text-blue-400">
+                      <h3 className="text-lg font-semibold text-blue-300">
                         {sequenceData.sequence.name}
                       </h3>
                     </div>
                     
                     <div className="space-y-3">
                       {Object.entries(sequenceData.shots).map(([shotId, shotData]: [string, any]) => (
-                        <div key={shotId} className="border border-gray-600 rounded-lg p-3 bg-gray-800/30">
+                        <div key={shotId} className="border border-gray-500 rounded-lg p-3 bg-gray-600/30">
                           <div className="flex items-center gap-2 mb-2">
                             <Camera className="h-4 w-4 text-green-400" />
-                            <h4 className="font-medium text-green-400">
+                            <h4 className="font-medium text-green-300">
                               {shotData.shot.name}
                             </h4>
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-gray-300">
                               Frames {shotData.shot.frame_start}-{shotData.shot.frame_end}
                             </span>
                           </div>
                           
                           <div className="space-y-2">
                             {shotData.tasks.map((task: any) => (
-                              <div key={task.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded border border-gray-600">
+                              <div key={task.id} className="flex items-center justify-between p-3 bg-gray-500/50 rounded border border-gray-500">
                                 <div className="flex items-center gap-3">
                                   <CheckSquare className="h-4 w-4 text-orange-400" />
                                   <div>
                                     <h5 className="font-medium text-white">{task.name}</h5>
-                                    <p className="text-sm text-gray-400">{task.description}</p>
+                                    <p className="text-sm text-gray-200">{task.description}</p>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <Badge variant="outline" className="text-xs">
+                                      <Badge variant="outline" className="text-xs border-gray-400 text-gray-200">
                                         {task.task_type}
                                       </Badge>
                                       {task.estimated_hours && (
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-gray-300">
                                           Est: {task.estimated_hours}h
                                         </span>
                                       )}
@@ -220,9 +246,9 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
                                   <Badge 
                                     variant="outline" 
                                     className={`text-xs ${
-                                      task.sharedTaskInfo.status === 'approved' ? 'border-green-500 text-green-400' :
-                                      task.sharedTaskInfo.status === 'pending' ? 'border-yellow-500 text-yellow-400' :
-                                      'border-red-500 text-red-400'
+                                      task.sharedTaskInfo.status === 'approved' ? 'border-green-400 text-green-300 bg-green-900/20' :
+                                      task.sharedTaskInfo.status === 'pending' ? 'border-yellow-400 text-yellow-300 bg-yellow-900/20' :
+                                      'border-red-400 text-red-300 bg-red-900/20'
                                     }`}
                                   >
                                     {task.sharedTaskInfo.status}

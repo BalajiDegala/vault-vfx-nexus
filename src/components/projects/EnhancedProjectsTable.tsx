@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -94,11 +93,36 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
 
   const fetchProjects = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*");
-    if (!error && data) setProjects(data);
-    setLoading(false);
+    try {
+      console.log("🔍 Fetching projects for user:", userId, "role:", userRole);
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        console.error("❌ Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load projects. Please try again.",
+          variant: "destructive"
+        });
+        setProjects([]);
+      } else {
+        console.log("✅ Successfully fetched", data?.length || 0, "projects");
+        setProjects(data || []);
+      }
+    } catch (error) {
+      console.error("💥 Unexpected error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading projects.",
+        variant: "destructive"
+      });
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Reset page when filters change
@@ -160,20 +184,31 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
 
   // Create dynamic status color mapping
   const statusColor: Record<string, string> = {
-    completed: "bg-blue-500/20 text-blue-400",
-    open: "bg-green-500/20 text-green-400",
-    draft: "bg-yellow-500/20 text-yellow-400",
-    cancelled: "bg-red-500/20 text-red-400",
-    review: "bg-cyan-500/20 text-cyan-400",
-    in_progress: "bg-purple-500/20 text-purple-400",
+    completed: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    open: "bg-green-500/20 text-green-300 border-green-500/30",
+    draft: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+    cancelled: "bg-red-500/20 text-red-300 border-red-500/30",
+    review: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+    in_progress: "bg-purple-500/20 text-purple-300 border-purple-500/30",
   };
 
   const isAllOnPageSelected = pagedProjects.length > 0 && pagedProjects.every(p => selectedIds.includes(p.id));
   const isIndeterminate = selectedIds.length > 0 && !isAllOnPageSelected;
   const anySelected = selectedIds.length > 0;
 
+  if (loading) {
+    return (
+      <div className="bg-gray-800 border border-gray-600 rounded-xl overflow-x-auto mb-8 p-8">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-gray-300">Loading projects...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-x-auto mb-8 p-4">
+    <div className="bg-gray-800 border border-gray-600 rounded-xl overflow-x-auto mb-8 p-4 shadow-xl">
       {/* Filters Section */}
       <ProjectsTableFiltersContainer
         statusOptions={statusOptions}
@@ -182,16 +217,16 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
       />
 
       {/* Action Bar */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="text-sm text-gray-400">
-          Showing {filteredProjects.length} of {projects.length} projects
+      <div className="flex items-center justify-between gap-4 mb-4 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+        <div className="text-sm text-gray-300 font-medium">
+          Showing <span className="text-white">{filteredProjects.length}</span> of <span className="text-white">{projects.length}</span> projects
         </div>
         
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             onClick={handleExportCSV}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+            className="border-gray-500 bg-gray-700 text-gray-200 hover:bg-gray-600 hover:text-white"
           >
             <Download className="h-4 w-4 mr-2" />
             Export {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
@@ -201,7 +236,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
             <Button
               variant="outline"
               onClick={clearAllFilters}
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="border-gray-500 bg-gray-700 text-gray-200 hover:bg-gray-600 hover:text-white"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset Filters
