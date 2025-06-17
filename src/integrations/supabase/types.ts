@@ -2048,6 +2048,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_accessible_project_ids: {
+        Args: { p_user_id: string }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -2078,6 +2082,14 @@ export type Database = {
       update_hashtag_count: {
         Args: { hashtag_name: string }
         Returns: undefined
+      }
+      user_has_project_access: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      user_has_shared_task_access: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
       }
       validate_project_status_transition: {
         Args: {
