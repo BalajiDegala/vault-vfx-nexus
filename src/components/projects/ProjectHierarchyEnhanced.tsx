@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
 import ShotsListEnhanced from "./ShotsListEnhanced";
+import CreateSequenceModal from "./CreateSequenceModal";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type Sequence = Database["public"]["Tables"]["sequences"]["Row"];
@@ -25,6 +26,7 @@ export default function ProjectHierarchyEnhanced({
   const [sequences, setSequences] = useState<Sequence[]>([]);
   const [openSequence, setOpenSequence] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -57,6 +59,18 @@ export default function ProjectHierarchyEnhanced({
     }
   };
 
+  const handleCreateSequence = () => {
+    console.log('🎬 Opening create sequence modal for project:', project.id);
+    setShowCreateModal(true);
+  };
+
+  const handleSequenceCreated = () => {
+    console.log('✅ Sequence created, refreshing list');
+    fetchSequences();
+  };
+
+  const canCreateSequences = userRole === 'studio' || userRole === 'admin' || userRole === 'producer' || project.client_id === userId;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -72,11 +86,12 @@ export default function ProjectHierarchyEnhanced({
         <h3 className="text-xl font-semibold text-white">
           {userRole === 'artist' ? 'Your Assigned Work' : 'Project Structure'}
         </h3>
-        {(userRole === 'studio' || userRole === 'admin' || userRole === 'producer') && (
+        {canCreateSequences && (
           <Button
             variant="outline"
             size="sm"
             className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+            onClick={handleCreateSequence}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Sequence
@@ -95,10 +110,11 @@ export default function ProjectHierarchyEnhanced({
               : 'Add sequences to organize your project shots.'
             }
           </p>
-          {(userRole === 'studio' || userRole === 'admin' || userRole === 'producer') && (
+          {canCreateSequences && (
             <Button
               variant="outline"
               className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+              onClick={handleCreateSequence}
             >
               <Plus className="h-4 w-4 mr-2" />
               Create First Sequence
@@ -136,6 +152,13 @@ export default function ProjectHierarchyEnhanced({
           ))}
         </div>
       )}
+
+      <CreateSequenceModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        projectId={project.id}
+        onSuccess={handleSequenceCreated}
+      />
     </div>
   );
 }
