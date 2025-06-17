@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
-import ProjectHierarchy from "./ProjectHierarchy";
-import ShotsList from "./ShotsList";
+import ProjectHierarchyEnhanced from "./ProjectHierarchyEnhanced";
+import ShotsListEnhanced from "./ShotsListEnhanced";
 import TaskSharingModal from "@/components/tasks/TaskSharingModal";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -31,13 +31,15 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
 
   return (
     <div className="space-y-6">
-      <ProjectHierarchy 
+      <ProjectHierarchyEnhanced 
         project={project} 
         userRole={userRole}
+        userId={user.id}
         renderShotsList={(sequenceId) => (
-          <ShotsList 
+          <ShotsListEnhanced 
             sequenceId={sequenceId} 
             userRole={userRole}
+            userId={user.id}
             onShareTask={handleShareTask}
           />
         )}

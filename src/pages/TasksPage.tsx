@@ -4,7 +4,7 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import TaskManagement from "@/components/tasks/TaskManagement";
+import TaskManagementEnhanced from "@/components/tasks/TaskManagementEnhanced";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { Loader2 } from "lucide-react";
@@ -83,12 +83,10 @@ const TasksPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <DashboardNavbar user={user} userRole={userRole || "artist"} />
-      <div className="container mx-auto px-4 py-8">
-        <TaskManagement 
-          userRole={userRole || undefined} 
-          userId={user.id} 
-        />
-      </div>
+      <TaskManagementEnhanced 
+        userRole={userRole || undefined} 
+        userId={user.id} 
+      />
     </div>
   );
 };
