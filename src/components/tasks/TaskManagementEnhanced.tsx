@@ -16,7 +16,7 @@ import {
   Folder,
   Video,
   Camera,
-  Task as TaskIcon,
+  CheckSquare,
   ArrowRight,
   AlertCircle
 } from "lucide-react";
@@ -192,7 +192,7 @@ const TaskManagementEnhanced = ({ userRole, userId }: TaskManagementEnhancedProp
                             {shotData.tasks.map((task: any) => (
                               <div key={task.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded border border-gray-600">
                                 <div className="flex items-center gap-3">
-                                  <TaskIcon className="h-4 w-4 text-orange-400" />
+                                  <CheckSquare className="h-4 w-4 text-orange-400" />
                                   <div>
                                     <h5 className="font-medium text-white">{task.name}</h5>
                                     <p className="text-sm text-gray-400">{task.description}</p>
