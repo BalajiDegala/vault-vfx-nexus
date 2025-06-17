@@ -20,7 +20,7 @@ interface ProjectsTableFiltersContainerProps {
     statusFilter: string[];
     typeFilter: string;
     searchQuery: string;
-    deadlineRange: { from: Date | null; to: Date | null };
+    deadlineRange: { from: string | null; to: string | null };
   }) => void;
 }
 
@@ -32,13 +32,13 @@ const ProjectsTableFiltersContainer = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
   const [typeFilter, setTypeFilter] = useState("all");
-  const [deadlineRange, setDeadlineRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [deadlineRange, setDeadlineRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
 
   const handleFiltersUpdate = (updates: Partial<{
     statusFilter: string[];
     typeFilter: string;
     searchQuery: string;
-    deadlineRange: { from: Date | null; to: Date | null };
+    deadlineRange: { from: string | null; to: string | null };
   }>) => {
     const newFilters = {
       statusFilter: updates.statusFilter ?? statusFilter,
