@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,13 +31,26 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Load artists when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 TaskSharingModal opened, searching for artists...');
+      searchUsers('', 'artist');
+    }
+  }, [isOpen, searchUsers]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!task || !formData.artist_id) return;
+    if (!task || !formData.artist_id) {
+      console.log('❌ Missing task or artist_id:', { task: !!task, artist_id: formData.artist_id });
+      return;
+    }
 
     try {
       setSubmitting(true);
+      console.log('📤 Sharing task with artist:', formData);
+      
       await shareTaskWithArtist(
         task.id, 
         formData.artist_id, 
@@ -45,6 +58,7 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
         formData.notes || undefined
       );
 
+      // Reset form
       setFormData({
         artist_id: '',
         access_level: 'view',
@@ -53,22 +67,33 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
 
       onClose();
     } catch (error) {
-      // Error handling is done in the hook
+      console.error('❌ Error sharing task:', error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleArtistSearch = (query: string) => {
-    if (query.length > 2) {
-      searchUsers(query, 'artist');
-    }
+  const handleClose = () => {
+    // Reset form when closing
+    setFormData({
+      artist_id: '',
+      access_level: 'view',
+      notes: ''
+    });
+    onClose();
   };
 
   if (!task) return null;
 
+  console.log('🎯 TaskSharingModal render:', {
+    isOpen,
+    taskId: task.id,
+    searchResultsCount: searchResults.length,
+    formData
+  });
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="bg-gray-900 border-blue-500/20 max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -77,7 +102,7 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
         </DialogHeader>
 
         <div className="space-y-6 mt-6">
-          {/* Task Info */}
+          {/* Task Info - Now properly displaying all details */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <h3 className="text-blue-400 font-medium mb-3 flex items-center">
               <Share2 className="h-4 w-4 mr-2" />
@@ -95,9 +120,16 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
+                <span className="text-gray-300">Status:</span>
+                <Badge variant="outline" className="text-blue-400">
+                  {task.status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-gray-300">Priority:</span>
                 <Badge variant="outline" className={
-                  task.priority === 'high' ? 'text-red-400' :
+                  task.priority === 'critical' ? 'text-red-400' :
+                  task.priority === 'high' ? 'text-orange-400' :
                   task.priority === 'medium' ? 'text-yellow-400' : 'text-green-400'
                 }>
                   {task.priority}
@@ -121,32 +153,36 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
               </Label>
               <Select 
                 value={formData.artist_id} 
-                onValueChange={(value) => setFormData({...formData, artist_id: value})}
-                onOpenChange={(open) => {
-                  if (open) {
-                    searchUsers('', 'artist');
-                  }
+                onValueChange={(value) => {
+                  console.log('🎨 Artist selected:', value);
+                  setFormData({...formData, artist_id: value});
                 }}
               >
                 <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
                   <SelectValue placeholder="Search and select an artist..." />
                 </SelectTrigger>
-                <SelectContent>
-                  {searchResults.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center space-x-2">
-                        <span>{user.first_name} {user.last_name}</span>
-                        <span className="text-xs text-gray-400">(@{user.username})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                  {searchResults.length === 0 && (
-                    <SelectItem value="no-results" disabled>
-                      No artists found
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((user) => (
+                      <SelectItem key={user.id} value={user.id} className="text-white hover:bg-gray-700">
+                        <div className="flex items-center space-x-2">
+                          <span>{user.first_name} {user.last_name}</span>
+                          {user.username && (
+                            <span className="text-xs text-gray-400">(@{user.username})</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-results" disabled className="text-gray-400">
+                      No artists found. Try searching for artists in the system.
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-400">
+                Found {searchResults.length} artists available for assignment
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -156,15 +192,24 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
               </Label>
               <Select 
                 value={formData.access_level} 
-                onValueChange={(value: 'view' | 'edit' | 'comment') => setFormData({...formData, access_level: value})}
+                onValueChange={(value: 'view' | 'edit' | 'comment') => {
+                  console.log('🔐 Access level selected:', value);
+                  setFormData({...formData, access_level: value});
+                }}
               >
                 <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="view">View Only - Can see task details</SelectItem>
-                  <SelectItem value="comment">Comment Access - Can view and comment</SelectItem>
-                  <SelectItem value="edit">Edit Access - Can view, comment, and update</SelectItem>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="view" className="text-white hover:bg-gray-700">
+                    View Only - Can see task details
+                  </SelectItem>
+                  <SelectItem value="comment" className="text-white hover:bg-gray-700">
+                    Comment Access - Can view and comment
+                  </SelectItem>
+                  <SelectItem value="edit" className="text-white hover:bg-gray-700">
+                    Edit Access - Can view, comment, and update
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -203,7 +248,7 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={handleClose}
                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
               >
                 Cancel
