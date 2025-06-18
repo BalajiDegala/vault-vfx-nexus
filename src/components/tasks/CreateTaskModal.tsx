@@ -18,9 +18,10 @@ interface CreateTaskModalProps {
   onClose: () => void;
   shotId: string;
   shotName: string;
+  onSuccess?: () => void;
 }
 
-const CreateTaskModal = ({ isOpen, onClose, shotId, shotName }: CreateTaskModalProps) => {
+const CreateTaskModal = ({ isOpen, onClose, shotId, shotName, onSuccess }: CreateTaskModalProps) => {
   const { createTask } = useTasks();
   const [formData, setFormData] = useState<Omit<TaskInsert, 'shot_id'>>({
     name: '',
@@ -70,6 +71,11 @@ const CreateTaskModal = ({ isOpen, onClose, shotId, shotName }: CreateTaskModalP
         status: 'todo',
         estimated_hours: undefined,
       });
+
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
 
       onClose();
     } catch (error) {
