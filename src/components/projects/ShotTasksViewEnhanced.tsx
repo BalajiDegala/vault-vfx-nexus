@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
 import { Plus, Share2, Clock, CheckCircle, PlayCircle, PauseCircle } from "lucide-react";
+import CreateTaskModal from "../tasks/CreateTaskModal";
 
 type Shot = Database["public"]["Tables"]["shots"]["Row"];
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
@@ -33,6 +34,7 @@ export default function ShotTasksViewEnhanced({
 }: ShotTasksViewEnhancedProps) {
   const [tasks, setTasks] = useState<TaskWithSharedInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -104,6 +106,16 @@ export default function ShotTasksViewEnhanced({
     }
   };
 
+  const handleCreateTask = () => {
+    console.log('🎯 Opening create task modal for shot:', shot.id);
+    setShowCreateModal(true);
+  };
+
+  const handleTaskCreated = () => {
+    console.log('✅ Task created, refreshing list');
+    fetchTasks();
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "in_progress": return <PlayCircle className="h-4 w-4" />;
@@ -132,6 +144,8 @@ export default function ShotTasksViewEnhanced({
     }
   };
 
+  const canCreateTasks = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
+
   if (loading) {
     return <div className="text-gray-400">Loading tasks...</div>;
   }
@@ -142,11 +156,12 @@ export default function ShotTasksViewEnhanced({
         <h4 className="font-semibold text-gray-200">
           {userRole === 'artist' ? 'Your Assigned Tasks' : 'Tasks'}
         </h4>
-        {(userRole === 'studio' || userRole === 'admin' || userRole === 'producer') && (
+        {canCreateTasks && (
           <Button
             variant="outline"
             size="sm"
             className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+            onClick={handleCreateTask}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Task
@@ -157,6 +172,18 @@ export default function ShotTasksViewEnhanced({
       {tasks.length === 0 ? (
         <div className="text-center py-6 text-gray-400">
           {userRole === 'artist' ? 'No assigned tasks in this shot.' : 'No tasks created for this shot yet.'}
+          {canCreateTasks && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                onClick={handleCreateTask}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Task
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -229,6 +256,13 @@ export default function ShotTasksViewEnhanced({
           ))}
         </div>
       )}
+
+      <CreateTaskModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        shotId={shot.id}
+        shotName={shot.name}
+      />
     </div>
   );
 }

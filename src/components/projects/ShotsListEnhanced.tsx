@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronDown, ChevronRight, Loader2, SortAsc, SortDesc } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, SortAsc, SortDesc, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
 import ShotTasksViewEnhanced from "./ShotTasksViewEnhanced";
+import CreateShotModal from "./CreateShotModal";
 
 type Shot = Database["public"]["Tables"]["shots"]["Row"];
 
@@ -37,6 +38,7 @@ export default function ShotsListEnhanced({
   const [sortCol, setSortCol] = useState<SortCol>("frame_start");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -68,6 +70,18 @@ export default function ShotsListEnhanced({
     }
   };
 
+  const handleCreateShot = () => {
+    console.log('🎬 Opening create shot modal for sequence:', sequenceId);
+    setShowCreateModal(true);
+  };
+
+  const handleShotCreated = () => {
+    console.log('✅ Shot created, refreshing list');
+    fetchShots();
+  };
+
+  const canCreateShots = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
+
   let filtered = shots;
   if (statusFilter) filtered = filtered.filter(s => s.status === statusFilter);
 
@@ -81,29 +95,43 @@ export default function ShotsListEnhanced({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2 items-center mb-4">
-        <span className="font-semibold text-gray-200">
-          {userRole === 'artist' ? 'Your Assigned Shots' : 'Shots'}
-        </span>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-200"
-        >
-          {statusOptions.map(opt =>
-            <option value={opt.value} key={opt.value}>{opt.label}</option>
-          )}
-        </select>
-        <Button variant="ghost" size="sm"
-          onClick={() => {
-            setSortCol("frame_start");
-            setSortDir(d => d === "asc" ? "desc" : "asc");
-          }}
-        >Frames {sortCol === "frame_start" && (sortDir === "asc" ? <SortAsc /> : <SortDesc />)}</Button>
-        <Button variant="ghost" size="sm"
-          onClick={() => {
-            setSortCol("name");
-            setSortDir(d => d === "asc" ? "desc" : "asc");
-          }}
-        >Name {sortCol === "name" && (sortDir === "asc" ? <SortAsc /> : <SortDesc />)}</Button>
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="font-semibold text-gray-200">
+            {userRole === 'artist' ? 'Your Assigned Shots' : 'Shots'}
+          </span>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-200"
+          >
+            {statusOptions.map(opt =>
+              <option value={opt.value} key={opt.value}>{opt.label}</option>
+            )}
+          </select>
+          <Button variant="ghost" size="sm"
+            onClick={() => {
+              setSortCol("frame_start");
+              setSortDir(d => d === "asc" ? "desc" : "asc");
+            }}
+          >Frames {sortCol === "frame_start" && (sortDir === "asc" ? <SortAsc /> : <SortDesc />)}</Button>
+          <Button variant="ghost" size="sm"
+            onClick={() => {
+              setSortCol("name");
+              setSortDir(d => d === "asc" ? "desc" : "asc");
+            }}
+          >Name {sortCol === "name" && (sortDir === "asc" ? <SortAsc /> : <SortDesc />)}</Button>
+        </div>
+        
+        {canCreateShots && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+            onClick={handleCreateShot}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Shot
+          </Button>
+        )}
       </div>
       
       {loading ? (
@@ -111,8 +139,20 @@ export default function ShotsListEnhanced({
       ) : (
         <div className="space-y-4">
           {filtered.length === 0 ? (
-            <div className="text-gray-400">
+            <div className="text-center py-6 text-gray-400">
               {userRole === 'artist' ? 'No assigned shots found.' : 'No shots found.'}
+              {canCreateShots && !statusFilter && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                    onClick={handleCreateShot}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Shot
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             filtered.map(shot => (
@@ -144,6 +184,13 @@ export default function ShotsListEnhanced({
           )}
         </div>
       )}
+
+      <CreateShotModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        sequenceId={sequenceId}
+        onSuccess={handleShotCreated}
+      />
     </div>
   );
 }
