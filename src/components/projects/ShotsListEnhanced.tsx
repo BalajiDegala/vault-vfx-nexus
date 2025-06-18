@@ -82,6 +82,8 @@ export default function ShotsListEnhanced({
 
   const canCreateShots = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
 
+  console.log('🎬 ShotsListEnhanced render - userRole:', userRole, 'canCreateShots:', canCreateShots);
+
   let filtered = shots;
   if (statusFilter) filtered = filtered.filter(s => s.status === statusFilter);
 

@@ -146,6 +146,8 @@ export default function ShotTasksViewEnhanced({
 
   const canCreateTasks = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
 
+  console.log('🎯 ShotTasksViewEnhanced render - userRole:', userRole, 'canCreateTasks:', canCreateTasks);
+
   if (loading) {
     return <div className="text-gray-400">Loading tasks...</div>;
   }
@@ -262,6 +264,7 @@ export default function ShotTasksViewEnhanced({
         onClose={() => setShowCreateModal(false)}
         shotId={shot.id}
         shotName={shot.name}
+        onSuccess={handleTaskCreated}
       />
     </div>
   );
