@@ -10,26 +10,69 @@ import { Share2, Users, Shield } from "lucide-react";
 import { useUserSearch } from "@/hooks/useUserSearch";
 import { useSharedTasks } from "@/hooks/useSharedTasks";
 import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
 
 interface TaskSharingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task: Task | null;
+  task?: Task | null;
+  taskId?: string;
   userRole: string;
   userId: string;
+  onSuccess?: () => void;
 }
 
-const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskSharingModalProps) => {
+const TaskSharingModal = ({ 
+  isOpen, 
+  onClose, 
+  task: propTask, 
+  taskId, 
+  userRole, 
+  userId,
+  onSuccess 
+}: TaskSharingModalProps) => {
   const { searchUsers, searchResults } = useUserSearch();
   const { shareTaskWithArtist } = useSharedTasks(userRole, userId);
+  const [task, setTask] = useState<Task | null>(propTask || null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     artist_id: '',
     access_level: 'view' as 'view' | 'edit' | 'comment',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch task if taskId is provided
+  useEffect(() => {
+    if (isOpen && taskId && !propTask) {
+      fetchTask();
+    }
+  }, [isOpen, taskId, propTask]);
+
+  const fetchTask = async () => {
+    if (!taskId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching task:', error);
+      } else {
+        setTask(data);
+      }
+    } catch (error) {
+      console.error('Error fetching task:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load artists when modal opens
   useEffect(() => {
@@ -65,6 +108,9 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
         notes: ''
       });
 
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
     } catch (error) {
       console.error('❌ Error sharing task:', error);
@@ -80,10 +126,36 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
       access_level: 'view',
       notes: ''
     });
+    setTask(propTask || null);
     onClose();
   };
 
-  if (!task) return null;
+  if (!isOpen) return null;
+
+  if (loading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="bg-gray-900 border-blue-500/20 max-w-2xl">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+            <span className="ml-2 text-gray-400">Loading task details...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!task) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="bg-gray-900 border-blue-500/20 max-w-2xl">
+          <div className="text-center py-8">
+            <p className="text-red-400">Task not found</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   console.log('🎯 TaskSharingModal render:', {
     isOpen,
@@ -102,7 +174,7 @@ const TaskSharingModal = ({ isOpen, onClose, task, userRole, userId }: TaskShari
         </DialogHeader>
 
         <div className="space-y-6 mt-6">
-          {/* Task Info - Now properly displaying all details */}
+          {/* Task Info */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <h3 className="text-blue-400 font-medium mb-3 flex items-center">
               <Share2 className="h-4 w-4 mr-2" />

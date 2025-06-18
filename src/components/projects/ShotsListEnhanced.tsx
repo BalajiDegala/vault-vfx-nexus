@@ -49,18 +49,67 @@ export default function ShotsListEnhanced({
     try {
       console.log('🔍 Fetching shots for sequence:', sequenceId, 'userRole:', userRole);
       
-      // The RLS policies will automatically filter shots based on user access
-      const { data, error } = await supabase
-        .from("shots")
-        .select("*")
-        .eq("sequence_id", sequenceId);
+      if (userRole === 'artist') {
+        // For artists, only show shots that have tasks shared with them
+        const { data: sharedTasks, error: sharedError } = await supabase
+          .from('shared_tasks')
+          .select(`
+            task_id,
+            status,
+            tasks!inner (
+              id,
+              shot_id,
+              shots!inner (
+                id,
+                name,
+                description,
+                status,
+                frame_start,
+                frame_end,
+                sequence_id,
+                assigned_to,
+                created_at,
+                updated_at
+              )
+            )
+          `)
+          .eq('artist_id', userId)
+          .eq('status', 'approved')
+          .eq('tasks.shots.sequence_id', sequenceId);
 
-      if (error) {
-        console.error('Error fetching shots:', error);
-        setShots([]);
+        if (sharedError) {
+          console.error('Error fetching shared tasks for shots:', sharedError);
+          setShots([]);
+          return;
+        }
+
+        // Extract unique shots from shared tasks
+        const uniqueShots = new Map();
+        sharedTasks?.forEach(sharedTask => {
+          const shot = sharedTask.tasks?.shots;
+          if (shot) {
+            uniqueShots.set(shot.id, shot);
+          }
+        });
+
+        const artistShots = Array.from(uniqueShots.values());
+        console.log('✅ Artist shots with shared tasks:', artistShots.length);
+        setShots(artistShots);
       } else {
-        console.log('✅ Fetched shots:', data?.length || 0);
-        setShots(data || []);
+        // For studios/admins, show all shots in the sequence
+        const { data, error } = await supabase
+          .from("shots")
+          .select("*")
+          .eq("sequence_id", sequenceId)
+          .order('frame_start');
+
+        if (error) {
+          console.error('Error fetching shots:', error);
+          setShots([]);
+        } else {
+          console.log('✅ All shots fetched:', data?.length || 0);
+          setShots(data || []);
+        }
       }
     } catch (error) {
       console.error('Unexpected error fetching shots:', error);
@@ -142,7 +191,7 @@ export default function ShotsListEnhanced({
         <div className="space-y-4">
           {filtered.length === 0 ? (
             <div className="text-center py-6 text-gray-400">
-              {userRole === 'artist' ? 'No assigned shots found.' : 'No shots found.'}
+              {userRole === 'artist' ? 'No assigned shots found in this sequence.' : 'No shots found.'}
               {canCreateShots && !statusFilter && (
                 <div className="mt-2">
                   <Button
