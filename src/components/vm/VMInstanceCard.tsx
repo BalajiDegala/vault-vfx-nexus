@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Cpu, Monitor, HardDrive, Zap, MapPin } from 'lucide-react';
+import { Cpu, Monitor, HardDrive, Zap, MapPin, Network } from 'lucide-react';
 import type { VMInstance } from '@/hooks/useVMInstances';
 import DCVConnectionStatus from './DCVConnectionStatus';
 
@@ -64,9 +64,23 @@ const VMInstanceCard: React.FC<VMInstanceCardProps> = ({ vm, onTerminate, onConn
         </div>
 
         {vm.physical_machines && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <MapPin className="h-4 w-4" />
-            <span>{vm.physical_machines.name} - {vm.physical_machines.location}</span>
+          <div className="space-y-2 p-3 bg-gray-700 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-gray-300">
+              <MapPin className="h-4 w-4" />
+              <span className="font-medium">{vm.physical_machines.name}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Network className="h-4 w-4" />
+              <span>{vm.physical_machines.ip_address}</span>
+            </div>
+            <div className="text-sm text-gray-400">
+              Location: {vm.physical_machines.location}
+            </div>
+            {vm.physical_machines.dcv_enabled && (
+              <Badge variant="outline" className="text-xs border-green-500 text-green-400">
+                DCV Enabled
+              </Badge>
+            )}
           </div>
         )}
 

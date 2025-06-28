@@ -10,6 +10,11 @@ export interface DCVConnectionStatus {
   vmStatus: string | null;
   dcvAvailable: boolean;
   error: string | null;
+  machineInfo?: {
+    name: string;
+    location: string;
+    ip_address: string;
+  };
 }
 
 export const useDCVConnection = () => {
@@ -39,6 +44,7 @@ export const useDCVConnection = () => {
           dcvAvailable: data.dcv_available,
           connectionUrl: data.connection_url,
           vmStatus: data.vm_status,
+          machineInfo: data.machine_info,
           isValidating: false,
         }));
         return data;
@@ -73,11 +79,11 @@ export const useDCVConnection = () => {
       if (error) throw error;
 
       if (data.success) {
-        // Append session token to connection URL
-        const urlWithToken = `${connectionUrl}?token=${data.session_token}`;
+        // Create secure DCV connection URL
+        const urlWithToken = `${connectionUrl}?token=${data.session_token}&user=${data.user_id}`;
         
-        // Open in new window/tab
-        const newWindow = window.open(urlWithToken, '_blank', 'noopener,noreferrer');
+        // Open DCV connection in new window
+        const newWindow = window.open(urlWithToken, '_blank', 'noopener,noreferrer,width=1280,height=720');
         
         if (!newWindow) {
           throw new Error('Pop-up blocked. Please allow pop-ups for this site and try again.');
@@ -86,9 +92,12 @@ export const useDCVConnection = () => {
         setConnectionStatus(prev => ({ ...prev, isConnecting: false }));
         
         toast({
-          title: "Connected",
-          description: "DCV session opened in new window",
+          title: "Connected to Remote Desktop",
+          description: `DCV session opened to ${connectionStatus.machineInfo?.name || 'remote machine'}`,
         });
+
+        // Monitor connection status
+        monitorConnection(vmInstanceId);
       } else {
         throw new Error('Failed to generate session token');
       }
@@ -108,9 +117,68 @@ export const useDCVConnection = () => {
     }
   };
 
+  const connectToLocalMachine = async (machineIp: string, port: number = 8443) => {
+    setConnectionStatus(prev => ({ ...prev, isConnecting: true, error: null }));
+
+    try {
+      // Construct local DCV connection URL
+      const localDcvUrl = `https://${machineIp}:${port}`;
+      
+      // Test connection availability
+      const testConnection = await fetch(`${localDcvUrl}/health`, { 
+        method: 'GET',
+        mode: 'no-cors' // Allow cross-origin for local network
+      }).catch(() => null);
+
+      // Open DCV connection to local machine
+      const newWindow = window.open(localDcvUrl, '_blank', 'noopener,noreferrer,width=1280,height=720');
+      
+      if (!newWindow) {
+        throw new Error('Pop-up blocked. Please allow pop-ups for this site and try again.');
+      }
+
+      setConnectionStatus(prev => ({ ...prev, isConnecting: false }));
+      
+      toast({
+        title: "Connected to Local Machine",
+        description: `DCV session opened to ${machineIp}`,
+      });
+
+    } catch (error: any) {
+      console.error('Local connection error:', error);
+      setConnectionStatus(prev => ({
+        ...prev,
+        error: error.message,
+        isConnecting: false,
+      }));
+      toast({
+        title: "Local Connection Failed",
+        description: error.message || "Failed to connect to local machine",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const monitorConnection = (vmInstanceId: string) => {
+    // Monitor connection status every 30 seconds
+    const interval = setInterval(async () => {
+      try {
+        await validateConnection(vmInstanceId);
+      } catch (error) {
+        console.log('Connection monitoring error:', error);
+        clearInterval(interval);
+      }
+    }, 30000);
+
+    // Clear interval after 5 minutes
+    setTimeout(() => clearInterval(interval), 300000);
+  };
+
   return {
     connectionStatus,
     validateConnection,
     connectToVM,
+    connectToLocalMachine,
   };
 };

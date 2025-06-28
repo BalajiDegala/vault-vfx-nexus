@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
 import VMInstanceCard from '@/components/vm/VMInstanceCard';
 import VMPlanCard from '@/components/vm/VMPlanCard';
+import LocalMachineConnection from '@/components/vm/LocalMachineConnection';
 import { useVMInstances } from '@/hooks/useVMInstances';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from "@/integrations/supabase/types";
@@ -200,6 +201,9 @@ const MachineRental = () => {
             <TabsTrigger value="plans" className="data-[state=active]:bg-gray-700">
               Available Plans
             </TabsTrigger>
+            <TabsTrigger value="local" className="data-[state=active]:bg-gray-700">
+              Local Machines
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="instances">
@@ -244,6 +248,12 @@ const MachineRental = () => {
                   }}
                 />
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="local">
+            <div className="max-w-md mx-auto">
+              <LocalMachineConnection />
             </div>
           </TabsContent>
         </Tabs>
