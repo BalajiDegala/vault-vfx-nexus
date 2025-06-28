@@ -67,7 +67,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
       <td className="font-medium text-white">
         <button
           onClick={handleProjectNameClick}
-          className="text-left hover:text-blue-400 transition-colors underline-offset-2 hover:underline"
+          className="text-left hover:text-blue-400 transition-colors underline-offset-2 hover:underline text-white"
         >
           {project.title}
         </button>
@@ -89,12 +89,12 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
           <ProjectStatusHistory projectId={project.id} />
         </div>
       </td>
-      <td>
+      <td className="text-gray-300">
         {project.budget_min && project.budget_max
           ? `${project.budget_min}–${project.budget_max} ${project.currency ?? "V3C"}`
           : "—"}
       </td>
-      <td>
+      <td className="text-gray-300">
         {project.deadline ? new Date(project.deadline).toLocaleDateString() : "—"}
       </td>
       <td>
@@ -102,8 +102,8 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
           ? <span className="text-blue-300">Assigned</span>
           : <span className="text-gray-400">Unassigned</span>}
       </td>
-      <td>{project.security_level ?? "Standard"}</td>
-      <td className="capitalize">{project.project_type ?? "studio"}</td>
+      <td className="text-gray-300">{project.security_level ?? "Standard"}</td>
+      <td className="capitalize text-gray-300">{project.project_type ?? "studio"}</td>
       <td>
         <div className="flex gap-2">
           <Button
@@ -111,6 +111,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
             size="icon"
             aria-label={`View ${project.title}`}
             onClick={handleViewClick}
+            className="text-gray-400 hover:text-white"
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -122,6 +123,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
               e.stopPropagation();
               onEdit(project);
             }}
+            className="text-gray-400 hover:text-white"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -133,6 +135,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({
               e.stopPropagation();
               onDelete(project);
             }}
+            className="text-gray-400 hover:text-red-400"
           >
             <Trash2 className="w-4 h-4 text-red-400" />
           </Button>
