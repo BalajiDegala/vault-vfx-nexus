@@ -1,4 +1,11 @@
-# Welcome to your Lovable project
+# VFX Nexus
+
+VFX Nexus is a portal for artists and studios to rent virtual machines, manage
+cloud storage, and exchange **V3 Coins** for rendering time or other services.
+The platform also includes community tools for posting projects, sharing files
+and bidding on tasks. All user data, authentication and file storage are backed
+by **Supabase** which provides a Postgres database, storage buckets and server
+functions used to launch VMs and process V3 Coin transactions.
 
 ## Project info
 
@@ -62,7 +69,14 @@ This project is built with:
 
 ## Environment variables
 
-Copy `.env.example` to `.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` with your own Supabase credentials. The `.env` file is ignored by Git.
+Create a `.env` file by copying `.env.example`:
+
+```sh
+cp .env.example .env
+```
+
+Then set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` with your own
+Supabase credentials. The `.env` file is ignored by Git.
 
 ## How can I deploy this project?
 
