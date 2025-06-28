@@ -56,11 +56,11 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           />
 
           <ProjectBudgetSection
-            budgetMin={formData.budget_min}
-            budgetMax={formData.budget_max}
+            budgetMin={parseFloat(formData.budget_min) || 0}
+            budgetMax={parseFloat(formData.budget_max) || 0}
             currency={formData.currency}
-            onBudgetMinChange={(value) => setFormData({ ...formData, budget_min: value })}
-            onBudgetMaxChange={(value) => setFormData({ ...formData, budget_max: value })}
+            onBudgetMinChange={(value) => setFormData({ ...formData, budget_min: value.toString() })}
+            onBudgetMaxChange={(value) => setFormData({ ...formData, budget_max: value.toString() })}
             onCurrencyChange={(value) => setFormData({ ...formData, currency: value })}
           />
 
