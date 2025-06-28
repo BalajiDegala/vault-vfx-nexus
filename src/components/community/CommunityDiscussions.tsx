@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { Users } from 'lucide-react';
@@ -68,7 +69,7 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
 
   const handleMentionClick = (mention: string) => {
     // Placeholder for mention click functionality if needed in the future
-    console.log('Clicked mention:', mention);
+    logger.log('Clicked mention:', mention);
   };
 
   // handleMessageUser is now openMessagingModal from the hook

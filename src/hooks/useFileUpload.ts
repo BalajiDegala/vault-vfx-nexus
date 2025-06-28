@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +42,7 @@ export const useFileUpload = (options: FileUploadOptions) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
-      console.log('Uploading file:', fileName);
+      logger.log('Uploading file:', fileName);
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
@@ -61,7 +62,7 @@ export const useFileUpload = (options: FileUploadOptions) => {
         .from(options.bucket)
         .getPublicUrl(fileName);
 
-      console.log('File uploaded successfully:', publicUrl);
+      logger.log('File uploaded successfully:', publicUrl);
 
       setUploadProgress(100);
 

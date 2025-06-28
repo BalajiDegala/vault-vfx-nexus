@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -67,7 +68,7 @@ export const useProjectNotifications = (userId: string) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('New notification:', payload);
+          logger.log('New notification:', payload);
           const typedNotification: ProjectNotification = {
             ...payload.new,
             type: payload.new.type as 'message' | 'status_change' | 'assignment' | 'deadline' | 'file_upload'

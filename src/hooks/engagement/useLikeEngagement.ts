@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -7,7 +8,7 @@ export const useLikeEngagement = (refreshPosts: () => Promise<void>) => {
 
   const toggleLike = async (postId: string) => {
     try {
-      console.log('Toggling like for post:', postId);
+      logger.log('Toggling like for post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Authentication Error", description: "You must be logged in to like posts.", variant: "destructive" });
@@ -33,7 +34,7 @@ export const useLikeEngagement = (refreshPosts: () => Promise<void>) => {
           .eq('user_id', user.id);
         
         if (error) throw error;
-        console.log('Post unliked');
+        logger.log('Post unliked');
       } else {
         const { error } = await supabase
           .from('community_post_likes')
@@ -43,7 +44,7 @@ export const useLikeEngagement = (refreshPosts: () => Promise<void>) => {
           });
         
         if (error) throw error;
-        console.log('Post liked');
+        logger.log('Post liked');
       }
       
       await refreshPosts(); 

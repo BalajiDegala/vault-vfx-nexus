@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -40,7 +41,7 @@ export const useSimpleDirectMessages = (
   const fetchMessages = useCallback(async () => {
     if (!currentUserId || !recipientId) return;
     
-    console.log(`📥 Fetching messages between ${currentUserId} and ${recipientId}`);
+    logger.log(`📥 Fetching messages between ${currentUserId} and ${recipientId}`);
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -65,7 +66,7 @@ export const useSimpleDirectMessages = (
           : msg.sender_profile
       }));
       
-      console.log(`📥 Loaded ${transformedMessages.length} messages`);
+      logger.log(`📥 Loaded ${transformedMessages.length} messages`);
       setMessages(transformedMessages);
       
       // Update last message ID for polling
@@ -104,7 +105,7 @@ export const useSimpleDirectMessages = (
         if (error) throw error;
         
         if (data && data.length > 0 && data[0].id !== lastMessageIdRef.current) {
-          console.log('📊 Polling detected new message, refreshing...');
+          logger.log('📊 Polling detected new message, refreshing...');
           fetchMessages();
         }
       } catch (error) {
@@ -125,7 +126,7 @@ export const useSimpleDirectMessages = (
     if (!currentUserId || !recipientId) return;
 
     const channelName = getChannelName();
-    console.log(`🔄 Setting up real-time channel: ${channelName}`);
+    logger.log(`🔄 Setting up real-time channel: ${channelName}`);
     
     const channel = supabase.channel(channelName, {
       config: { broadcast: { self: false } }
@@ -141,7 +142,7 @@ export const useSimpleDirectMessages = (
           table: 'direct_messages'
         },
         (payload) => {
-          console.log('📨 Real-time message received:', payload);
+          logger.log('📨 Real-time message received:', payload);
           const newMessage = payload.new as DirectMessage;
           
           // Check if this message is for our conversation
@@ -150,23 +151,23 @@ export const useSimpleDirectMessages = (
             (newMessage.sender_id === recipientId && newMessage.receiver_id === currentUserId);
           
           if (isForThisConversation) {
-            console.log('✅ Message is for this conversation, refreshing...');
+            logger.log('✅ Message is for this conversation, refreshing...');
             fetchMessages();
           }
         }
       )
       // Listen for typing indicators
       .on('broadcast', { event: 'typing' }, ({ payload }: { payload: { user_id: string; typing: boolean } }) => {
-        console.log('⌨️ Typing indicator received:', payload);
+        logger.log('⌨️ Typing indicator received:', payload);
         if (payload.user_id === recipientId) {
           onRecipientTyping(payload.typing);
         }
       })
       .subscribe((status: string, err?: Error) => {
-        console.log(`Real-time channel [${channelName}] status:`, status);
+        logger.log(`Real-time channel [${channelName}] status:`, status);
         
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time connected successfully');
+          logger.log('✅ Real-time connected successfully');
           setIsRealtimeConnected(true);
           stopPolling(); // Stop polling when real-time works
         } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
@@ -182,7 +183,7 @@ export const useSimpleDirectMessages = (
   // Broadcast typing status
   const broadcastTyping = useCallback((isTyping: boolean) => {
     if (channelRef.current?.state === 'joined') {
-      console.log(`⌨️ Broadcasting typing status: ${isTyping}`);
+      logger.log(`⌨️ Broadcasting typing status: ${isTyping}`);
       channelRef.current.send({
         type: 'broadcast',
         event: 'typing',
@@ -197,7 +198,7 @@ export const useSimpleDirectMessages = (
   const sendMessage = async (content: string) => {
     if (!content.trim() || !currentUserId || !recipientId) return false;
 
-    console.log(`📤 Sending message from ${currentUserId} to ${recipientId}`);
+    logger.log(`📤 Sending message from ${currentUserId} to ${recipientId}`);
     
     // Optimistic update - add message immediately
     const optimisticMessage: DirectMessage = {
@@ -221,7 +222,7 @@ export const useSimpleDirectMessages = (
 
       if (error) throw error;
       
-      console.log('✅ Message sent successfully');
+      logger.log('✅ Message sent successfully');
       
       // Remove optimistic message and refresh to get real message
       setTimeout(() => {
@@ -251,7 +252,7 @@ export const useSimpleDirectMessages = (
       return;
     }
     
-    console.log('🔄 Setting up direct messages for:', currentUserId, recipientId);
+    logger.log('🔄 Setting up direct messages for:', currentUserId, recipientId);
     
     // Initial fetch
     fetchMessages();
@@ -260,7 +261,7 @@ export const useSimpleDirectMessages = (
     setupRealtime();
     
     return () => {
-      console.log('🧹 Cleaning up direct messages...');
+      logger.log('🧹 Cleaning up direct messages...');
       
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);

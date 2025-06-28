@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,33 +32,33 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    console.log('AttachmentUpload: Files selected:', files);
+    logger.log('AttachmentUpload: Files selected:', files);
     if (files.length > maxFiles) {
       console.warn(`AttachmentUpload: Too many files selected. Max is ${maxFiles}. Truncating.`);
     }
     const validFiles = files.slice(0, maxFiles);
     setSelectedFiles(validFiles);
-    console.log('AttachmentUpload: Valid files to be processed:', validFiles);
+    logger.log('AttachmentUpload: Valid files to be processed:', validFiles);
   };
 
   const removeFile = (index: number) => {
-    console.log('AttachmentUpload: Removing file at index:', index);
+    logger.log('AttachmentUpload: Removing file at index:', index);
     setSelectedFiles(files => files.filter((_, i) => i !== index));
   };
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      console.log('AttachmentUpload: No files selected for upload.');
+      logger.log('AttachmentUpload: No files selected for upload.');
       return;
     }
-    console.log('AttachmentUpload: Starting local storage upload for files:', selectedFiles, 'by userId:', currentUserId);
+    logger.log('AttachmentUpload: Starting local storage upload for files:', selectedFiles, 'by userId:', currentUserId);
 
     const uploadedFiles = await uploadMultipleFiles(selectedFiles, currentUserId);
-    console.log('AttachmentUpload: Files stored locally, response from hook:', uploadedFiles);
+    logger.log('AttachmentUpload: Files stored locally, response from hook:', uploadedFiles);
 
     if (uploadedFiles && uploadedFiles.length > 0) {
       onFilesUploaded(uploadedFiles);
-      console.log('AttachmentUpload: onFilesUploaded called with:', uploadedFiles);
+      logger.log('AttachmentUpload: onFilesUploaded called with:', uploadedFiles);
       setSelectedFiles([]);
     } else {
       console.warn('AttachmentUpload: uploadMultipleFiles returned empty or null. Not calling onFilesUploaded.');

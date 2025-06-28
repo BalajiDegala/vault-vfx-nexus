@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -6,7 +7,7 @@ export const useCommentEngagement = () => {
   const { toast } = useToast();
 
   const addComment = async (postId: string, content: string) => {
-    console.log('useCommentEngagement: addComment called with postId:', postId, 'content:', content);
+    logger.log('useCommentEngagement: addComment called with postId:', postId, 'content:', content);
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
@@ -20,7 +21,7 @@ export const useCommentEngagement = () => {
         toast({ title: "Authentication Error", description: "You must be logged in to comment.", variant: "destructive" });
         return false;
       }
-      console.log('useCommentEngagement: Authenticated user:', user.id, user.email);
+      logger.log('useCommentEngagement: Authenticated user:', user.id, user.email);
 
       // First, ensure the user has a profile
       const { data: profile, error: profileError } = await supabase
@@ -34,7 +35,7 @@ export const useCommentEngagement = () => {
         
         // If profile doesn't exist, create one
         if (profileError.code === 'PGRST116') {
-          console.log('useCommentEngagement: Profile not found, creating one...');
+          logger.log('useCommentEngagement: Profile not found, creating one...');
           const { error: createError } = await supabase
             .from('profiles')
             .insert({
@@ -50,13 +51,13 @@ export const useCommentEngagement = () => {
             toast({ title: "Profile Error", description: "Could not create user profile. Please try again.", variant: "destructive" });
             return false;
           }
-          console.log('useCommentEngagement: Profile created successfully');
+          logger.log('useCommentEngagement: Profile created successfully');
         } else {
           toast({ title: "Profile Error", description: "Could not access user profile. Please try again.", variant: "destructive" });
           return false;
         }
       } else {
-        console.log('useCommentEngagement: User profile found:', profile);
+        logger.log('useCommentEngagement: User profile found:', profile);
       }
 
       const { error: insertError } = await supabase
@@ -77,7 +78,7 @@ export const useCommentEngagement = () => {
         return false;
       }
       
-      console.log('useCommentEngagement: Comment added successfully to Supabase for post:', postId);
+      logger.log('useCommentEngagement: Comment added successfully to Supabase for post:', postId);
       toast({
         title: "Success",
         description: "Comment added successfully!",

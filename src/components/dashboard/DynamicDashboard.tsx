@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -69,7 +70,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
   };
 
   const handleCreateProject = () => {
-    console.log("Create project clicked - userRole:", userRole);
+    logger.log("Create project clicked - userRole:", userRole);
     if (!userRole || !["studio", "producer", "admin"].includes(userRole)) {
       toast({
         title: "Access Denied",
@@ -78,7 +79,7 @@ const DynamicDashboard = ({ user, userRole }: DynamicDashboardProps) => {
       });
       return;
     }
-    console.log("Navigating to projects page...");
+    logger.log("Navigating to projects page...");
     navigate("/projects");
   };
 

@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,7 +28,7 @@ export function useUserSearch(initialQuery: string = "", excludeUserId?: string)
     setError(null);
 
     try {
-      console.log("Searching for users with query:", query);
+      logger.log("Searching for users with query:", query);
       
       let queryBuilder = supabase
         .from("profiles")
@@ -52,7 +53,7 @@ export function useUserSearch(initialQuery: string = "", excludeUserId?: string)
 
       const { data, error } = await queryBuilder.limit(50);
 
-      console.log("Search results:", data, "Error:", error);
+      logger.log("Search results:", data, "Error:", error);
 
       if (error) {
         console.error("Search error:", error);
@@ -60,7 +61,7 @@ export function useUserSearch(initialQuery: string = "", excludeUserId?: string)
         setSearchResults([]);
       } else {
         setSearchResults(data ?? []);
-        console.log(`Found ${data?.length || 0} users matching "${query}"`);
+        logger.log(`Found ${data?.length || 0} users matching "${query}"`);
       }
     } catch (err) {
       console.error("Unexpected search error:", err);

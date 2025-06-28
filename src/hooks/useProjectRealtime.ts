@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -62,10 +63,10 @@ export const useProjectRealtime = (projectId: string, userId: string, username: 
         setPresence(presenceMap);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', key, newPresences);
+        logger.log('User joined:', key, newPresences);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', key, leftPresences);
+        logger.log('User left:', key, leftPresences);
       })
       .on('broadcast', { event: 'project_update' }, (payload) => {
         const update = payload.payload as ProjectUpdate;

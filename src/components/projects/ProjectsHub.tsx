@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +38,7 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
   const { projects, loading, stats, handleProjectUpdate } = useProjectsData();
 
   const handleCreateProject = () => {
-    console.log("Create project button clicked - userRole:", userRole);
+    logger.log("Create project button clicked - userRole:", userRole);
     if (!userRole || !["studio", "producer", "admin"].includes(userRole)) {
       toast({
         title: "Access Denied",
@@ -46,12 +47,12 @@ const ProjectsHub = ({ userRole, userId }: ProjectsHubProps) => {
       });
       return;
     }
-    console.log("Opening create project modal...");
+    logger.log("Opening create project modal...");
     setIsCreateModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    console.log("Closing create project modal...");
+    logger.log("Closing create project modal...");
     setIsCreateModalOpen(false);
   };
 

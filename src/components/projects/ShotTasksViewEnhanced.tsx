@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -42,9 +43,9 @@ export default function ShotTasksViewEnhanced({
 
   const fetchTasks = async () => {
     try {
-      console.log('🔍 Fetching tasks for shot:', shot.id, 'userRole:', userRole);
+      logger.log('🔍 Fetching tasks for shot:', shot.id, 'userRole:', userRole);
       
-      let query = supabase.from("tasks").select("*").eq("shot_id", shot.id);
+      const query = supabase.from("tasks").select("*").eq("shot_id", shot.id);
       
       // For artists, also get shared task info
       if (userRole === 'artist') {
@@ -107,12 +108,12 @@ export default function ShotTasksViewEnhanced({
   };
 
   const handleCreateTask = () => {
-    console.log('🎯 Opening create task modal for shot:', shot.id);
+    logger.log('🎯 Opening create task modal for shot:', shot.id);
     setShowCreateModal(true);
   };
 
   const handleTaskCreated = () => {
-    console.log('✅ Task created, refreshing list');
+    logger.log('✅ Task created, refreshing list');
     fetchTasks();
   };
 
@@ -146,7 +147,7 @@ export default function ShotTasksViewEnhanced({
 
   const canCreateTasks = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
 
-  console.log('🎯 ShotTasksViewEnhanced render - userRole:', userRole, 'canCreateTasks:', canCreateTasks);
+  logger.log('🎯 ShotTasksViewEnhanced render - userRole:', userRole, 'canCreateTasks:', canCreateTasks);
 
   if (loading) {
     return <div className="text-gray-400">Loading tasks...</div>;

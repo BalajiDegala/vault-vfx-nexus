@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from 'react';
 import { useCommunityPosts } from '@/hooks/useCommunityPosts';
 import { useCommentsAuth } from '@/hooks/useCommentsAuth';
@@ -46,13 +47,13 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     try {
       setCommentsLoading(true);
       setError(null);
-      console.log('CommentsSection: Loading comments for post:', postId);
+      logger.log('CommentsSection: Loading comments for post:', postId);
       const fetchedComments = await fetchComments(postId);
       
       // Defensive programming: ensure we have valid comments array
       if (Array.isArray(fetchedComments)) {
         setComments(fetchedComments);
-        console.log('CommentsSection: Comments loaded successfully:', fetchedComments.length);
+        logger.log('CommentsSection: Comments loaded successfully:', fetchedComments.length);
       } else {
         console.warn('CommentsSection: Invalid comments data received:', fetchedComments);
         setComments([]);
@@ -70,7 +71,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     e.preventDefault();
     
     if (!newComment.trim() || !postId) {
-      console.log('CommentsSection: Submission aborted - empty comment or no postId');
+      logger.log('CommentsSection: Submission aborted - empty comment or no postId');
       return;
     }
 
@@ -82,11 +83,11 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
     setLoading(true);
     setError(null);
-    console.log('CommentsSection: Submitting comment:', { postId, content: newComment });
+    logger.log('CommentsSection: Submitting comment:', { postId, content: newComment });
     
     try {
       const success = await addComment(postId, newComment);
-      console.log('CommentsSection: Comment submission result:', success);
+      logger.log('CommentsSection: Comment submission result:', success);
       
       if (success) {
         setNewComment('');
@@ -94,7 +95,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
         setTimeout(async () => {
           try {
             await loadComments();
-            console.log('CommentsSection: Comment added successfully, comments reloaded');
+            logger.log('CommentsSection: Comment added successfully, comments reloaded');
           } catch (reloadError) {
             console.error('CommentsSection: Error reloading comments after submission:', reloadError);
             // Don't show error to user for reload failures, the comment was added successfully
@@ -114,7 +115,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   useEffect(() => {
     if (postId) {
-      console.log('CommentsSection: postId changed, loading comments:', postId);
+      logger.log('CommentsSection: postId changed, loading comments:', postId);
       loadComments();
     } else {
       // Reset state if no postId

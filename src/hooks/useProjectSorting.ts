@@ -20,7 +20,7 @@ export const useProjectSorting = (filteredProjects: Project[], itemsPerPage: num
   };
 
   const sortedProjects = useMemo(() => {
-    let proj = [...filteredProjects];
+    const proj = [...filteredProjects];
     proj.sort((a, b) => {
       let aVal: any = a[sortColumn];
       let bVal: any = b[sortColumn];

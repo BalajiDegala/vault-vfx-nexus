@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
@@ -16,14 +17,14 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
     oldAttachments?: UploadedFile[]
   ) => {
     try {
-      console.log('useEditCommunityPost: Editing post:', postId, 'with content:', content, 'category:', category, 'newAttachments:', newAttachments, 'oldAttachments:', oldAttachments);
+      logger.log('useEditCommunityPost: Editing post:', postId, 'with content:', content, 'category:', category, 'newAttachments:', newAttachments, 'oldAttachments:', oldAttachments);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.warn('useEditCommunityPost: User not authenticated for editPost.');
         toast({ title: "Authentication Error", description: "You must be logged in to edit posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
-      console.log('useEditCommunityPost: Authenticated user for editPost:', user.id);
+      logger.log('useEditCommunityPost: Authenticated user for editPost:', user.id);
       
       // Handle file deletions using mock file server
       const filesToDelete: string[] = [];
@@ -41,7 +42,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       }
 
       if (filesToDelete.length > 0) {
-        console.log('useEditCommunityPost: Deleting attachments from storage:', filesToDelete);
+        logger.log('useEditCommunityPost: Deleting attachments from storage:', filesToDelete);
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
@@ -55,7 +56,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
 
       const hashtags = extractHashtags(content);
       const attachmentsJson = newAttachments ? JSON.stringify(newAttachments) : '[]';
-      console.log('useEditCommunityPost: Attachments JSON for DB update:', attachmentsJson);
+      logger.log('useEditCommunityPost: Attachments JSON for DB update:', attachmentsJson);
 
       const { error } = await supabase
         .from('community_posts')
@@ -77,7 +78,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
         await updateTrendingHashtags(hashtags);
       }
 
-      console.log('useEditCommunityPost: Post edited successfully');
+      logger.log('useEditCommunityPost: Post edited successfully');
       toast({
         title: "Success",
         description: "Post updated successfully!",

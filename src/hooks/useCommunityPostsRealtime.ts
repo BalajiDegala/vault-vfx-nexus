@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -9,7 +10,7 @@ export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => 
   useEffect(() => {
     // Clean up any existing channel first
     if (channelRef.current) {
-      console.log('Cleaning up existing community channel');
+      logger.log('Cleaning up existing community channel');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -26,7 +27,7 @@ export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => 
         table: 'community_posts' 
       }, async () => {
         try {
-          console.log('Community posts updated, refreshing...');
+          logger.log('Community posts updated, refreshing...');
           await refreshPosts();
         } catch (error) {
           console.error('Error refreshing posts:', error);
@@ -38,21 +39,21 @@ export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => 
         table: 'community_post_likes' 
       }, async () => {
         try {
-          console.log('Post likes updated, refreshing...');
+          logger.log('Post likes updated, refreshing...');
           await refreshPosts();
         } catch (error) {
           console.error('Error refreshing posts after like:', error);
         }
       })
       .subscribe((status: string) => {
-        console.log('Community realtime subscription status:', status);
+        logger.log('Community realtime subscription status:', status);
       });
 
     channelRef.current = channel;
 
     return () => {
       if (channelRef.current) {
-        console.log('Cleaning up community realtime subscription');
+        logger.log('Cleaning up community realtime subscription');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }

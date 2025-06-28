@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +13,7 @@ export const useCommunityPostsData = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching community posts...');
+      logger.log('Fetching community posts...');
       
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -62,7 +63,7 @@ export const useCommunityPostsData = () => {
         }
       }
       
-      console.log('Fetched posts:', postsData);
+      logger.log('Fetched posts:', postsData);
       
       const formattedPosts: CommunityPost[] = postsData
         ?.filter(post => post.profiles) // Only include posts with valid profile data
@@ -96,7 +97,7 @@ export const useCommunityPostsData = () => {
 
   const fetchComments = async (postId: string): Promise<Comment[]> => {
     try {
-      console.log('Fetching comments for post:', postId);
+      logger.log('Fetching comments for post:', postId);
       
       const { data, error } = await supabase
         .from('community_post_comments')
@@ -116,7 +117,7 @@ export const useCommunityPostsData = () => {
         throw error;
       }
       
-      console.log('Fetched comments:', data);
+      logger.log('Fetched comments:', data);
       
       const formattedComments = (data || [])
         .filter(comment => comment.profiles) // Only include comments with valid profile data

@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { storeFile, getFileUrl } from '@/utils/localFileStorage';
@@ -26,7 +27,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
       setUploading(true);
       setUploadProgress(0);
 
-      console.log('useCustomFileUpload: Starting upload for:', file.name, 'Size:', file.size);
+      logger.log('useCustomFileUpload: Starting upload for:', file.name, 'Size:', file.size);
 
       // Validate file size
       const maxSize = options.maxFileSize || 50 * 1024 * 1024; // 50MB default
@@ -39,12 +40,12 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         throw new Error('File type not allowed');
       }
 
-      console.log('useCustomFileUpload: Validation passed, storing file in localStorage');
+      logger.log('useCustomFileUpload: Validation passed, storing file in localStorage');
       setUploadProgress(25);
 
       // Store file in localStorage
       const storedFile = await storeFile(file);
-      console.log('useCustomFileUpload: File stored with ID:', storedFile.id);
+      logger.log('useCustomFileUpload: File stored with ID:', storedFile.id);
       setUploadProgress(75);
 
       // Get the blob URL for immediate display
@@ -55,7 +56,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
 
       setUploadProgress(100);
       
-      console.log('useCustomFileUpload: Upload complete. FileId:', storedFile.id, 'URL:', fileUrl);
+      logger.log('useCustomFileUpload: Upload complete. FileId:', storedFile.id, 'URL:', fileUrl);
 
       const uploadedFile: UploadedFile = {
         name: file.name,
@@ -65,7 +66,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
         fileId: storedFile.id // Ensure fileId is always included
       };
 
-      console.log('useCustomFileUpload: Returning uploaded file:', uploadedFile);
+      logger.log('useCustomFileUpload: Returning uploaded file:', uploadedFile);
       return uploadedFile;
     } catch (error) {
       console.error('useCustomFileUpload: Error during upload:', error);
@@ -82,7 +83,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
   };
 
   const uploadMultipleFiles = async (files: File[], userId: string): Promise<UploadedFile[]> => {
-    console.log('useCustomFileUpload: Starting multiple file upload for', files.length, 'files');
+    logger.log('useCustomFileUpload: Starting multiple file upload for', files.length, 'files');
     const uploadedFiles: UploadedFile[] = [];
     
     for (const file of files) {
@@ -92,7 +93,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
       }
     }
     
-    console.log('useCustomFileUpload: Multiple upload complete. Successful uploads:', uploadedFiles.length);
+    logger.log('useCustomFileUpload: Multiple upload complete. Successful uploads:', uploadedFiles.length);
     return uploadedFiles;
   };
 

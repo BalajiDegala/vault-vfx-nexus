@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { extractHashtags, updateTrendingHashtags } from '@/utils/hashtagUtils';
@@ -9,18 +10,18 @@ export const useCreateCommunityPost = (refreshPosts: () => Promise<void>) => {
 
   const createPost = async (content: string, category: string = 'general', attachments?: UploadedFile[]) => {
     try {
-      console.log('useCreateCommunityPost: Creating new post with content:', content, 'category:', category, 'attachments:', attachments);
+      logger.log('useCreateCommunityPost: Creating new post with content:', content, 'category:', category, 'attachments:', attachments);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.warn('useCreateCommunityPost: User not authenticated for createPost.');
         toast({ title: "Authentication Error", description: "You must be logged in to create posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
-      console.log('useCreateCommunityPost: Authenticated user for createPost:', user.id);
+      logger.log('useCreateCommunityPost: Authenticated user for createPost:', user.id);
 
       const hashtags = extractHashtags(content);
       const attachmentsJson = attachments ? JSON.stringify(attachments) : '[]';
-      console.log('useCreateCommunityPost: Attachments JSON for DB:', attachmentsJson);
+      logger.log('useCreateCommunityPost: Attachments JSON for DB:', attachmentsJson);
 
       const { error } = await supabase
         .from('community_posts')
@@ -40,7 +41,7 @@ export const useCreateCommunityPost = (refreshPosts: () => Promise<void>) => {
         await updateTrendingHashtags(hashtags);
       }
       
-      console.log('useCreateCommunityPost: Post created successfully.');
+      logger.log('useCreateCommunityPost: Post created successfully.');
       toast({
         title: "Success",
         description: "Post created successfully!",

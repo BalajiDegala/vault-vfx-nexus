@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronRight, Loader2, Plus } from "lucide-react";
@@ -35,7 +36,7 @@ export default function ProjectHierarchyEnhanced({
 
   const fetchSequences = async () => {
     try {
-      console.log('🔍 Fetching sequences for project:', project.id, 'userRole:', userRole);
+      logger.log('🔍 Fetching sequences for project:', project.id, 'userRole:', userRole);
       
       // The RLS policies will automatically filter sequences based on user access
       const { data, error } = await supabase
@@ -48,7 +49,7 @@ export default function ProjectHierarchyEnhanced({
         console.error('Error fetching sequences:', error);
         setSequences([]);
       } else {
-        console.log('✅ Fetched sequences:', data?.length || 0);
+        logger.log('✅ Fetched sequences:', data?.length || 0);
         setSequences(data || []);
       }
     } catch (error) {
@@ -60,12 +61,12 @@ export default function ProjectHierarchyEnhanced({
   };
 
   const handleCreateSequence = () => {
-    console.log('🎬 Opening create sequence modal for project:', project.id);
+    logger.log('🎬 Opening create sequence modal for project:', project.id);
     setShowCreateModal(true);
   };
 
   const handleSequenceCreated = () => {
-    console.log('✅ Sequence created, refreshing list');
+    logger.log('✅ Sequence created, refreshing list');
     fetchSequences();
   };
 

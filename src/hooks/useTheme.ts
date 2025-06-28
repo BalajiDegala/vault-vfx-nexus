@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useEffect } from 'react';
 import { Database } from "@/integrations/supabase/types";
 
@@ -17,7 +18,7 @@ export const useTheme = (userRole: AppRole | null) => {
     document.body.classList.add(themeClass);
     document.documentElement.classList.add(themeClass);
 
-    console.log(`Applied luxury theme: ${themeClass}`);
+    logger.log(`Applied luxury theme: ${themeClass}`);
 
     // Cleanup function
     return () => {

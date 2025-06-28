@@ -51,8 +51,8 @@ export default function TasksList({ shotId }: { shotId: string }) {
   if (typeFilter) filtered = filtered.filter(t => t.task_type === typeFilter);
 
   filtered = filtered.sort((a, b) => {
-    let av: any = a[sortCol];
-    let bv: any = b[sortCol];
+    const av: any = a[sortCol];
+    const bv: any = b[sortCol];
     if (sortCol === "priority") {
       av = priorityOrder[a.priority] || 0;
       bv = priorityOrder[b.priority] || 0;

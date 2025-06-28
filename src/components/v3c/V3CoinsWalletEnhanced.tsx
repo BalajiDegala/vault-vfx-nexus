@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState } from "react";
 import { useV3CoinsEnhanced } from "@/hooks/useV3CoinsEnhanced";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ export function V3CoinsWalletEnhanced({ userId }: { userId: string }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
-    console.log("=== MANUAL REFRESH CLICKED ===");
+    logger.log("=== MANUAL REFRESH CLICKED ===");
     setRefreshing(true);
     try {
       await forceRefresh();

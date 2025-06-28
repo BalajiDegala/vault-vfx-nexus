@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -7,7 +8,7 @@ export const useBookmarkEngagement = (refreshPosts: () => Promise<void>) => {
 
   const toggleBookmark = async (postId: string) => {
     try {
-      console.log('Toggling bookmark for post:', postId);
+      logger.log('Toggling bookmark for post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Authentication Error", description: "You must be logged in to bookmark posts.", variant: "destructive" });
@@ -32,7 +33,7 @@ export const useBookmarkEngagement = (refreshPosts: () => Promise<void>) => {
           .eq('id', existingBookmark.id);
         
         if (deleteError) throw deleteError;
-        console.log('Post unbookmarked');
+        logger.log('Post unbookmarked');
         toast({ title: "Success", description: "Post removed from bookmarks." });
       } else {
         const { error: insertError } = await supabase
@@ -43,7 +44,7 @@ export const useBookmarkEngagement = (refreshPosts: () => Promise<void>) => {
           });
         
         if (insertError) throw insertError;
-        console.log('Post bookmarked');
+        logger.log('Post bookmarked');
         toast({ title: "Success", description: "Post added to bookmarks!" });
       }
       

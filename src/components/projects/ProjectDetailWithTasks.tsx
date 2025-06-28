@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -28,7 +29,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
 
   const fetchSequences = async () => {
     try {
-      console.log('🔍 Fetching sequences for project:', project.id, 'userRole:', userRole);
+      logger.log('🔍 Fetching sequences for project:', project.id, 'userRole:', userRole);
       
       if (userRole === 'artist') {
         // For artists, only show sequences that have tasks shared with them
@@ -73,7 +74,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
         });
 
         const artistSequences = Array.from(uniqueSequences.values());
-        console.log('✅ Artist sequences with shared tasks:', artistSequences.length);
+        logger.log('✅ Artist sequences with shared tasks:', artistSequences.length);
         setSequences(artistSequences);
       } else {
         // For studios/admins, show all sequences
@@ -87,7 +88,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
           console.error('Error fetching sequences:', error);
           setSequences([]);
         } else {
-          console.log('✅ All sequences fetched:', data?.length || 0);
+          logger.log('✅ All sequences fetched:', data?.length || 0);
           setSequences(data || []);
         }
       }
@@ -100,7 +101,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
   };
 
   const handleShareTask = (taskId: string) => {
-    console.log('📤 Sharing task:', taskId);
+    logger.log('📤 Sharing task:', taskId);
     setSelectedTaskId(taskId);
   };
 
