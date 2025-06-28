@@ -8,12 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { AppRole } from "@/types/auth";
 import RoleSelection from "@/components/auth/RoleSelection";
 import SignupForm from "@/components/auth/SignupForm";
-import { 
 import logger from "@/lib/logger";
-  checkProfileExists, 
-  createProfileDirectly, 
-  assignRole, 
-  validateSignupForm 
+import {
+  checkProfileExists,
+  createProfileDirectly,
+  assignRole,
+  validateSignupForm
 } from "@/utils/signupHelpers";
 
 const Signup = () => {
