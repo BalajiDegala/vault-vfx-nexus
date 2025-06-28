@@ -22,6 +22,8 @@ export interface VMInstance {
     name: string;
     location: string;
     gpu_model: string;
+    ip_address: string;
+    dcv_enabled: boolean;
   };
 }
 
