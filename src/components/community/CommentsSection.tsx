@@ -39,7 +39,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
 
   const loadComments = async () => {
     if (!postId) {
-      console.error('CommentsSection: No postId provided.');
+      logger.error('CommentsSection: No postId provided.');
       setCommentsLoading(false);
       return;
     }
@@ -55,11 +55,11 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
         setComments(fetchedComments);
         logger.log('CommentsSection: Comments loaded successfully:', fetchedComments.length);
       } else {
-        console.warn('CommentsSection: Invalid comments data received:', fetchedComments);
+        logger.warn('CommentsSection: Invalid comments data received:', fetchedComments);
         setComments([]);
       }
     } catch (error) {
-      console.error('CommentsSection: Error loading comments:', error);
+      logger.error('CommentsSection: Error loading comments:', error);
       setError('Failed to load comments');
       setComments([]); // Reset to empty array on error
     } finally {
@@ -76,7 +76,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
     }
 
     if (!isAuthenticated) {
-      console.error('CommentsSection: User not authenticated, cannot submit comment');
+      logger.error('CommentsSection: User not authenticated, cannot submit comment');
       setError('You must be logged in to comment');
       return;
     }
@@ -97,16 +97,16 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
             await loadComments();
             logger.log('CommentsSection: Comment added successfully, comments reloaded');
           } catch (reloadError) {
-            console.error('CommentsSection: Error reloading comments after submission:', reloadError);
+            logger.error('CommentsSection: Error reloading comments after submission:', reloadError);
             // Don't show error to user for reload failures, the comment was added successfully
           }
         }, 100);
       } else {
-        console.error('CommentsSection: Failed to add comment (addComment returned false)');
+        logger.error('CommentsSection: Failed to add comment (addComment returned false)');
         setError('Failed to post comment. Please try again.');
       }
     } catch (error) {
-      console.error('CommentsSection: Comment submission error:', error);
+      logger.error('CommentsSection: Comment submission error:', error);
       setError('Failed to post comment. An unexpected error occurred.');
     } finally {
       setLoading(false);

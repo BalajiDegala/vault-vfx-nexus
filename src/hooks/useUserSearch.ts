@@ -56,7 +56,7 @@ export function useUserSearch(initialQuery: string = "", excludeUserId?: string)
       logger.log("Search results:", data, "Error:", error);
 
       if (error) {
-        console.error("Search error:", error);
+        logger.error("Search error:", error);
         setError(error.message);
         setSearchResults([]);
       } else {
@@ -64,7 +64,7 @@ export function useUserSearch(initialQuery: string = "", excludeUserId?: string)
         logger.log(`Found ${data?.length || 0} users matching "${query}"`);
       }
     } catch (err) {
-      console.error("Unexpected search error:", err);
+      logger.error("Unexpected search error:", err);
       setError("Failed to search users");
       setSearchResults([]);
     } finally {

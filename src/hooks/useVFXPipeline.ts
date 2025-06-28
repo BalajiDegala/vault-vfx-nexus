@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type Sequence = Database["public"]["Tables"]["sequences"]["Row"];
 type Shot = Database["public"]["Tables"]["shots"]["Row"];
@@ -77,7 +78,7 @@ export const useVFXPipeline = (projectId: string) => {
 
       setSequences(processedSequences);
     } catch (error) {
-      console.error('Error fetching pipeline data:', error);
+      logger.error('Error fetching pipeline data:', error);
       toast({
         title: "Error",
         description: "Failed to load project structure",
@@ -115,7 +116,7 @@ export const useVFXPipeline = (projectId: string) => {
       toast({ title: "Sequence created successfully" });
       return newSequence;
     } catch (error) {
-      console.error('Error creating sequence:', error);
+      logger.error('Error creating sequence:', error);
       toast({
         title: "Error",
         description: "Failed to create sequence",
@@ -150,7 +151,7 @@ export const useVFXPipeline = (projectId: string) => {
       toast({ title: "Shot created successfully" });
       return newShot;
     } catch (error) {
-      console.error('Error creating shot:', error);
+      logger.error('Error creating shot:', error);
       toast({
         title: "Error",
         description: "Failed to create shot",
@@ -194,7 +195,7 @@ export const useVFXPipeline = (projectId: string) => {
       toast({ title: "Task created successfully" });
       return newTask;
     } catch (error) {
-      console.error('Error creating task:', error);
+      logger.error('Error creating task:', error);
       toast({
         title: "Error",
         description: "Failed to create task",
@@ -218,7 +219,7 @@ export const useVFXPipeline = (projectId: string) => {
       
       toast({ title: "Sequence updated successfully" });
     } catch (error) {
-      console.error('Error updating sequence:', error);
+      logger.error('Error updating sequence:', error);
       toast({
         title: "Error",
         description: "Failed to update sequence",
@@ -252,7 +253,7 @@ export const useVFXPipeline = (projectId: string) => {
       
       toast({ title: "Shot updated successfully" });
     } catch (error) {
-      console.error('Error updating shot:', error);
+      logger.error('Error updating shot:', error);
       toast({
         title: "Error",
         description: "Failed to update shot",
@@ -290,7 +291,7 @@ export const useVFXPipeline = (projectId: string) => {
       
       toast({ title: "Task updated successfully" });
     } catch (error) {
-      console.error('Error updating task:', error);
+      logger.error('Error updating task:', error);
       toast({
         title: "Error",
         description: "Failed to update task",
@@ -320,7 +321,7 @@ export const useVFXPipeline = (projectId: string) => {
       
       toast({ title: "Task status updated" });
     } catch (error) {
-      console.error('Error updating task status:', error);
+      logger.error('Error updating task status:', error);
       toast({
         title: "Error",
         description: "Failed to update task status",

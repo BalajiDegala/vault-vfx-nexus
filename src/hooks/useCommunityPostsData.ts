@@ -30,7 +30,7 @@ export const useCommunityPostsData = () => {
         .order('created_at', { ascending: false });
 
       if (postsError) {
-        console.error('Error fetching posts:', postsError);
+        logger.error('Error fetching posts:', postsError);
         throw postsError;
       }
       
@@ -45,7 +45,7 @@ export const useCommunityPostsData = () => {
           .eq('user_id', user.id);
 
         if (bookmarksError) {
-          console.error('Error fetching user bookmarks:', bookmarksError);
+          logger.error('Error fetching user bookmarks:', bookmarksError);
         } else if (bookmarksData) {
           bookmarksData.forEach(b => bookmarkedPostIds.add(b.post_id));
         }
@@ -57,7 +57,7 @@ export const useCommunityPostsData = () => {
           .eq('user_id', user.id);
 
         if (likesError) {
-          console.error('Error fetching user likes:', likesError);
+          logger.error('Error fetching user likes:', likesError);
         } else if (likesData) {
           likesData.forEach(l => likedPostIds.add(l.post_id));
         }
@@ -84,7 +84,7 @@ export const useCommunityPostsData = () => {
       
       setPosts(formattedPosts);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      logger.error('Error fetching posts:', error);
       toast({
         title: "Error",
         description: "Failed to load community posts",
@@ -113,7 +113,7 @@ export const useCommunityPostsData = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching comments:', error);
+        logger.error('Error fetching comments:', error);
         throw error;
       }
       
@@ -132,7 +132,7 @@ export const useCommunityPostsData = () => {
       
       return formattedComments;
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      logger.error('Error fetching comments:', error);
       return [];
     }
   };

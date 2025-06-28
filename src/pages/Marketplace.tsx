@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, DollarSign, Plus, Star, Download } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import CreateMarketplaceItemModal from "@/components/marketplace/CreateMarketplaceItemModal";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type MarketplaceCategory = Database["public"]["Enums"]["marketplace_category"];
@@ -61,7 +62,7 @@ const Marketplace = () => {
         .eq("user_id", session.user.id);
 
       if (roleError) {
-        console.error("Role fetch error:", roleError);
+        logger.error("Role fetch error:", roleError);
         navigate("/login");
         return;
       }
@@ -81,7 +82,7 @@ const Marketplace = () => {
 
       setUserRole(selectedRole);
     } catch (error) {
-      console.error("Auth check error:", error);
+      logger.error("Auth check error:", error);
       navigate("/login");
     } finally {
       setLoading(false);
@@ -110,13 +111,13 @@ const Marketplace = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching marketplace items:", error);
+        logger.error("Error fetching marketplace items:", error);
         return;
       }
 
       setItems(data || []);
     } catch (error) {
-      console.error("Error fetching marketplace items:", error);
+      logger.error("Error fetching marketplace items:", error);
     }
   };
 
@@ -140,7 +141,7 @@ const Marketplace = () => {
             variant: "destructive",
           });
         } else {
-          console.error("Purchase error:", error);
+          logger.error("Purchase error:", error);
           toast({
             title: "Purchase Failed",
             description: "There was an error processing your purchase.",
@@ -164,7 +165,7 @@ const Marketplace = () => {
           .eq("id", itemId);
 
         if (updateError) {
-          console.error("Error updating download count:", updateError);
+          logger.error("Error updating download count:", updateError);
         }
       }
 
@@ -175,7 +176,7 @@ const Marketplace = () => {
 
       fetchItems(); // Refresh to update download counts
     } catch (error) {
-      console.error("Purchase error:", error);
+      logger.error("Purchase error:", error);
       toast({
         title: "Purchase Failed",
         description: "There was an error processing your purchase.",

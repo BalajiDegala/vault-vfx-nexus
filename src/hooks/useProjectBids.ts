@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type ProjectBid = Database["public"]["Tables"]["project_bids"]["Row"];
 type ProjectBidInsert = Database["public"]["Tables"]["project_bids"]["Insert"];
@@ -45,7 +46,7 @@ export const useProjectBids = (projectId?: string) => {
         .order('created_at', { ascending: false });
 
       if (bidsError) {
-        console.error("Error fetching project bids:", bidsError);
+        logger.error("Error fetching project bids:", bidsError);
         throw bidsError;
       }
 
@@ -71,7 +72,7 @@ export const useProjectBids = (projectId?: string) => {
         .in('id', bidderIds);
 
       if (profilesError) {
-        console.error("Error fetching bidder profiles:", profilesError);
+        logger.error("Error fetching bidder profiles:", profilesError);
         throw profilesError;
       }
 
@@ -86,7 +87,7 @@ export const useProjectBids = (projectId?: string) => {
       
       setBids(combinedBids as ProjectBidWithProfile[]);
     } catch (error) {
-      console.error('Error processing project bids:', error);
+      logger.error('Error processing project bids:', error);
       toast({
         title: "Error",
         description: "Failed to load project bids",
@@ -122,7 +123,7 @@ export const useProjectBids = (projectId?: string) => {
       await fetchProjectBids();
       return data;
     } catch (error: any) {
-      console.error('Error submitting project bid:', error);
+      logger.error('Error submitting project bid:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit project bid",

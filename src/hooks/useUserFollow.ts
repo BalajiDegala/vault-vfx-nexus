@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import logger from "@/lib/logger";
 
 export const useUserFollow = (currentUserId: string | null, targetUserId: string) => {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -68,7 +69,7 @@ export const useUserFollow = (currentUserId: string | null, targetUserId: string
         });
       }
     } catch (error: any) {
-      console.error('Error toggling follow:', error);
+      logger.error('Error toggling follow:', error);
       toast({
         title: "Error",
         description: "Failed to update follow status",

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { DashboardWidget, DashboardLayout, DEFAULT_WIDGETS } from "@/types/dashboard";
+import logger from "@/lib/logger";
 
 export const useDashboardCustomization = (userId: string) => {
   const [layout, setLayout] = useState<DashboardLayout>({
@@ -19,7 +20,7 @@ export const useDashboardCustomization = (userId: string) => {
         const parsed = JSON.parse(savedLayout);
         setLayout(parsed);
       } catch (error) {
-        console.error('Error loading dashboard layout:', error);
+        logger.error('Error loading dashboard layout:', error);
       }
     }
   }, [userId]);

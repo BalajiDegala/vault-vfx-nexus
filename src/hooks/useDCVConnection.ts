@@ -53,7 +53,7 @@ export const useDCVConnection = () => {
         throw new Error(data.error || 'Connection validation failed');
       }
     } catch (error: any) {
-      console.error('Connection validation error:', error);
+      logger.error('Connection validation error:', error);
       setConnectionStatus(prev => ({
         ...prev,
         error: error.message,
@@ -103,7 +103,7 @@ export const useDCVConnection = () => {
         throw new Error('Failed to generate session token');
       }
     } catch (error: any) {
-      console.error('Connection error:', error);
+      logger.error('Connection error:', error);
       setConnectionStatus(prev => ({
         ...prev,
         error: error.message,
@@ -146,7 +146,7 @@ export const useDCVConnection = () => {
       });
 
     } catch (error: any) {
-      console.error('Local connection error:', error);
+      logger.error('Local connection error:', error);
       setConnectionStatus(prev => ({
         ...prev,
         error: error.message,

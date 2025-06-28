@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type TaskBid = Database["public"]["Tables"]["task_bids"]["Row"];
 type TaskBidInsert = Database["public"]["Tables"]["task_bids"]["Insert"];
@@ -45,7 +46,7 @@ export const useTaskBids = (taskId?: string) => {
       const typedData = (data || []) as TaskBidWithProfile[];
       setBids(typedData);
     } catch (error) {
-      console.error('Error fetching task bids:', error);
+      logger.error('Error fetching task bids:', error);
       toast({
         title: "Error",
         description: "Failed to load bids",
@@ -81,7 +82,7 @@ export const useTaskBids = (taskId?: string) => {
       await fetchTaskBids(); // Refresh bids
       return data;
     } catch (error: any) {
-      console.error('Error submitting bid:', error);
+      logger.error('Error submitting bid:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit bid",
@@ -109,7 +110,7 @@ export const useTaskBids = (taskId?: string) => {
 
       await fetchTaskBids(); // Refresh bids
     } catch (error: any) {
-      console.error('Error updating bid status:', error);
+      logger.error('Error updating bid status:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update bid",

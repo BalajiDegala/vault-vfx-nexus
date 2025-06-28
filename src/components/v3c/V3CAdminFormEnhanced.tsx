@@ -109,7 +109,7 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
       });
 
       if (error) {
-        console.error("Transaction RPC error:", error);
+        logger.error("Transaction RPC error:", error);
         setLastResult({ success: false, error: error.message });
         toast({
           title: "Transaction failed",
@@ -123,7 +123,7 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
       setLastResult(result);
 
       if (!result.success) {
-        console.error("Transaction failed:", result.error);
+        logger.error("Transaction failed:", result.error);
         toast({
           title: "Transaction failed",
           description: result.error,
@@ -158,7 +158,7 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
       logger.log("=== ADMIN TRANSACTION COMPLETE ===");
       
     } catch (err) {
-      console.error("Unexpected transaction error:", err);
+      logger.error("Unexpected transaction error:", err);
       const errorMsg = "An unexpected error occurred.";
       setLastResult({ success: false, error: errorMsg });
       toast({

@@ -74,7 +74,7 @@ export const useSimpleDirectMessages = (
         lastMessageIdRef.current = transformedMessages[transformedMessages.length - 1].id;
       }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      logger.error('Error fetching messages:', error);
       toast({
         title: "Error",
         description: "Failed to load messages",
@@ -109,7 +109,7 @@ export const useSimpleDirectMessages = (
           fetchMessages();
         }
       } catch (error) {
-        console.error('Polling error:', error);
+        logger.error('Polling error:', error);
       }
     }, 3000); // Poll every 3 seconds
   }, [currentUserId, recipientId, fetchMessages]);
@@ -171,7 +171,7 @@ export const useSimpleDirectMessages = (
           setIsRealtimeConnected(true);
           stopPolling(); // Stop polling when real-time works
         } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-          console.warn('❌ Real-time failed, falling back to polling:', err);
+          logger.warn('❌ Real-time failed, falling back to polling:', err);
           setIsRealtimeConnected(false);
           startPolling(); // Start polling as fallback
         }
@@ -190,7 +190,7 @@ export const useSimpleDirectMessages = (
         payload: { user_id: currentUserId, typing: isTyping }
       });
     } else {
-      console.warn('⚠️ Cannot broadcast typing, channel not ready');
+      logger.warn('⚠️ Cannot broadcast typing, channel not ready');
     }
   }, [currentUserId]);
 
@@ -231,7 +231,7 @@ export const useSimpleDirectMessages = (
       
       return true;
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));

@@ -8,6 +8,7 @@ import ProjectsHub from "@/components/projects/ProjectsHub";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { Loader2 } from "lucide-react";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -24,16 +25,16 @@ const Projects = () => {
 
   const checkUser = async () => {
     try {
-      console.log("Projects page: Checking user authentication...");
+      logger.log("Projects page: Checking user authentication...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
-        console.log("Projects page: No session found, redirecting to login");
+        logger.log("Projects page: No session found, redirecting to login");
         navigate("/login");
         return;
       }
 
-      console.log("Projects page: User authenticated:", session.user.id);
+      logger.log("Projects page: User authenticated:", session.user.id);
       setUser(session.user);
 
       // Get user role
@@ -44,7 +45,7 @@ const Projects = () => {
         .single();
 
       if (roleError) {
-        console.error("Projects page: Error fetching user role:", roleError);
+        logger.error("Projects page: Error fetching user role:", roleError);
         toast({
           title: "Error",
           description: "Unable to fetch user role",
@@ -53,11 +54,11 @@ const Projects = () => {
         // Set default role to prevent blocking
         setUserRole("artist");
       } else {
-        console.log("Projects page: User role:", roleData.role);
+        logger.log("Projects page: User role:", roleData.role);
         setUserRole(roleData.role);
       }
     } catch (error) {
-      console.error("Projects page: Auth error:", error);
+      logger.error("Projects page: Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);

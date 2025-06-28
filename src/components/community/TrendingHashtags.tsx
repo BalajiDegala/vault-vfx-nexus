@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import logger from "@/lib/logger";
 
 interface TrendingHashtag {
   hashtag: string;
@@ -29,7 +30,7 @@ const TrendingHashtags = ({ onHashtagClick }: TrendingHashtagsProps) => {
       if (error) throw error;
       setHashtags(data || []);
     } catch (error) {
-      console.error('Error fetching trending hashtags:', error);
+      logger.error('Error fetching trending hashtags:', error);
     } finally {
       setLoading(false);
     }

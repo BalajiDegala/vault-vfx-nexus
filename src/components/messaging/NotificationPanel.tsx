@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { MessageSquare, X, Check, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import logger from "@/lib/logger";
 
 interface Notification {
   id: string;
@@ -72,7 +73,7 @@ const NotificationPanel = ({ isOpen, onClose, currentUserId, unreadCount, onMark
       
       setNotifications(formattedNotifications);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      logger.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }

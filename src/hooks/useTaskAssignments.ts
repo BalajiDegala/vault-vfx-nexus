@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type TaskAssignment = Database["public"]["Tables"]["task_assignments"]["Row"];
 type TaskAssignmentInsert = Database["public"]["Tables"]["task_assignments"]["Insert"];
@@ -64,7 +65,7 @@ export const useTaskAssignments = (userId?: string) => {
       const typedData = (data || []) as TaskAssignmentWithProfiles[];
       setAssignments(typedData);
     } catch (error) {
-      console.error('Error fetching task assignments:', error);
+      logger.error('Error fetching task assignments:', error);
       toast({
         title: "Error",
         description: "Failed to load assignments",
@@ -99,7 +100,7 @@ export const useTaskAssignments = (userId?: string) => {
       await fetchAssignments(); // Refresh assignments
       return data;
     } catch (error: any) {
-      console.error('Error creating assignment:', error);
+      logger.error('Error creating assignment:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create assignment",
@@ -139,7 +140,7 @@ export const useTaskAssignments = (userId?: string) => {
 
       await fetchAssignments(); // Refresh assignments
     } catch (error: any) {
-      console.error('Error updating assignment status:', error);
+      logger.error('Error updating assignment status:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update assignment",

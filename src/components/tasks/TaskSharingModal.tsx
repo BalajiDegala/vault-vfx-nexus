@@ -64,12 +64,12 @@ const TaskSharingModal = ({
         .single();
 
       if (error) {
-        console.error('Error fetching task:', error);
+        logger.error('Error fetching task:', error);
       } else {
         setTask(data);
       }
     } catch (error) {
-      console.error('Error fetching task:', error);
+      logger.error('Error fetching task:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +114,7 @@ const TaskSharingModal = ({
       }
       onClose();
     } catch (error) {
-      console.error('❌ Error sharing task:', error);
+      logger.error('❌ Error sharing task:', error);
     } finally {
       setSubmitting(false);
     }

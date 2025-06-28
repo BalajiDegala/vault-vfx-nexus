@@ -8,6 +8,7 @@ import TaskManagementEnhanced from "@/components/tasks/TaskManagementEnhanced";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { Loader2 } from "lucide-react";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -24,16 +25,16 @@ const TasksPage = () => {
 
   const checkUser = async () => {
     try {
-      console.log("Tasks page: Checking user authentication...");
+      logger.log("Tasks page: Checking user authentication...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
-        console.log("Tasks page: No session found, redirecting to login");
+        logger.log("Tasks page: No session found, redirecting to login");
         navigate("/login");
         return;
       }
 
-      console.log("Tasks page: User authenticated:", session.user.id);
+      logger.log("Tasks page: User authenticated:", session.user.id);
       setUser(session.user);
 
       // Get user role
@@ -44,7 +45,7 @@ const TasksPage = () => {
         .single();
 
       if (roleError) {
-        console.error("Tasks page: Error fetching user role:", roleError);
+        logger.error("Tasks page: Error fetching user role:", roleError);
         toast({
           title: "Error",
           description: "Unable to fetch user role",
@@ -53,11 +54,11 @@ const TasksPage = () => {
         // Set default role to prevent blocking
         setUserRole("artist");
       } else {
-        console.log("Tasks page: User role:", roleData.role);
+        logger.log("Tasks page: User role:", roleData.role);
         setUserRole(roleData.role);
       }
     } catch (error) {
-      console.error("Tasks page: Auth error:", error);
+      logger.error("Tasks page: Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);

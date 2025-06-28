@@ -30,7 +30,7 @@ export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => 
           logger.log('Community posts updated, refreshing...');
           await refreshPosts();
         } catch (error) {
-          console.error('Error refreshing posts:', error);
+          logger.error('Error refreshing posts:', error);
         }
       })
       .on('postgres_changes', { 
@@ -42,7 +42,7 @@ export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => 
           logger.log('Post likes updated, refreshing...');
           await refreshPosts();
         } catch (error) {
-          console.error('Error refreshing posts after like:', error);
+          logger.error('Error refreshing posts after like:', error);
         }
       })
       .subscribe((status: string) => {

@@ -79,7 +79,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
         urlCache.set(cacheKey, localUrl);
         return localUrl;
       } else {
-        console.error('AttachmentDisplay: Failed to retrieve file from localStorage:', attachment.fileId);
+        logger.error('AttachmentDisplay: Failed to retrieve file from localStorage:', attachment.fileId);
         setImageErrors(prev => new Set([...prev, attachment.fileId!]));
       }
     }
@@ -90,7 +90,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   };
 
   const handleImageError = (attachment: Attachment) => {
-    console.error('AttachmentDisplay: Image failed to load:', attachment.name, 'fileId:', attachment.fileId);
+    logger.error('AttachmentDisplay: Image failed to load:', attachment.name, 'fileId:', attachment.fileId);
     if (attachment.fileId) {
       setImageErrors(prev => new Set([...prev, attachment.fileId!]));
       // Remove from cache to force regeneration on next render
@@ -109,7 +109,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     logger.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
     
     if (!attachment || !attachment.type) {
-      console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type.`, attachment);
+      logger.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type.`, attachment);
       return (
         <div key={`invalid-${index}`} className="flex items-center gap-2 bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400">
           <AlertCircle className="h-4 w-4" />

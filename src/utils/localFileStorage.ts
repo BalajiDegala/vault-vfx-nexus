@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 
 // Local file storage utility for browser-based file uploads
 interface StoredFile {
@@ -33,7 +34,7 @@ const getStoredFiles = (): StoredFile[] => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Error reading stored files:', error);
+    logger.error('Error reading stored files:', error);
     return [];
   }
 };
@@ -43,7 +44,7 @@ const saveStoredFiles = (files: StoredFile[]): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
   } catch (error) {
-    console.error('Error saving files to storage:', error);
+    logger.error('Error saving files to storage:', error);
     throw new Error('Storage quota exceeded');
   }
 };
@@ -78,7 +79,7 @@ export const storeFile = async (file: File): Promise<StoredFile> => {
   files.push(storedFile);
   saveStoredFiles(files);
   
-  console.log('File stored locally:', storedFile.name, 'ID:', storedFile.id);
+  logger.log('File stored locally:', storedFile.name, 'ID:', storedFile.id);
   return storedFile;
 };
 
@@ -88,7 +89,7 @@ export const getFileUrl = (fileId: string): string | null => {
   const file = files.find(f => f.id === fileId);
   
   if (!file) {
-    console.warn('File not found:', fileId);
+    logger.warn('File not found:', fileId);
     return null;
   }
   
@@ -105,7 +106,7 @@ export const getFileUrl = (fileId: string): string | null => {
     const blob = new Blob([bytes], { type: file.type });
     return URL.createObjectURL(blob);
   } catch (error) {
-    console.error('Error converting stored file to URL:', error);
+    logger.error('Error converting stored file to URL:', error);
     return null;
   }
 };
@@ -115,7 +116,7 @@ export const deleteStoredFiles = (fileIds: string[]): void => {
   const files = getStoredFiles();
   const updatedFiles = files.filter(file => !fileIds.includes(file.id));
   saveStoredFiles(updatedFiles);
-  console.log('Deleted files from storage:', fileIds);
+  logger.log('Deleted files from storage:', fileIds);
 };
 
 // Get storage usage info
@@ -142,6 +143,6 @@ export const cleanupOldFiles = (daysOld: number = 30): void => {
   
   if (recentFiles.length < files.length) {
     saveStoredFiles(recentFiles);
-    console.log(`Cleaned up ${files.length - recentFiles.length} old files`);
+    logger.log(`Cleaned up ${files.length - recentFiles.length} old files`);
   }
 };

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AdvancedFilters, SavedFilterPreset } from "@/types/advancedFilters";
+import logger from "@/lib/logger";
 
 export const useFilterPresets = () => {
   const [savedPresets, setSavedPresets] = useState<SavedFilterPreset[]>([]);
@@ -26,7 +27,7 @@ export const useFilterPresets = () => {
       if (error) throw error;
       setSavedPresets((data as unknown as SavedFilterPreset[]) || []);
     } catch (error) {
-      console.error("Error loading filter presets:", error);
+      logger.error("Error loading filter presets:", error);
     }
   };
 
@@ -52,7 +53,7 @@ export const useFilterPresets = () => {
 
       loadSavedPresets();
     } catch (error) {
-      console.error("Error saving filter preset:", error);
+      logger.error("Error saving filter preset:", error);
       toast({
         title: "Error",
         description: "Failed to save filter preset",
@@ -85,7 +86,7 @@ export const useFilterPresets = () => {
 
       loadSavedPresets();
     } catch (error) {
-      console.error("Error deleting filter preset:", error);
+      logger.error("Error deleting filter preset:", error);
       toast({
         title: "Error",
         description: "Failed to delete filter preset",

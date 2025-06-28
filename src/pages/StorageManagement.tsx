@@ -15,6 +15,7 @@ import StoragePlanCard from '@/components/storage/StoragePlanCard';
 import { useStorageManagement } from '@/hooks/useStorageManagement';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -49,7 +50,7 @@ const StorageManagement = () => {
           .eq("user_id", session.user.id);
 
         if (roleError || !rolesData || rolesData.length === 0) {
-          console.error("Role fetch error:", roleError);
+          logger.error("Role fetch error:", roleError);
           navigate("/login");
           return;
         }
@@ -66,7 +67,7 @@ const StorageManagement = () => {
 
         setUserRole(selectedRole);
       } catch (error) {
-        console.error("Auth check error:", error);
+        logger.error("Auth check error:", error);
         navigate("/login");
       } finally {
         setAuthLoading(false);

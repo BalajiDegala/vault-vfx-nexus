@@ -40,7 +40,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
 
   const onSubmit = async (data: ShotFormData) => {
     if (!sequenceId) {
-      console.error('No sequence ID provided');
+      logger.error('No sequence ID provided');
       toast({
         title: "Error",
         description: "Sequence ID is missing",
@@ -57,12 +57,12 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error('Session error:', sessionError);
+        logger.error('Session error:', sessionError);
         throw sessionError;
       }
 
       if (!session?.user) {
-        console.error('No authenticated user found');
+        logger.error('No authenticated user found');
         toast({
           title: "Authentication Error",
           description: "You must be logged in to create shots",
@@ -92,8 +92,8 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
         .single();
 
       if (error) {
-        console.error('❌ Error creating shot:', error);
-        console.error('Error details:', {
+        logger.error('❌ Error creating shot:', error);
+        logger.error('Error details:', {
           code: error.code,
           message: error.message,
           details: error.details,
@@ -130,7 +130,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
       onClose();
       
     } catch (error) {
-      console.error('❌ Unexpected error creating shot:', error);
+      logger.error('❌ Unexpected error creating shot:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",

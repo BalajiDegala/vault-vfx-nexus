@@ -34,7 +34,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
     const files = Array.from(event.target.files || []);
     logger.log('AttachmentUpload: Files selected:', files);
     if (files.length > maxFiles) {
-      console.warn(`AttachmentUpload: Too many files selected. Max is ${maxFiles}. Truncating.`);
+      logger.warn(`AttachmentUpload: Too many files selected. Max is ${maxFiles}. Truncating.`);
     }
     const validFiles = files.slice(0, maxFiles);
     setSelectedFiles(validFiles);
@@ -61,7 +61,7 @@ const AttachmentUpload = ({ onFilesUploaded, currentUserId, maxFiles = 5 }: Atta
       logger.log('AttachmentUpload: onFilesUploaded called with:', uploadedFiles);
       setSelectedFiles([]);
     } else {
-      console.warn('AttachmentUpload: uploadMultipleFiles returned empty or null. Not calling onFilesUploaded.');
+      logger.warn('AttachmentUpload: uploadMultipleFiles returned empty or null. Not calling onFilesUploaded.');
     }
   };
 

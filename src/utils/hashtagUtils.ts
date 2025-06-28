@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import logger from "@/lib/logger";
 
 export const extractHashtags = (content: string): string[] => {
   const hashtagRegex = /#(\w+)/g;
@@ -17,10 +18,10 @@ export const updateTrendingHashtags = async (hashtags: string[]) => {
       });
       
       if (error) {
-        console.error('Error updating hashtag count:', error);
+        logger.error('Error updating hashtag count:', error);
       }
     }
   } catch (error) {
-    console.error('Error in updateTrendingHashtags:', error);
+    logger.error('Error in updateTrendingHashtags:', error);
   }
 };

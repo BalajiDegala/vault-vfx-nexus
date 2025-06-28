@@ -17,6 +17,7 @@ import LocalMachineConnection from '@/components/vm/LocalMachineConnection';
 import { useVMInstances } from '@/hooks/useVMInstances';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -50,7 +51,7 @@ const MachineRental = () => {
           .eq("user_id", session.user.id);
 
         if (roleError || !rolesData || rolesData.length === 0) {
-          console.error("Role fetch error:", roleError);
+          logger.error("Role fetch error:", roleError);
           navigate("/login");
           return;
         }
@@ -67,7 +68,7 @@ const MachineRental = () => {
 
         setUserRole(selectedRole);
       } catch (error) {
-        console.error("Auth check error:", error);
+        logger.error("Auth check error:", error);
         navigate("/login");
       } finally {
         setAuthLoading(false);

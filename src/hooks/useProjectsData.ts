@@ -36,14 +36,14 @@ export const useProjectsData = () => {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching projects:", error);
+        logger.error("Error fetching projects:", error);
         throw error;
       }
       
       logger.log("Projects fetched successfully:", data?.length || 0);
       setProjects(data || []);
     } catch (error: any) {
-      console.error("Error fetching projects:", error);
+      logger.error("Error fetching projects:", error);
       toast({
         title: "Error",
         description: "Failed to load projects",
@@ -95,7 +95,7 @@ export const useProjectsData = () => {
         activeArtists: activeArtists || 0
       });
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      logger.error("Error fetching stats:", error);
     }
   };
 

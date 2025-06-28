@@ -46,14 +46,14 @@ export default function ProjectHierarchyEnhanced({
         .order("order_index", { ascending: true });
 
       if (error) {
-        console.error('Error fetching sequences:', error);
+        logger.error('Error fetching sequences:', error);
         setSequences([]);
       } else {
         logger.log('✅ Fetched sequences:', data?.length || 0);
         setSequences(data || []);
       }
     } catch (error) {
-      console.error('Unexpected error fetching sequences:', error);
+      logger.error('Unexpected error fetching sequences:', error);
       setSequences([]);
     } finally {
       setLoading(false);

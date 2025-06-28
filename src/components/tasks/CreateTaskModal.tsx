@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 
@@ -79,7 +80,7 @@ const CreateTaskModal = ({ isOpen, onClose, shotId, shotName, onSuccess }: Creat
 
       onClose();
     } catch (error) {
-      console.error('Error creating task:', error);
+      logger.error('Error creating task:', error);
     } finally {
       setSubmitting(false);
     }

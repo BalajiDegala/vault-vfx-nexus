@@ -9,6 +9,7 @@ import { AppRole } from "@/types/auth";
 import RoleSelection from "@/components/auth/RoleSelection";
 import SignupForm from "@/components/auth/SignupForm";
 import { 
+import logger from "@/lib/logger";
   checkProfileExists, 
   createProfileDirectly, 
   assignRole, 
@@ -80,7 +81,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      console.log("Starting signup process...");
+      logger.log("Starting signup process...");
 
       // Step 1: Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -96,7 +97,7 @@ const Signup = () => {
       });
 
       if (authError) {
-        console.error("Auth signup error:", authError);
+        logger.error("Auth signup error:", authError);
         toast({
           title: "Signup Failed",
           description: authError.message,
@@ -106,7 +107,7 @@ const Signup = () => {
       }
 
       if (!authData.user) {
-        console.error("No user returned from signup");
+        logger.error("No user returned from signup");
         toast({
           title: "Signup Failed",
           description: "Failed to create user account.",
@@ -115,14 +116,14 @@ const Signup = () => {
         return;
       }
 
-      console.log("User created successfully:", authData.user.id);
+      logger.log("User created successfully:", authData.user.id);
 
       // Step 2: Wait for profile to be created by trigger OR create it directly
-      console.log("Waiting for profile to be created...");
+      logger.log("Waiting for profile to be created...");
       let profileExists = await checkProfileExists(authData.user.id);
 
       if (!profileExists) {
-        console.error("Profile not created by trigger, creating directly...");
+        logger.error("Profile not created by trigger, creating directly...");
         profileExists = await createProfileDirectly(
           authData.user.id,
           formData.email,
@@ -142,7 +143,7 @@ const Signup = () => {
       }
 
       // Step 3: Assign the role
-      console.log("Assigning role...");
+      logger.log("Assigning role...");
       const roleAssigned = await assignRole(authData.user.id, selectedRole as AppRole);
 
       if (!roleAssigned) {
@@ -165,7 +166,7 @@ const Signup = () => {
       navigate("/login");
 
     } catch (error) {
-      console.error("Unexpected signup error:", error);
+      logger.error("Unexpected signup error:", error);
       toast({
         title: "Signup Error",
         description: "An unexpected error occurred. Please try again.",

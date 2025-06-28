@@ -7,6 +7,7 @@ import { AppRole } from "@/types/auth";
 import LoginHeader from "@/components/auth/LoginHeader";
 import RoleSelection from "@/components/auth/RoleSelection";
 import LoginForm from "@/components/auth/LoginForm";
+import logger from "@/lib/logger";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -23,12 +24,12 @@ const Login = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          console.log("User already authenticated, redirecting to dashboard");
+          logger.log("User already authenticated, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
       } catch (error) {
-        console.error("Session check error:", error);
+        logger.error("Session check error:", error);
       } finally {
         setAuthChecking(false);
       }
@@ -52,7 +53,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Attempting login with:", { email, role: selectedRole });
+      logger.log("Attempting login with:", { email, role: selectedRole });
 
       // First, authenticate the user
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -61,7 +62,7 @@ const Login = () => {
       });
 
       if (authError) {
-        console.error("Authentication error:", authError);
+        logger.error("Authentication error:", authError);
         toast({
           title: "Login Failed",
           description: authError.message,
@@ -72,7 +73,7 @@ const Login = () => {
       }
 
       if (!authData.user) {
-        console.error("No user data returned");
+        logger.error("No user data returned");
         toast({
           title: "Login Failed",
           description: "Authentication failed.",
@@ -82,7 +83,7 @@ const Login = () => {
         return;
       }
 
-      console.log("User authenticated successfully:", authData.user.id);
+      logger.log("User authenticated successfully:", authData.user.id);
 
       // Check if user has the selected role
       const { data: rolesData, error: rolesError } = await supabase
@@ -92,7 +93,7 @@ const Login = () => {
         .eq("role", selectedRole);
 
       if (rolesError) {
-        console.error("Role check error:", rolesError);
+        logger.error("Role check error:", rolesError);
         toast({
           title: "Access Error",
           description: "Unable to verify your roles. Please try again or contact support.",
@@ -103,11 +104,11 @@ const Login = () => {
         return;
       }
       
-      console.log("Role check result:", { rolesData, selectedRole });
+      logger.log("Role check result:", { rolesData, selectedRole });
 
       if (!rolesData || rolesData.length === 0) {
         // If user doesn't have the selected role, check what roles they have
-        console.log("User does not have the selected role. Checking all user roles...");
+        logger.log("User does not have the selected role. Checking all user roles...");
         
         const { data: allRolesData, error: allRolesError } = await supabase
           .from("user_roles")
@@ -115,7 +116,7 @@ const Login = () => {
           .eq("user_id", authData.user.id);
 
       if (allRolesError) {
-        console.error("All roles check error:", allRolesError);
+        logger.error("All roles check error:", allRolesError);
         toast({
           title: "Access Error",
           description: "Unable to verify your roles. Please try again or contact support.",
@@ -128,13 +129,13 @@ const Login = () => {
 
       if (!allRolesData || allRolesData.length === 0) {
         // No roles found—try to assign selected
-        console.log("No roles found for user. Assigning selected role.");
+        logger.log("No roles found for user. Assigning selected role.");
         const { error: insertError } = await supabase
           .from("user_roles")
           .insert({ user_id: authData.user.id, role: selectedRole });
 
         if (insertError) {
-          console.error("Failed to assign role:", insertError);
+          logger.error("Failed to assign role:", insertError);
           toast({
             title: "Role Assignment Failed",
             description: "Could not assign your initial role. Please contact support.",
@@ -144,11 +145,11 @@ const Login = () => {
           setLoading(false);
           return;
         }
-        console.log(`Role '${selectedRole}' assigned successfully.`);
+        logger.log(`Role '${selectedRole}' assigned successfully.`);
       } else {
         // User has roles, but not the selected
         const userRoles = allRolesData.map(r => r.role as AppRole);
-        console.log("User has roles but not the selected one:", userRoles);
+        logger.log("User has roles but not the selected one:", userRoles);
         toast({
           title: "Access Denied",
           description: `You don't have the '${selectedRole}' role. Please select one: ${userRoles.join(", ")}.`,
@@ -162,7 +163,7 @@ const Login = () => {
     // Store the selected role in session storage so Dashboard knows which role to use
     sessionStorage.setItem('selectedRole', selectedRole);
 
-    console.log("Login successful, redirecting to dashboard");
+    logger.log("Login successful, redirecting to dashboard");
     toast({
       title: "Welcome back!",
       description: `Successfully logged in as ${selectedRole}.`,
@@ -170,7 +171,7 @@ const Login = () => {
     navigate("/dashboard");
 
   } catch (error) {
-    console.error("Unexpected login error:", error);
+    logger.error("Unexpected login error:", error);
     toast({
       title: "Login Error",
       description: "An unexpected error occurred. Please try again.",

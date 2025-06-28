@@ -43,7 +43,7 @@ export const useProjectNotifications = (userId: string) => {
 
         setNotifications(typedNotifications);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        logger.error('Error fetching notifications:', error);
         toast({
           title: "Error",
           description: "Failed to load notifications",
@@ -108,7 +108,7 @@ export const useProjectNotifications = (userId: string) => {
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
     }
   };
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type ProjectShare = Database["public"]["Tables"]["project_shares"]["Row"];
 type ProjectShareInsert = Database["public"]["Tables"]["project_shares"]["Insert"];
@@ -65,7 +66,7 @@ export const useProjectShares = (userId?: string) => {
       
       setShares((data || []) as ProjectShareWithProfiles[]);
     } catch (error) {
-      console.error('Error fetching project shares:', error);
+      logger.error('Error fetching project shares:', error);
       toast({
         title: "Error",
         description: "Failed to load project shares",
@@ -100,7 +101,7 @@ export const useProjectShares = (userId?: string) => {
       await fetchProjectShares();
       return data;
     } catch (error: any) {
-      console.error('Error sharing project:', error);
+      logger.error('Error sharing project:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to share project",
@@ -135,7 +136,7 @@ export const useProjectShares = (userId?: string) => {
 
       await fetchProjectShares();
     } catch (error: any) {
-      console.error('Error updating share status:', error);
+      logger.error('Error updating share status:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update share",

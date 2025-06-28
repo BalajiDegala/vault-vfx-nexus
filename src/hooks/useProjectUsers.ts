@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import logger from "@/lib/logger";
 
 type UserForAssignment = {
   id: string;
@@ -26,7 +27,7 @@ export const useProjectUsers = () => {
           setUsers(data);
         }
       } catch (error) {
-        console.error("Error fetching users:", error);
+        logger.error("Error fetching users:", error);
       } finally {
         setLoading(false);
       }

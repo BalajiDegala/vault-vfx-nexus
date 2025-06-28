@@ -36,7 +36,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
 
   const onSubmit = async (data: SequenceFormData) => {
     if (!projectId) {
-      console.error('No project ID provided');
+      logger.error('No project ID provided');
       toast({
         title: "Error",
         description: "Project ID is missing",
@@ -53,12 +53,12 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error('Session error:', sessionError);
+        logger.error('Session error:', sessionError);
         throw sessionError;
       }
 
       if (!session?.user) {
-        console.error('No authenticated user found');
+        logger.error('No authenticated user found');
         toast({
           title: "Authentication Error",
           description: "You must be logged in to create sequences",
@@ -78,7 +78,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
         .limit(1);
 
       if (fetchError) {
-        console.error('Error fetching existing sequences:', fetchError);
+        logger.error('Error fetching existing sequences:', fetchError);
         // Continue anyway with default order
       }
 
@@ -105,8 +105,8 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
         .single();
 
       if (error) {
-        console.error('❌ Error creating sequence:', error);
-        console.error('Error details:', {
+        logger.error('❌ Error creating sequence:', error);
+        logger.error('Error details:', {
           code: error.code,
           message: error.message,
           details: error.details,
@@ -143,7 +143,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
       onClose();
       
     } catch (error) {
-      console.error('❌ Unexpected error creating sequence:', error);
+      logger.error('❌ Unexpected error creating sequence:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",

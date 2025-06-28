@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserSearchDropdown from "./UserSearchDropdown";
 import V3CAdminFormEnhanced from "./V3CAdminFormEnhanced";
 import { Coins } from "lucide-react";
+import logger from "@/lib/logger";
 
 export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
   const [recipientSearch, setRecipientSearch] = useState("");
@@ -43,7 +44,7 @@ export function V3CoinsAdminPanel({ adminUserId }: { adminUserId: string }) {
         currentBalance: data?.v3_coins_balance || 0
       });
     } catch (error) {
-      console.error("Error fetching user balance:", error);
+      logger.error("Error fetching user balance:", error);
       setSelectedUser({ id: profile.id, display });
     }
     

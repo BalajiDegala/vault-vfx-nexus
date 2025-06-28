@@ -73,7 +73,7 @@ export function useV3CoinsEnhanced(userId?: string) {
         .single();
         
       if (error) {
-        console.error("Balance fetch error:", error);
+        logger.error("Balance fetch error:", error);
         if (!silent) {
           toast({ title: "Error", description: error.message, variant: "destructive" });
         }
@@ -93,7 +93,7 @@ export function useV3CoinsEnhanced(userId?: string) {
         }
       }
     } catch (err) {
-      console.error("Unexpected error fetching balance:", err);
+      logger.error("Unexpected error fetching balance:", err);
       if (!silent && mountedRef.current) {
         toast({ title: "Error", description: "Failed to fetch balance", variant: "destructive" });
       }
@@ -118,7 +118,7 @@ export function useV3CoinsEnhanced(userId?: string) {
         .limit(50);
         
       if (error) {
-        console.error("Transactions fetch error:", error);
+        logger.error("Transactions fetch error:", error);
         if (!silent && mountedRef.current) {
           toast({ title: "Error", description: error.message, variant: "destructive" });
         }
@@ -129,7 +129,7 @@ export function useV3CoinsEnhanced(userId?: string) {
         setTransactions((data as V3CTransaction[]) || []);
       }
     } catch (err) {
-      console.error("Unexpected error fetching transactions:", err);
+      logger.error("Unexpected error fetching transactions:", err);
       if (!silent && mountedRef.current) {
         toast({ title: "Error", description: "Failed to fetch transactions", variant: "destructive" });
       }
@@ -266,7 +266,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       });
 
       if (error) {
-        console.error("Transaction RPC error:", error);
+        logger.error("Transaction RPC error:", error);
         toast({ title: "Transaction failed", description: error.message, variant: "destructive" });
         return { success: false, error: error.message };
       }
@@ -288,7 +288,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       
       return result;
     } catch (err) {
-      console.error("Unexpected transaction error:", err);
+      logger.error("Unexpected transaction error:", err);
       const errorMsg = "An unexpected error occurred.";
       toast({ title: "Transaction failed", description: errorMsg, variant: "destructive" });
       return { success: false, error: errorMsg };
@@ -323,7 +323,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       });
 
       if (error) {
-        console.error("Send coins RPC error:", error);
+        logger.error("Send coins RPC error:", error);
         toast({ title: "Error", description: error.message, variant: "destructive" });
         return { success: false, error: error.message };
       }
@@ -350,7 +350,7 @@ export function useV3CoinsEnhanced(userId?: string) {
       
       return { success: true, new_balance: result.sender_new_balance };
     } catch (err) {
-      console.error("Unexpected send coins error:", err);
+      logger.error("Unexpected send coins error:", err);
       const errorMsg = "An unexpected error occurred.";
       toast({ title: "Error", description: errorMsg, variant: "destructive" });
       return { success: false, error: errorMsg };

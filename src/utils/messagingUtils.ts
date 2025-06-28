@@ -1,5 +1,6 @@
 
 import { format } from "date-fns";
+import logger from "@/lib/logger";
 
 export const getInitials = (name: string): string => {
   if (!name) return '';
@@ -10,7 +11,7 @@ export const formatMessageTime = (timestamp: string): string => {
   try {
     const date = new Date(timestamp);
     if (isNaN(date.getTime())) {
-      // console.warn("Invalid date for formatMessageTime:", timestamp);
+      // logger.warn("Invalid date for formatMessageTime:", timestamp);
       return "Invalid date";
     }
     const now = new Date();
@@ -24,7 +25,7 @@ export const formatMessageTime = (timestamp: string): string => {
       return format(date, 'MMM d, HH:mm');
     }
   } catch (error) {
-    // console.error("Error formatting message time:", error, "timestamp:", timestamp);
+    // logger.error("Error formatting message time:", error, "timestamp:", timestamp);
     return "Error in date";
   }
 };

@@ -49,7 +49,7 @@ export const useLikeEngagement = (refreshPosts: () => Promise<void>) => {
       
       await refreshPosts(); 
     } catch (error) {
-      console.error('Error toggling like:', error);
+      logger.error('Error toggling like:', error);
       toast({
         title: "Error",
         description: "Failed to update like",

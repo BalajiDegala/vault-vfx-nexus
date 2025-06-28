@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import logger from "@/lib/logger";
 
 export const useAvatarUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -44,7 +45,7 @@ export const useAvatarUpload = () => {
 
       return data.publicUrl;
     } catch (error: any) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       toast({
         title: "Error",
         description: "Failed to upload avatar",

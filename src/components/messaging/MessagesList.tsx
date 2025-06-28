@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, MessageSquare, Users } from 'lucide-react';
 import DirectMessaging from './DirectMessaging';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
+import logger from "@/lib/logger";
 
 interface Contact {
   id: string;
@@ -97,7 +98,7 @@ const MessagesList = ({ currentUserId }: MessagesListProps) => {
 
       setContacts(Array.from(contactMap.values()));
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      logger.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ const MessagesList = ({ currentUserId }: MessagesListProps) => {
 
       setContacts(searchResults);
     } catch (error) {
-      console.error('Error searching users:', error);
+      logger.error('Error searching users:', error);
     }
   };
 

@@ -53,7 +53,7 @@ export const useFileUpload = (options: FileUploadOptions) => {
         });
 
       if (error) {
-        console.error('Upload error:', error);
+        logger.error('Upload error:', error);
         throw error;
       }
 
@@ -73,7 +73,7 @@ export const useFileUpload = (options: FileUploadOptions) => {
         size: file.size
       };
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       toast({
         title: "Upload Error",
         description: error instanceof Error ? error.message : "Failed to upload file",
