@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import logger from "@/lib/logger";
 
 export type ProjectStatus = {
   id: string;
@@ -48,7 +49,7 @@ export const useProjectStatuses = () => {
       if (error) throw error;
       setStatuses(data || []);
     } catch (error) {
-      console.error("Error fetching project statuses:", error);
+      logger.error("Error fetching project statuses:", error);
       toast({
         title: "Error",
         description: "Failed to fetch project statuses",
@@ -66,7 +67,7 @@ export const useProjectStatuses = () => {
       if (error) throw error;
       setTransitions(data || []);
     } catch (error) {
-      console.error("Error fetching status transitions:", error);
+      logger.error("Error fetching status transitions:", error);
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ export const useProjectStatuses = () => {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Error validating status transition:", error);
+      logger.error("Error validating status transition:", error);
       return false;
     }
   };
@@ -114,7 +115,7 @@ export const useProjectStatuses = () => {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error logging status change:", error);
+      logger.error("Error logging status change:", error);
     }
   };
 

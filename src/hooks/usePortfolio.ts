@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type PortfolioItem = Database["public"]["Tables"]["portfolio_items"]["Row"];
 
@@ -27,7 +28,7 @@ export const usePortfolio = (userId: string) => {
       if (error) throw error;
       setItems(data || []);
     } catch (error) {
-      console.error("Error fetching portfolio:", error);
+      logger.error("Error fetching portfolio:", error);
     } finally {
       setLoading(false);
     }
@@ -74,7 +75,7 @@ export const usePortfolio = (userId: string) => {
 
       fetchPortfolioItems();
     } catch (error: any) {
-      console.error('Error uploading portfolio item:', error);
+      logger.error('Error uploading portfolio item:', error);
       toast({
         title: "Error",
         description: "Failed to upload portfolio item",
@@ -108,7 +109,7 @@ export const usePortfolio = (userId: string) => {
 
       fetchPortfolioItems();
     } catch (error) {
-      console.error('Error deleting portfolio item:', error);
+      logger.error('Error deleting portfolio item:', error);
       toast({
         title: "Error",
         description: "Failed to delete portfolio item",

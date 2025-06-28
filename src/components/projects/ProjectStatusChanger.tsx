@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { ChevronDown, History } from "lucide-react";
+import logger from "@/lib/logger";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -105,7 +106,7 @@ const ProjectStatusChanger: React.FC<ProjectStatusChangerProps> = ({
       setReason("");
       onStatusChanged();
     } catch (error: any) {
-      console.error("Error changing status:", error);
+      logger.error("Error changing status:", error);
       toast({
         title: "Error",
         description: "Failed to change project status.",

@@ -15,6 +15,7 @@ import { Search, Users, UserPlus, MessageSquare, Eye, MapPin, Globe, Heart } fro
 import { Database } from "@/integrations/supabase/types";
 import { useUserFollow } from "@/hooks/useUserFollow";
 import DirectMessaging from "@/components/messaging/DirectMessaging";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -75,7 +76,7 @@ const ProfileDiscovery = () => {
 
       setUserRole(roleData?.role || "artist");
     } catch (error) {
-      console.error("Auth error:", error);
+      logger.error("Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);
@@ -125,7 +126,7 @@ const ProfileDiscovery = () => {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error("Error fetching profiles:", error);
+      logger.error("Error fetching profiles:", error);
     }
   };
 

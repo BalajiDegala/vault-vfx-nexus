@@ -102,7 +102,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
         .order("created_at", { ascending: false });
       
       if (error) {
-        console.error("❌ Error fetching projects:", error);
+        logger.error("❌ Error fetching projects:", error);
         toast({
           title: "Error",
           description: "Failed to load projects. Please try again.",
@@ -114,7 +114,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
         setProjects(data || []);
       }
     } catch (error) {
-      console.error("💥 Unexpected error:", error);
+      logger.error("💥 Unexpected error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while loading projects.",

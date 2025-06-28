@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
 type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
@@ -53,7 +54,7 @@ export const useTasks = (projectId?: string, shotId?: string): UseTasksResult =>
 
       setTasks(data || []);
     } catch (err: any) {
-      console.error('Error fetching tasks:', err);
+      logger.error('Error fetching tasks:', err);
       setError(err.message);
       toast({
         title: "Error",
@@ -85,7 +86,7 @@ export const useTasks = (projectId?: string, shotId?: string): UseTasksResult =>
         description: "Task status updated successfully",
       });
     } catch (err: any) {
-      console.error('Error updating task status:', err);
+      logger.error('Error updating task status:', err);
       toast({
         title: "Error",
         description: "Failed to update task status",
@@ -114,7 +115,7 @@ export const useTasks = (projectId?: string, shotId?: string): UseTasksResult =>
         description: "Task assigned successfully",
       });
     } catch (err: any) {
-      console.error('Error assigning task:', err);
+      logger.error('Error assigning task:', err);
       toast({
         title: "Error",
         description: "Failed to assign task",
@@ -140,7 +141,7 @@ export const useTasks = (projectId?: string, shotId?: string): UseTasksResult =>
         description: "Task created successfully",
       });
     } catch (err: any) {
-      console.error('Error creating task:', err);
+      logger.error('Error creating task:', err);
       toast({
         title: "Error",
         description: "Failed to create task",

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type Project = Pick<Database["public"]["Tables"]["projects"]["Row"], "id" | "title">;
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
@@ -44,7 +45,7 @@ export default function useProjectTasks(studioId: string | undefined): UseProjec
       .eq('client_id', studioId);
 
     if (error) {
-      console.error("Error fetching projects and tasks:", error);
+      logger.error("Error fetching projects and tasks:", error);
       setProjects([]);
       setTasksByProject({});
       setLoading(false);

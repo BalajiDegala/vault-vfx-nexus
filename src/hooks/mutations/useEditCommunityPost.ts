@@ -20,7 +20,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       logger.log('useEditCommunityPost: Editing post:', postId, 'with content:', content, 'category:', category, 'newAttachments:', newAttachments, 'oldAttachments:', oldAttachments);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('useEditCommunityPost: User not authenticated for editPost.');
+        logger.warn('useEditCommunityPost: User not authenticated for editPost.');
         toast({ title: "Authentication Error", description: "You must be logged in to edit posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
@@ -49,7 +49,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
             await deleteFileFromServer(filesToDelete, user.id, session.access_token);
           }
         } catch (error) {
-          console.error('useEditCommunityPost: Error calling file deletion API:', error);
+          logger.error('useEditCommunityPost: Error calling file deletion API:', error);
           toast({ title: "Attachment Error", description: "Could not delete old attachments, but post may be updated.", variant: "destructive" });
         }
       }
@@ -70,7 +70,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
         .eq('author_id', user.id);
 
       if (error) {
-        console.error('useEditCommunityPost: Error editing post in Supabase:', error);
+        logger.error('useEditCommunityPost: Error editing post in Supabase:', error);
         throw error;
       }
 
@@ -87,7 +87,7 @@ export const useEditCommunityPost = (refreshPosts: () => Promise<void>) => {
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('useEditCommunityPost: Catch block error editing post:', error);
+      logger.error('useEditCommunityPost: Catch block error editing post:', error);
       toast({
         title: "Error",
         description: "Failed to update post.",

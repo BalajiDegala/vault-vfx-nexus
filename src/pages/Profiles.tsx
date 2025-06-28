@@ -7,6 +7,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import UserProfile from "@/components/profiles/UserProfile";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -44,7 +45,7 @@ const Profiles = () => {
 
       setUserRole(roleData?.role || "artist");
     } catch (error) {
-      console.error("Auth error:", error);
+      logger.error("Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);

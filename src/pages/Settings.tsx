@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { Save, User as UserIcon, Mail, MapPin, Globe, DollarSign } from "lucide-react";
 import AvatarUpload from "@/components/profiles/AvatarUpload";
+import logger from "@/lib/logger";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -50,7 +51,7 @@ const Settings = () => {
 
       setUserRole(roleData?.role || "artist");
     } catch (error: unknown) {
-      console.error("Auth error:", error);
+      logger.error("Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);
@@ -69,7 +70,7 @@ const Settings = () => {
       setProfile(profileData);
       setEditData(profileData);
     } catch (error: unknown) {
-      console.error("Error fetching profile:", error);
+      logger.error("Error fetching profile:", error);
       toast({
         title: "Error",
         description: "Failed to load profile",
@@ -97,7 +98,7 @@ const Settings = () => {
         description: "Profile updated successfully"
       });
     } catch (error: unknown) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "Failed to update profile",

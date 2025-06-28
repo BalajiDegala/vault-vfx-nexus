@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import logger from "@/lib/logger";
 
 export interface VMInstance {
   id: string;
@@ -58,7 +59,7 @@ export const useVMInstances = () => {
       if (error) throw error;
       setVMPlans(data || []);
     } catch (error) {
-      console.error('Error fetching VM plans:', error);
+      logger.error('Error fetching VM plans:', error);
       toast({
         title: "Error",
         description: "Failed to load VM plans",
@@ -78,7 +79,7 @@ export const useVMInstances = () => {
         setVMInstances(data.vm_instances || []);
       }
     } catch (error) {
-      console.error('Error fetching VM instances:', error);
+      logger.error('Error fetching VM instances:', error);
       toast({
         title: "Error",
         description: "Failed to load VM instances",
@@ -108,7 +109,7 @@ export const useVMInstances = () => {
         throw new Error(data.error || 'Failed to launch VM');
       }
     } catch (error: any) {
-      console.error('Error launching VM:', error);
+      logger.error('Error launching VM:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to launch VM",
@@ -136,7 +137,7 @@ export const useVMInstances = () => {
         throw new Error(data.error || 'Failed to terminate VM');
       }
     } catch (error: any) {
-      console.error('Error terminating VM:', error);
+      logger.error('Error terminating VM:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to terminate VM",

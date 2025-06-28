@@ -13,6 +13,7 @@ import CommunityDiscussions from "@/components/community/CommunityDiscussions";
 import TrendingTopics from "@/components/community/TrendingTopics";
 import NotificationPanel from "@/components/messaging/NotificationPanel";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -47,7 +48,7 @@ const Community = () => {
 
       setUserRole(roleData?.role || "artist");
     } catch (error) {
-      console.error("Auth error:", error);
+      logger.error("Auth error:", error);
       navigate("/login");
     } finally {
       setLoading(false);

@@ -58,7 +58,7 @@ export const useProjectMessages = (projectId: string) => {
         }));
         setMessages(typedMessages);
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        logger.error('Error fetching messages:', error);
         toast({
           title: "Error",
           description: "Failed to load messages",
@@ -147,7 +147,7 @@ export const useProjectMessages = (projectId: string) => {
       const { error } = await supabase.from('project_messages').insert(messageData);
       if (error) throw error;
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       toast({
         title: "Error",
         description: `Failed to send message: ${error.message}`,
@@ -164,7 +164,7 @@ export const useProjectMessages = (projectId: string) => {
         .eq('id', messageId);
       if (error) throw error;
     } catch (error) {
-      console.error('Error updating message:', error);
+      logger.error('Error updating message:', error);
       toast({
         title: 'Error',
         description: `Failed to update message: ${error.message}`,
@@ -178,7 +178,7 @@ export const useProjectMessages = (projectId: string) => {
       const { error } = await supabase.from('project_messages').delete().eq('id', messageId);
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting message:', error);
+      logger.error('Error deleting message:', error);
       toast({
         title: 'Error',
         description: `Failed to delete message: ${error.message}`,

@@ -1,10 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { AppRole } from "@/types/auth";
+import logger from "@/lib/logger";
 
 export const checkProfileExists = async (userId: string, maxAttempts = 10): Promise<boolean> => {
   for (let i = 0; i < maxAttempts; i++) {
-    console.log(`Checking for profile (attempt ${i + 1})...`);
+    logger.log(`Checking for profile (attempt ${i + 1})...`);
     
     const { data, error } = await supabase
       .from("profiles")
@@ -13,7 +14,7 @@ export const checkProfileExists = async (userId: string, maxAttempts = 10): Prom
       .single();
 
     if (!error && data) {
-      console.log("Profile found!");
+      logger.log("Profile found!");
       return true;
     }
     
@@ -21,7 +22,7 @@ export const checkProfileExists = async (userId: string, maxAttempts = 10): Prom
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  console.log("Profile not found after waiting");
+  logger.log("Profile not found after waiting");
   return false;
 };
 
@@ -32,7 +33,7 @@ export const createProfileDirectly = async (
   lastName: string, 
   username: string
 ): Promise<boolean> => {
-  console.log("Creating profile directly...");
+  logger.log("Creating profile directly...");
   
   const { error } = await supabase
     .from("profiles")
@@ -47,16 +48,16 @@ export const createProfileDirectly = async (
     });
 
   if (error) {
-    console.error("Direct profile creation error:", error);
+    logger.error("Direct profile creation error:", error);
     return false;
   }
 
-  console.log("Profile created directly!");
+  logger.log("Profile created directly!");
   return true;
 };
 
 export const assignRole = async (userId: string, role: AppRole): Promise<boolean> => {
-  console.log(`Assigning role ${role} to user ${userId}`);
+  logger.log(`Assigning role ${role} to user ${userId}`);
   
   const { error } = await supabase
     .from("user_roles")
@@ -66,11 +67,11 @@ export const assignRole = async (userId: string, role: AppRole): Promise<boolean
     });
 
   if (error) {
-    console.error("Role assignment error:", error);
+    logger.error("Role assignment error:", error);
     return false;
   }
 
-  console.log("Role assigned successfully!");
+  logger.log("Role assigned successfully!");
   return true;
 };
 

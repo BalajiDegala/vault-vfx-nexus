@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import logger from "@/lib/logger";
 
 interface UserWithRole {
   id: string;
@@ -26,7 +27,7 @@ const TestUsers = () => {
           .select("*");
 
         if (profilesError) {
-          console.error("Error fetching profiles:", profilesError);
+          logger.error("Error fetching profiles:", profilesError);
           return;
         }
 
@@ -36,7 +37,7 @@ const TestUsers = () => {
           .select("*");
 
         if (rolesError) {
-          console.error("Error fetching roles:", rolesError);
+          logger.error("Error fetching roles:", rolesError);
           return;
         }
 
@@ -48,7 +49,7 @@ const TestUsers = () => {
 
         setUsers(usersWithRoles);
       } catch (error) {
-        console.error("Unexpected error:", error);
+        logger.error("Unexpected error:", error);
       } finally {
         setLoading(false);
       }

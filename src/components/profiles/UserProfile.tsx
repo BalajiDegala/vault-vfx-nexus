@@ -88,7 +88,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
           });
       }
     } catch (error: any) {
-      console.error("Error fetching profile:", error);
+      logger.error("Error fetching profile:", error);
       toast({
         title: "Error",
         description: "Failed to load profile",
@@ -111,7 +111,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
       if (error) throw error;
       setProjects(data || []);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      logger.error("Error fetching projects:", error);
     }
   };
 

@@ -54,7 +54,7 @@ export const useMessageNotifications = (currentUserId: string) => {
       if (error) throw error;
       setUnreadCount(data?.length || 0);
     } catch (error) {
-      console.error('Error checking unread messages:', error);
+      logger.error('Error checking unread messages:', error);
     }
   };
 

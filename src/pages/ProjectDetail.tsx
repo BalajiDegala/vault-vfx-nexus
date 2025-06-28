@@ -21,6 +21,7 @@ import { useProjectPresence } from "@/hooks/useProjectPresence";
 import { Loader2, Users, MessageSquare, FolderOpen, Files, DollarSign, Share2 } from "lucide-react";
 import ProjectSharesManagement from "@/components/projects/ProjectSharesManagement";
 import ProjectBiddingModal from "@/components/projects/ProjectBiddingModal";
+import logger from "@/lib/logger";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -42,16 +43,16 @@ const ProjectDetail = () => {
 
   const checkUser = useCallback(async () => {
     try {
-      console.log("Checking user authentication...");
+      logger.log("Checking user authentication...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
-        console.log("No session found, redirecting to login");
+        logger.log("No session found, redirecting to login");
         navigate("/login");
         return;
       }
 
-      console.log("User authenticated:", session.user.id);
+      logger.log("User authenticated:", session.user.id);
       setUser(session.user);
 
       const { data: roleData, error: roleError } = await supabase
@@ -61,13 +62,13 @@ const ProjectDetail = () => {
         .single();
 
       if (roleError) {
-        console.error("Error fetching user role:", roleError);
+        logger.error("Error fetching user role:", roleError);
         setUserRole("artist"); // Default fallback
       } else {
         setUserRole(roleData.role);
       }
     } catch (error: unknown) {
-      console.error("Auth error:", error);
+      logger.error("Auth error:", error);
       navigate("/login");
     } finally {
       setAuthChecked(true);
@@ -76,13 +77,13 @@ const ProjectDetail = () => {
 
   const fetchProject = useCallback(async () => {
     if (!id || !authChecked) {
-      console.log("Skipping project fetch - missing ID or auth not checked");
+      logger.log("Skipping project fetch - missing ID or auth not checked");
       return;
     }
 
     try {
       setLoading(true);
-      console.log("Fetching project with ID:", id);
+      logger.log("Fetching project with ID:", id);
       
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
@@ -91,7 +92,7 @@ const ProjectDetail = () => {
         .single();
 
       if (projectError) {
-        console.error("Error fetching project:", projectError);
+        logger.error("Error fetching project:", projectError);
         if (projectError.code === 'PGRST116') {
           toast({
             title: "Project Not Found",
@@ -109,11 +110,11 @@ const ProjectDetail = () => {
         return;
       }
 
-      console.log("Project data fetched successfully:", projectData);
+      logger.log("Project data fetched successfully:", projectData);
       setProject(projectData);
 
     } catch (error: unknown) {
-      console.error("Error fetching project:", error);
+      logger.error("Error fetching project:", error);
       toast({
         title: "Error",
         description: "Failed to load project details",

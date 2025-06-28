@@ -13,7 +13,7 @@ export const useCreateCommunityPost = (refreshPosts: () => Promise<void>) => {
       logger.log('useCreateCommunityPost: Creating new post with content:', content, 'category:', category, 'attachments:', attachments);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('useCreateCommunityPost: User not authenticated for createPost.');
+        logger.warn('useCreateCommunityPost: User not authenticated for createPost.');
         toast({ title: "Authentication Error", description: "You must be logged in to create posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
@@ -33,7 +33,7 @@ export const useCreateCommunityPost = (refreshPosts: () => Promise<void>) => {
         });
 
       if (error) {
-        console.error('useCreateCommunityPost: Error creating post in Supabase:', error);
+        logger.error('useCreateCommunityPost: Error creating post in Supabase:', error);
         throw error;
       }
       
@@ -50,7 +50,7 @@ export const useCreateCommunityPost = (refreshPosts: () => Promise<void>) => {
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('useCreateCommunityPost: Catch block error creating post:', error);
+      logger.error('useCreateCommunityPost: Catch block error creating post:', error);
       toast({
         title: "Error",
         description: "Failed to create post",

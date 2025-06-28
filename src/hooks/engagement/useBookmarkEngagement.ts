@@ -51,7 +51,7 @@ export const useBookmarkEngagement = (refreshPosts: () => Promise<void>) => {
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
+      logger.error('Error toggling bookmark:', error);
       toast({
         title: "Error",
         description: "Failed to update bookmark.",

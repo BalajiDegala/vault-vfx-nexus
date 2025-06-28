@@ -59,7 +59,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
           .eq('status', 'approved'); // Only show approved shared tasks
 
         if (sharedError) {
-          console.error('Error fetching shared tasks:', sharedError);
+          logger.error('Error fetching shared tasks:', sharedError);
           setSequences([]);
           return;
         }
@@ -85,7 +85,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
           .order('order_index');
 
         if (error) {
-          console.error('Error fetching sequences:', error);
+          logger.error('Error fetching sequences:', error);
           setSequences([]);
         } else {
           logger.log('✅ All sequences fetched:', data?.length || 0);
@@ -93,7 +93,7 @@ const ProjectDetailWithTasks = ({ project, user, userRole }: ProjectDetailWithTa
         }
       }
     } catch (error) {
-      console.error('Unexpected error fetching sequences:', error);
+      logger.error('Unexpected error fetching sequences:', error);
       setSequences([]);
     } finally {
       setLoading(false);

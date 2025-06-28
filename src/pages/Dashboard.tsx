@@ -10,6 +10,7 @@ import StudioDashboard from "@/components/dashboard/StudioDashboard";
 import ProducerDashboard from "@/components/dashboard/ProducerDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -26,23 +27,23 @@ const Dashboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("Dashboard: Checking authentication...");
+        logger.log("Dashboard: Checking authentication...");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log("Dashboard: No session found, redirecting to login");
+          logger.log("Dashboard: No session found, redirecting to login");
           navigate("/login");
           return;
         }
 
-        console.log("Dashboard: Session found for user:", session.user.id);
+        logger.log("Dashboard: Session found for user:", session.user.id);
         setUser(session.user);
 
         // First check if there's a selected role from login
         const selectedRoleFromLogin = sessionStorage.getItem('selectedRole') as AppRole;
         
         if (selectedRoleFromLogin) {
-          console.log("Dashboard: Using selected role from login:", selectedRoleFromLogin);
+          logger.log("Dashboard: Using selected role from login:", selectedRoleFromLogin);
           
           // Verify user actually has this role
           const { data: roleData, error: roleError } = await supabase
@@ -53,10 +54,10 @@ const Dashboard = () => {
             .single();
 
           if (roleError) {
-            console.error("Dashboard: Role verification error:", roleError);
+            logger.error("Dashboard: Role verification error:", roleError);
             sessionStorage.removeItem('selectedRole');
           } else if (roleData) {
-            console.log("Dashboard: Role verified, setting user role:", selectedRoleFromLogin);
+            logger.log("Dashboard: Role verified, setting user role:", selectedRoleFromLogin);
             setUserRole(selectedRoleFromLogin);
             // Clear the selected role from session storage since we've used it
             sessionStorage.removeItem('selectedRole');
@@ -72,7 +73,7 @@ const Dashboard = () => {
           .eq("user_id", session.user.id);
 
         if (roleError) {
-          console.error("Dashboard: Role fetch error:", roleError);
+          logger.error("Dashboard: Role fetch error:", roleError);
           toast({
             title: "Role Fetch Error",
             description: "Unable to fetch user roles. Logging out.",
@@ -82,10 +83,10 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Dashboard: Roles query result:", rolesData);
+        logger.log("Dashboard: Roles query result:", rolesData);
 
         if (!rolesData || rolesData.length === 0) {
-          console.log("Dashboard: No roles found for user. Redirecting to login.");
+          logger.log("Dashboard: No roles found for user. Redirecting to login.");
           toast({
             title: "No Role Assigned",
             description: "Please sign in again and select a role to continue.",
@@ -105,10 +106,10 @@ const Dashboard = () => {
         else if (roles.includes('studio')) selectedRole = 'studio';
         else if (roles.includes('artist')) selectedRole = 'artist';
 
-        console.log("Dashboard: Selected role for dashboard:", selectedRole);
+        logger.log("Dashboard: Selected role for dashboard:", selectedRole);
         setUserRole(selectedRole);
       } catch (error) {
-        console.error("Dashboard: Auth check error:", error);
+        logger.error("Dashboard: Auth check error:", error);
         toast({
           title: "Authentication Error",
           description: "Please try logging in again.",
@@ -125,7 +126,7 @@ const Dashboard = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Dashboard: Auth state changed:", event);
+        logger.log("Dashboard: Auth state changed:", event);
         if (event === 'SIGNED_OUT' || !session) {
           // Clear any stored role selection
           sessionStorage.removeItem('selectedRole');

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserPlus, MessageSquare, MapPin, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserFollow } from '@/hooks/useUserFollow';
+import logger from "@/lib/logger";
 
 interface UserProfile {
   id: string;
@@ -54,7 +55,7 @@ const UserHoverCard = ({ username, currentUserId, children, onMessageUser }: Use
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      logger.error('Error fetching user profile:', error);
     } finally {
       setLoading(false);
     }

@@ -64,7 +64,7 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
       });
       onUpdate(); // Refresh the project list
     } catch (error: any) {
-      console.error("Error deleting project:", error);
+      logger.error("Error deleting project:", error);
       toast({
         title: "Error",
         description: `Failed to delete ${project.title}: ${error.message}`,

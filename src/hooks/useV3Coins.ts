@@ -41,7 +41,7 @@ export function useV3Coins(userId?: string) {
       .maybeSingle();
       
     if (error) {
-      console.error("Balance fetch error:", error);
+      logger.error("Balance fetch error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
@@ -69,7 +69,7 @@ export function useV3Coins(userId?: string) {
       .order("created_at", { ascending: false });
       
     if (error) {
-      console.error("Transactions fetch error:", error);
+      logger.error("Transactions fetch error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       setLoading(false);
       return;
@@ -163,7 +163,7 @@ export function useV3Coins(userId?: string) {
     });
 
     if (error) {
-      console.error("Send coins error:", error);
+      logger.error("Send coins error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return { error: error.message };
     } else {
@@ -198,7 +198,7 @@ export function useV3Coins(userId?: string) {
     });
     
     if (error) {
-      console.error("Add transaction error:", error);
+      logger.error("Add transaction error:", error);
       toast({ title: "Transaction failed", description: error.message, variant: "destructive" });
       return { error: error.message };
     }

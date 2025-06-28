@@ -79,7 +79,7 @@ export default function ShotsListEnhanced({
           .eq('tasks.shots.sequence_id', sequenceId);
 
         if (sharedError) {
-          console.error('Error fetching shared tasks for shots:', sharedError);
+          logger.error('Error fetching shared tasks for shots:', sharedError);
           setShots([]);
           return;
         }
@@ -105,7 +105,7 @@ export default function ShotsListEnhanced({
           .order('frame_start');
 
         if (error) {
-          console.error('Error fetching shots:', error);
+          logger.error('Error fetching shots:', error);
           setShots([]);
         } else {
           logger.log('✅ All shots fetched:', data?.length || 0);
@@ -113,7 +113,7 @@ export default function ShotsListEnhanced({
         }
       }
     } catch (error) {
-      console.error('Unexpected error fetching shots:', error);
+      logger.error('Unexpected error fetching shots:', error);
       setShots([]);
     } finally {
       setLoading(false);

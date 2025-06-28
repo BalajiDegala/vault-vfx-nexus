@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type MarketplaceCategory = Database["public"]["Enums"]["marketplace_category"];
 
@@ -98,7 +99,7 @@ const CreateMarketplaceItemModal = ({
         });
 
       if (error) {
-        console.error("Error creating marketplace item:", error);
+        logger.error("Error creating marketplace item:", error);
         toast({
           title: "Error",
           description: "Failed to create marketplace item. Please try again.",
@@ -124,7 +125,7 @@ const CreateMarketplaceItemModal = ({
 
       onSuccess();
     } catch (error) {
-      console.error("Error creating marketplace item:", error);
+      logger.error("Error creating marketplace item:", error);
       toast({
         title: "Error",
         description: "Failed to create marketplace item. Please try again.",

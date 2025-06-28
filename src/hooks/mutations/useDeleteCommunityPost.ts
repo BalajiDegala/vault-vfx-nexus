@@ -13,7 +13,7 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
       logger.log('useDeleteCommunityPost: Deleting post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('useDeleteCommunityPost: User not authenticated for deletePost.');
+        logger.warn('useDeleteCommunityPost: User not authenticated for deletePost.');
         toast({ title: "Authentication Error", description: "You must be logged in to delete posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
@@ -31,7 +31,7 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
             );
           }
         } catch (error) {
-          console.error('useDeleteCommunityPost: Error calling file deletion API:', error);
+          logger.error('useDeleteCommunityPost: Error calling file deletion API:', error);
           toast({ title: "Attachment Error", description: "Could not delete attachments, but post may be deleted.", variant: "destructive" });
         }
       }
@@ -43,7 +43,7 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
         .eq('author_id', user.id);
 
       if (error) {
-        console.error('useDeleteCommunityPost: Error deleting post:', error);
+        logger.error('useDeleteCommunityPost: Error deleting post:', error);
         throw error;
       }
 
@@ -56,7 +56,7 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
       await refreshPosts();
       return true;
     } catch (error) {
-      console.error('useDeleteCommunityPost: Error deleting post:', error);
+      logger.error('useDeleteCommunityPost: Error deleting post:', error);
       toast({
         title: "Error",
         description: "Failed to delete post.",

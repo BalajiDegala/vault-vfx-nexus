@@ -11,6 +11,7 @@ import { DollarSign, Clock, User, CheckCircle, XCircle, MessageSquare } from 'lu
 import { useTaskBids } from '@/hooks/useTaskBids';
 import { useTaskAssignments } from '@/hooks/useTaskAssignments';
 import { Database } from '@/integrations/supabase/types';
+import logger from "@/lib/logger";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
 
@@ -69,7 +70,7 @@ const TaskBidsManagement = ({ task, userRole, userId }: TaskBidsManagementProps)
       setSelectedBid(null);
       setAssignmentNotes('');
     } catch (error) {
-      console.error('Error creating assignment:', error);
+      logger.error('Error creating assignment:', error);
     }
   };
 

@@ -14,6 +14,7 @@ import { History, ArrowRight, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjectStatuses } from "@/hooks/useProjectStatuses";
 import { useProjectUsers } from "@/hooks/useProjectUsers";
+import logger from "@/lib/logger";
 
 interface StatusHistoryEntry {
   id: string;
@@ -55,7 +56,7 @@ const ProjectStatusHistory: React.FC<ProjectStatusHistoryProps> = ({
       if (error) throw error;
       setHistory(data || []);
     } catch (error) {
-      console.error("Error fetching status history:", error);
+      logger.error("Error fetching status history:", error);
     } finally {
       setLoading(false);
     }

@@ -47,7 +47,7 @@ export const useProjectPresence = (projectId: string, userId: string) => {
             current_section: 'overview',
           });
       } catch (error) {
-        console.error('Error updating presence:', error);
+        logger.error('Error updating presence:', error);
       }
     };
 
@@ -77,7 +77,7 @@ export const useProjectPresence = (projectId: string, userId: string) => {
 
         setPresenceUsers(typedPresence);
       } catch (error) {
-        console.error('Error fetching presence:', error);
+        logger.error('Error fetching presence:', error);
       } finally {
         setLoading(false);
       }
@@ -160,7 +160,7 @@ export const useProjectPresence = (projectId: string, userId: string) => {
         .eq('project_id', projectId)
         .eq('user_id', userId);
     } catch (error) {
-      console.error('Error updating presence:', error);
+      logger.error('Error updating presence:', error);
     }
   };
 

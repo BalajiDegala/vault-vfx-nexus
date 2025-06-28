@@ -111,7 +111,7 @@ export const useSharedTasksWithProjects = (userRole: string, userId: string) => 
       logger.log('📊 Data length:', data?.length || 0);
 
       if (error) {
-        console.error('💥 Supabase query error details:', error);
+        logger.error('💥 Supabase query error details:', error);
         toast({
           title: "Error",
           description: "Failed to fetch shared tasks",
@@ -150,7 +150,7 @@ export const useSharedTasksWithProjects = (userRole: string, userId: string) => 
         profiles = profilesData || [];
         logger.log('✅ Fetched profiles:', profiles);
         if (profilesError) {
-          console.error('❌ Profiles fetch error:', profilesError);
+          logger.error('❌ Profiles fetch error:', profilesError);
         }
       }
 
@@ -195,7 +195,7 @@ export const useSharedTasksWithProjects = (userRole: string, userId: string) => 
       setSharedTasks(transformedData);
       
     } catch (error) {
-      console.error('💥 Unexpected error in fetchSharedTasksWithProjects:', error);
+      logger.error('💥 Unexpected error in fetchSharedTasksWithProjects:', error);
       toast({
         title: "Error",
         description: "Failed to fetch shared tasks",

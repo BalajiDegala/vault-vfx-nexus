@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
+import logger from "@/lib/logger";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -82,7 +83,7 @@ const UpdateProjectModal = ({ open, onClose, project, onSuccess }: UpdateProject
       
       onSuccess();
     } catch (error: any) {
-      console.error("Error updating project:", error);
+      logger.error("Error updating project:", error);
       toast({
         title: "Error",
         description: error.message,

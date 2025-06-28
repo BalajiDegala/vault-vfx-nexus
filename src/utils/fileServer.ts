@@ -1,9 +1,10 @@
 
 import { deleteStoredFiles } from './localFileStorage';
+import logger from "@/lib/logger";
 
 // Updated for local storage - extract file IDs from attachments
 export const deleteFileFromServer = async (fileUrls: string[], userId: string, authToken: string) => {
-  console.log('Local storage delete:', { fileUrls, userId });
+  logger.log('Local storage delete:', { fileUrls, userId });
   
   // Extract file IDs from URLs if they are local storage files
   // For local storage, we need to track file IDs differently
@@ -24,7 +25,7 @@ export const deleteLocalFiles = async (fileIds: string[]) => {
     deleteStoredFiles(fileIds);
     return { success: true };
   } catch (error) {
-    console.error('Error deleting local files:', error);
+    logger.error('Error deleting local files:', error);
     return { success: false, error };
   }
 };
@@ -33,7 +34,7 @@ export const deleteLocalFiles = async (fileIds: string[]) => {
 export const uploadFileToServer = async (file: File, userId: string, authToken: string) => {
   const mockUrl = `local-storage-file-${Date.now()}-${file.name}`;
   
-  console.log('Mock upload (now using local storage):', { fileName: file.name, userId, mockUrl });
+  logger.log('Mock upload (now using local storage):', { fileName: file.name, userId, mockUrl });
   
   await new Promise(resolve => setTimeout(resolve, 100));
   

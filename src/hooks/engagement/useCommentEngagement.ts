@@ -12,12 +12,12 @@ export const useCommentEngagement = () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
-        console.error('useCommentEngagement: Error getting user:', userError);
+        logger.error('useCommentEngagement: Error getting user:', userError);
         toast({ title: "Authentication Error", description: "Could not verify user. Please log in.", variant: "destructive" });
         return false;
       }
       if (!user) {
-        console.warn('useCommentEngagement: User not authenticated. Cannot add comment.');
+        logger.warn('useCommentEngagement: User not authenticated. Cannot add comment.');
         toast({ title: "Authentication Error", description: "You must be logged in to comment.", variant: "destructive" });
         return false;
       }
@@ -31,7 +31,7 @@ export const useCommentEngagement = () => {
         .single();
 
       if (profileError) {
-        console.error('useCommentEngagement: Error fetching user profile:', profileError);
+        logger.error('useCommentEngagement: Error fetching user profile:', profileError);
         
         // If profile doesn't exist, create one
         if (profileError.code === 'PGRST116') {
@@ -47,7 +47,7 @@ export const useCommentEngagement = () => {
             });
           
           if (createError) {
-            console.error('useCommentEngagement: Error creating profile:', createError);
+            logger.error('useCommentEngagement: Error creating profile:', createError);
             toast({ title: "Profile Error", description: "Could not create user profile. Please try again.", variant: "destructive" });
             return false;
           }
@@ -69,7 +69,7 @@ export const useCommentEngagement = () => {
         });
 
       if (insertError) {
-        console.error('useCommentEngagement: Error inserting comment into Supabase:', insertError);
+        logger.error('useCommentEngagement: Error inserting comment into Supabase:', insertError);
         toast({
           title: "Error",
           description: `Failed to add comment: ${insertError.message}`,
@@ -86,7 +86,7 @@ export const useCommentEngagement = () => {
       // Don't call refreshPosts() here to prevent conflicts with local comment loading
       return true;
     } catch (error) {
-      console.error('useCommentEngagement: Catch block error adding comment:', error);
+      logger.error('useCommentEngagement: Catch block error adding comment:', error);
       toast({
         title: "Error",
         description: "Failed to add comment. Please try again.",

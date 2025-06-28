@@ -52,7 +52,7 @@ export default function ShotTasksViewEnhanced({
         const { data: tasksData, error: tasksError } = await query;
         
         if (tasksError) {
-          console.error('Error fetching tasks:', tasksError);
+          logger.error('Error fetching tasks:', tasksError);
           setTasks([]);
           return;
         }
@@ -71,7 +71,7 @@ export default function ShotTasksViewEnhanced({
           .eq("artist_id", userId);
 
         if (sharedError) {
-          console.error('Error fetching shared tasks:', sharedError);
+          logger.error('Error fetching shared tasks:', sharedError);
         }
 
         // Combine tasks with shared info
@@ -93,14 +93,14 @@ export default function ShotTasksViewEnhanced({
         const { data, error } = await query;
         
         if (error) {
-          console.error('Error fetching tasks:', error);
+          logger.error('Error fetching tasks:', error);
           setTasks([]);
         } else {
           setTasks(data || []);
         }
       }
     } catch (error) {
-      console.error('Unexpected error fetching tasks:', error);
+      logger.error('Unexpected error fetching tasks:', error);
       setTasks([]);
     } finally {
       setLoading(false);

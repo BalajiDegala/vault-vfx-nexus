@@ -53,13 +53,13 @@ const DashboardNavbar = ({ user, userRole }: DashboardNavbarProps) => {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error("DashboardNavbar: Logout error:", error);
+        logger.error("DashboardNavbar: Logout error:", error);
       } else {
         logger.log("DashboardNavbar: Logout successful, navigating to login");
         navigate("/login");
       }
     } catch (error) {
-      console.error("DashboardNavbar: Unexpected logout error:", error);
+      logger.error("DashboardNavbar: Unexpected logout error:", error);
     } finally {
       setIsLoggingOut(false);
     }

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import logger from "@/lib/logger";
 
 export interface StorageAllocation {
   id: string;
@@ -48,7 +49,7 @@ export const useStorageManagement = () => {
       if (error) throw error;
       setAllocations(data || []);
     } catch (error: any) {
-      console.error('Error fetching allocations:', error);
+      logger.error('Error fetching allocations:', error);
       toast({
         title: "Error",
         description: "Failed to fetch storage allocations",
@@ -70,7 +71,7 @@ export const useStorageManagement = () => {
       if (error) throw error;
       setPlans(data || []);
     } catch (error: any) {
-      console.error('Error fetching plans:', error);
+      logger.error('Error fetching plans:', error);
       toast({
         title: "Error",
         description: "Failed to fetch storage plans",
@@ -104,7 +105,7 @@ export const useStorageManagement = () => {
         throw new Error(data.error || 'Failed to create allocation');
       }
     } catch (error: any) {
-      console.error('Error creating allocation:', error);
+      logger.error('Error creating allocation:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create storage allocation",
@@ -138,7 +139,7 @@ export const useStorageManagement = () => {
         throw new Error('Failed to terminate allocation');
       }
     } catch (error: any) {
-      console.error('Error terminating allocation:', error);
+      logger.error('Error terminating allocation:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to terminate storage allocation",

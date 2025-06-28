@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Clock, FileText } from "lucide-react";
+import logger from "@/lib/logger";
 
 interface BidModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ const BidModal = ({ isOpen, onClose, projectId, onSuccess }: BidModalProps) => {
 
       onSuccess();
     } catch (error: any) {
-      console.error("Error submitting bid:", error);
+      logger.error("Error submitting bid:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit bid",

@@ -69,7 +69,7 @@ export const useCustomFileUpload = (options: FileUploadOptions = {}) => {
       logger.log('useCustomFileUpload: Returning uploaded file:', uploadedFile);
       return uploadedFile;
     } catch (error) {
-      console.error('useCustomFileUpload: Error during upload:', error);
+      logger.error('useCustomFileUpload: Error during upload:', error);
       toast({
         title: "Upload Error",
         description: error instanceof Error ? error.message : "Failed to store file locally",

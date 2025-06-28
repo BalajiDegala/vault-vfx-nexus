@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectTemplate } from "@/types/projectTemplates";
+import logger from "@/lib/logger";
 
 interface FormData {
   title: string;
@@ -122,7 +123,7 @@ export const useCreateProjectForm = (onSuccess: () => void) => {
 
       onSuccess();
     } catch (error: any) {
-      console.error("Error creating project:", error);
+      logger.error("Error creating project:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create project",
