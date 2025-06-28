@@ -121,7 +121,7 @@ const CommentsSection = ({ postId }: CommentsSectionProps) => {
       setComments([]);
       setCommentsLoading(false);
     }
-  }, [postId]);
+  }, [postId, loadComments]);
 
   if (commentsLoading) {
     return <CommentsLoadingState />;

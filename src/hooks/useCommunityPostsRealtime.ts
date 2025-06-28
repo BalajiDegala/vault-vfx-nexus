@@ -1,9 +1,10 @@
 
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useCommunityPostsRealtime = (refreshPosts: () => Promise<void>) => {
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     // Clean up any existing channel first

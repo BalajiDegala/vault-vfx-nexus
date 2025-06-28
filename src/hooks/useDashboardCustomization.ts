@@ -61,7 +61,7 @@ export const useDashboardCustomization = (userId: string) => {
     saveLayout(newLayout);
   };
 
-  const updateWidgetConfig = (widgetId: string, config: any) => {
+  const updateWidgetConfig = (widgetId: string, config: Record<string, unknown>) => {
     const newLayout = {
       ...layout,
       widgets: layout.widgets.map(widget =>

@@ -2,12 +2,14 @@
 import { Fragment } from 'react';
 import UserHoverCard from './UserHoverCard';
 
+import type { BasicProfile } from '@/types/profile';
+
 interface EnhancedPostContentParserProps {
   content: string;
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
   currentUserId?: string;
-  onMessageUser?: (profile: any) => void;
+  onMessageUser?: (profile: BasicProfile) => void;
 }
 
 const EnhancedPostContentParser = ({ 

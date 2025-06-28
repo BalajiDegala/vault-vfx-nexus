@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { CommunityPost, UploadedFile } from '@/types/community';
+import type { BasicProfile } from '@/types/profile';
 
 export interface ModalState {
   isEditModalOpen: boolean;
@@ -9,7 +10,7 @@ export interface ModalState {
   postIdToDelete: string | null;
   attachmentsToDelete: UploadedFile[] | undefined;
   showMessaging: boolean;
-  selectedProfile: any | null; // Consider defining a Profile type if not already available globally
+  selectedProfile: BasicProfile | null;
 }
 
 export interface ModalActions {
@@ -17,7 +18,7 @@ export interface ModalActions {
   closeEditModal: () => void;
   openDeleteDialog: (postId: string, attachments: UploadedFile[] | undefined) => void;
   closeDeleteDialog: () => void;
-  openMessagingModal: (profile: any) => void;
+  openMessagingModal: (profile: BasicProfile) => void;
   closeMessagingModal: () => void;
 }
 
@@ -30,7 +31,7 @@ export const useCommunityModals = (): ModalState & ModalActions => {
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<UploadedFile[] | undefined>(undefined);
 
   const [showMessaging, setShowMessaging] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<BasicProfile | null>(null);
 
   const openEditModal = (post: CommunityPost) => {
     setPostToEdit(post);
@@ -54,7 +55,7 @@ export const useCommunityModals = (): ModalState & ModalActions => {
     setAttachmentsToDelete(undefined);
   };
 
-  const openMessagingModal = (profile: any) => {
+  const openMessagingModal = (profile: BasicProfile) => {
     setSelectedProfile(profile);
     setShowMessaging(true);
   };

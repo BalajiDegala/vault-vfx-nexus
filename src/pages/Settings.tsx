@@ -49,7 +49,7 @@ const Settings = () => {
         .single();
 
       setUserRole(roleData?.role || "artist");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Auth error:", error);
       navigate("/login");
     } finally {
@@ -68,7 +68,7 @@ const Settings = () => {
       if (error) throw error;
       setProfile(profileData);
       setEditData(profileData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching profile:", error);
       toast({
         title: "Error",
@@ -96,7 +96,7 @@ const Settings = () => {
         title: "Success",
         description: "Profile updated successfully"
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
       toast({
         title: "Error",

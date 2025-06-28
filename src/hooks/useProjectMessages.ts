@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface ProjectMessage {
   id: string;
@@ -9,7 +10,7 @@ export interface ProjectMessage {
   sender_id: string;
   content: string;
   message_type: 'text' | 'system' | 'file_upload' | 'status_update';
-  metadata: any;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   profiles?: {
@@ -23,7 +24,7 @@ export const useProjectMessages = (projectId: string) => {
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!projectId) {
@@ -126,7 +127,11 @@ export const useProjectMessages = (projectId: string) => {
     };
   }, [projectId, toast]);
 
-  const sendMessage = async (content: string, messageType: 'text' | 'system' | 'file_upload' | 'status_update' = 'text', metadata: any = {}) => {
+  const sendMessage = async (
+    content: string,
+    messageType: 'text' | 'system' | 'file_upload' | 'status_update' = 'text',
+    metadata: Record<string, unknown> = {}
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

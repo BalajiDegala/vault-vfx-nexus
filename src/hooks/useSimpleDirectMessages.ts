@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface DirectMessage {
   id: string;
@@ -26,7 +27,7 @@ export const useSimpleDirectMessages = (
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const { toast } = useToast();
   
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout>();
   const lastMessageIdRef = useRef<string>('');
 
@@ -141,7 +142,7 @@ export const useSimpleDirectMessages = (
         },
         (payload) => {
           console.log('📨 Real-time message received:', payload);
-          const newMessage = payload.new as any;
+          const newMessage = payload.new as DirectMessage;
           
           // Check if this message is for our conversation
           const isForThisConversation = 
@@ -155,7 +156,7 @@ export const useSimpleDirectMessages = (
         }
       )
       // Listen for typing indicators
-      .on('broadcast', { event: 'typing' }, ({ payload }: { payload: any }) => {
+      .on('broadcast', { event: 'typing' }, ({ payload }: { payload: { user_id: string; typing: boolean } }) => {
         console.log('⌨️ Typing indicator received:', payload);
         if (payload.user_id === recipientId) {
           onRecipientTyping(payload.typing);

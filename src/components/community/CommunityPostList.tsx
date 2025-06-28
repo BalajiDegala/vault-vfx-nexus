@@ -5,6 +5,7 @@ import { Users } from 'lucide-react';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
 import { CommunityPost, UploadedFile } from '@/types/community';
+import type { BasicProfile } from '@/types/profile';
 
 interface CommunityPostListProps {
   posts: CommunityPost[]; // Full list to check if any posts exist at all
@@ -15,7 +16,7 @@ interface CommunityPostListProps {
   onToggleBookmark: (postId: string) => Promise<boolean | void>;
   onHashtagClick: (hashtag: string) => void;
   onMentionClick: (mention: string) => void;
-  onMessageUser: (profile: any) => void;
+  onMessageUser: (profile: BasicProfile) => void;
   onEditPost: (post: CommunityPost) => void;
   onDeletePost: (postId: string, attachments: UploadedFile[] | undefined) => void;
 }

@@ -7,6 +7,7 @@ import DirectMessaging from '@/components/messaging/DirectMessaging';
 import EditPostModal from './EditPostModal';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 import { CommunityPost, UploadedFile } from '@/types/community';
+import type { BasicProfile } from '@/types/profile';
 
 import CommunityHeader from './CommunityHeader';
 import CommunityFilters from './CommunityFilters';
@@ -16,6 +17,7 @@ import CommunitySidebar from './CommunitySidebar';
 interface CommunityDiscussionsProps {
   currentUser: User;
 }
+
 
 const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
   const { 
@@ -80,8 +82,8 @@ const CommunityDiscussions = ({ currentUser }: CommunityDiscussionsProps) => {
     setSelectedCategory('all');
   };
   
-  const getDisplayName = (profile: any) => {
-    if (!profile) return 'Unknown User'; // Guard against null profile
+  const getDisplayName = (profile: BasicProfile | null) => {
+    if (!profile) return 'Unknown User';
     if (profile.first_name || profile.last_name) {
       return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
     }
