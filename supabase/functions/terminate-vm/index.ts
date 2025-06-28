@@ -82,8 +82,7 @@ serve(async (req) => {
           hourly_rate: activeUsage.hourly_rate
         }
       })
-
-      console.log('Charge result:', chargeResult)
+      // Charge result is ignored in this serverless context
     }
 
     // Update VM status to terminated
