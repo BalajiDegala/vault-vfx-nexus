@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +28,7 @@ export const useProjectsData = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      console.log("Fetching projects...");
+      logger.log("Fetching projects...");
       
       const { data, error } = await supabase
         .from("projects")
@@ -39,7 +40,7 @@ export const useProjectsData = () => {
         throw error;
       }
       
-      console.log("Projects fetched successfully:", data?.length || 0);
+      logger.log("Projects fetched successfully:", data?.length || 0);
       setProjects(data || []);
     } catch (error: any) {
       console.error("Error fetching projects:", error);
@@ -99,7 +100,7 @@ export const useProjectsData = () => {
   };
 
   const handleProjectUpdate = () => {
-    console.log("Updating projects list...");
+    logger.log("Updating projects list...");
     fetchProjects();
     fetchStats();
   };

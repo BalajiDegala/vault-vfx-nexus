@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -49,7 +50,7 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
     }
 
     try {
-      console.log("Deleting project:", project.id);
+      logger.log("Deleting project:", project.id);
       const { error } = await supabase
         .from("projects")
         .delete()
@@ -74,7 +75,7 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
 
   const handleViewProject = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Navigating to project:", project.id);
+    logger.log("Navigating to project:", project.id);
     navigate(`/projects/${project.id}`);
   };
 
@@ -85,7 +86,7 @@ const EnhancedProjectCard = ({ project, userRole, userId, onUpdate }: EnhancedPr
         target.closest('.dropdown-trigger')) {
       return;
     }
-    console.log("Card clicked, navigating to project:", project.id);
+    logger.log("Card clicked, navigating to project:", project.id);
     navigate(`/projects/${project.id}`);
   };
 

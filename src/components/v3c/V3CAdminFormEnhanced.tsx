@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,15 +85,15 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
     setLastResult(null);
 
     try {
-      console.log(`=== ADMIN TRANSACTION START ===`);
-      console.log(`Admin: ${adminUserId}`);
-      console.log(`Target User: ${selectedUser.id} (${selectedUser.display})`);
-      console.log(`Action: ${type}`);
-      console.log(`Amount: ${amountNum} V3C`);
+      logger.log(`=== ADMIN TRANSACTION START ===`);
+      logger.log(`Admin: ${adminUserId}`);
+      logger.log(`Target User: ${selectedUser.id} (${selectedUser.display})`);
+      logger.log(`Action: ${type}`);
+      logger.log(`Amount: ${amountNum} V3C`);
       
       // Get current balance first
       const currentBalance = await fetchUserBalance(selectedUser.id);
-      console.log(`Current balance: ${currentBalance} V3C`);
+      logger.log(`Current balance: ${currentBalance} V3C`);
       
       // Process transaction using enhanced function
       const { data, error } = await supabase.rpc("process_v3c_transaction", {
@@ -131,8 +132,8 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
         return;
       }
 
-      console.log("=== ADMIN TRANSACTION SUCCESS ===");
-      console.log("Result:", result);
+      logger.log("=== ADMIN TRANSACTION SUCCESS ===");
+      logger.log("Result:", result);
       
       toast({
         title: "V3C Transaction Successful",
@@ -154,7 +155,7 @@ const V3CAdminFormEnhanced: React.FC<V3CAdminFormEnhancedProps> = ({
       
       // Clear form
       setAmount("");
-      console.log("=== ADMIN TRANSACTION COMPLETE ===");
+      logger.log("=== ADMIN TRANSACTION COMPLETE ===");
       
     } catch (err) {
       console.error("Unexpected transaction error:", err);

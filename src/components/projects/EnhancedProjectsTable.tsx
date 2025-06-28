@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -94,7 +95,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      console.log("🔍 Fetching projects for user:", userId, "role:", userRole);
+      logger.log("🔍 Fetching projects for user:", userId, "role:", userRole);
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -109,7 +110,7 @@ const EnhancedProjectsTable: React.FC<EnhancedProjectsTableProps> = ({ userRole,
         });
         setProjects([]);
       } else {
-        console.log("✅ Successfully fetched", data?.length || 0, "projects");
+        logger.log("✅ Successfully fetched", data?.length || 0, "projects");
         setProjects(data || []);
       }
     } catch (error) {

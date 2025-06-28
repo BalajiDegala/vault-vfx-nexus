@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ const TaskSharingModal = ({
   // Load artists when modal opens
   useEffect(() => {
     if (isOpen) {
-      console.log('🔍 TaskSharingModal opened, searching for artists...');
+      logger.log('🔍 TaskSharingModal opened, searching for artists...');
       searchUsers('', 'artist');
     }
   }, [isOpen, searchUsers]);
@@ -86,13 +87,13 @@ const TaskSharingModal = ({
     e.preventDefault();
     
     if (!task || !formData.artist_id) {
-      console.log('❌ Missing task or artist_id:', { task: !!task, artist_id: formData.artist_id });
+      logger.log('❌ Missing task or artist_id:', { task: !!task, artist_id: formData.artist_id });
       return;
     }
 
     try {
       setSubmitting(true);
-      console.log('📤 Sharing task with artist:', formData);
+      logger.log('📤 Sharing task with artist:', formData);
       
       await shareTaskWithArtist(
         task.id, 
@@ -157,7 +158,7 @@ const TaskSharingModal = ({
     );
   }
 
-  console.log('🎯 TaskSharingModal render:', {
+  logger.log('🎯 TaskSharingModal render:', {
     isOpen,
     taskId: task.id,
     searchResultsCount: searchResults.length,
@@ -226,7 +227,7 @@ const TaskSharingModal = ({
               <Select 
                 value={formData.artist_id} 
                 onValueChange={(value) => {
-                  console.log('🎨 Artist selected:', value);
+                  logger.log('🎨 Artist selected:', value);
                   setFormData({...formData, artist_id: value});
                 }}
               >
@@ -265,7 +266,7 @@ const TaskSharingModal = ({
               <Select 
                 value={formData.access_level} 
                 onValueChange={(value: 'view' | 'edit' | 'comment') => {
-                  console.log('🔐 Access level selected:', value);
+                  logger.log('🔐 Access level selected:', value);
                   setFormData({...formData, access_level: value});
                 }}
               >

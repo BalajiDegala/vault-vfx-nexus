@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useSharedTasks } from '@/hooks/useSharedTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +12,11 @@ interface ArtistTasksViewProps {
 const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
   const { sharedTasks, loading } = useSharedTasks('artist', userId);
 
-  console.log('🎨 === ArtistTasksView Debug ===');
-  console.log('👤 userId:', userId);
-  console.log('⏳ loading:', loading);
-  console.log('📊 sharedTasks count:', sharedTasks.length);
-  console.log('📋 sharedTasks data:', sharedTasks);
+  logger.log('🎨 === ArtistTasksView Debug ===');
+  logger.log('👤 userId:', userId);
+  logger.log('⏳ loading:', loading);
+  logger.log('📊 sharedTasks count:', sharedTasks.length);
+  logger.log('📋 sharedTasks data:', sharedTasks);
 
   const getTaskTypeIcon = (taskType: string) => {
     switch (taskType) {
@@ -78,7 +79,7 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
   };
 
   if (loading) {
-    console.log('⏳ ArtistTasksView: Still loading...');
+    logger.log('⏳ ArtistTasksView: Still loading...');
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
@@ -88,7 +89,7 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
   }
 
   if (sharedTasks.length === 0) {
-    console.log('❌ ArtistTasksView: No tasks found, showing empty state');
+    logger.log('❌ ArtistTasksView: No tasks found, showing empty state');
     return (
       <div className="text-center py-20">
         <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4" />
@@ -104,7 +105,7 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
     );
   }
 
-  console.log('✅ ArtistTasksView: Rendering tasks...');
+  logger.log('✅ ArtistTasksView: Rendering tasks...');
 
   // Separate tasks by share status
   const pendingTasks = sharedTasks.filter(t => t.status === 'pending');
@@ -137,10 +138,10 @@ const ArtistTasksView = ({ userId }: ArtistTasksViewProps) => {
       <div className="grid gap-6">
         {sharedTasks.map((sharedTask) => {
           const task = sharedTask.tasks;
-          console.log('Rendering shared task:', sharedTask.id, 'task data:', task);
+          logger.log('Rendering shared task:', sharedTask.id, 'task data:', task);
           
           if (!task) {
-            console.log('No task data for shared task:', sharedTask.id);
+            logger.log('No task data for shared task:', sharedTask.id);
             return (
               <Card key={sharedTask.id} className="bg-gray-900/50 border-gray-700">
                 <CardContent className="p-6">

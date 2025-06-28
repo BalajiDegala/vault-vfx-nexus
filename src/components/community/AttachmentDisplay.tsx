@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -23,8 +24,8 @@ const urlCache = new Map<string, string>();
 const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
-  console.log('AttachmentDisplay: Received attachments:', attachments);
-  console.log('AttachmentDisplay: Current storage info:', getStorageInfo());
+  logger.log('AttachmentDisplay: Received attachments:', attachments);
+  logger.log('AttachmentDisplay: Current storage info:', getStorageInfo());
 
   useEffect(() => {
     // Cleanup blob URLs when component unmounts
@@ -39,7 +40,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   }, []);
 
   if (!attachments || attachments.length === 0) {
-    console.log('AttachmentDisplay: No attachments to display.');
+    logger.log('AttachmentDisplay: No attachments to display.');
     return null;
   }
 
@@ -59,7 +60,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   };
 
   const getAttachmentUrl = (attachment: Attachment): string => {
-    console.log('AttachmentDisplay: Getting URL for attachment:', attachment.name, 'fileId:', attachment.fileId);
+    logger.log('AttachmentDisplay: Getting URL for attachment:', attachment.name, 'fileId:', attachment.fileId);
     
     // If we have a fileId, try to get fresh URL from local storage
     if (attachment.fileId) {
@@ -67,14 +68,14 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
       const cacheKey = `file_${attachment.fileId}`;
       if (urlCache.has(cacheKey)) {
         const cachedUrl = urlCache.get(cacheKey)!;
-        console.log('AttachmentDisplay: Using cached URL for:', attachment.name);
+        logger.log('AttachmentDisplay: Using cached URL for:', attachment.name);
         return cachedUrl;
       }
       
       // Generate fresh blob URL from localStorage
       const localUrl = getFileUrl(attachment.fileId);
       if (localUrl) {
-        console.log('AttachmentDisplay: Generated fresh blob URL for:', attachment.name, localUrl);
+        logger.log('AttachmentDisplay: Generated fresh blob URL for:', attachment.name, localUrl);
         urlCache.set(cacheKey, localUrl);
         return localUrl;
       } else {
@@ -84,7 +85,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
     }
     
     // Fallback to stored URL (for backwards compatibility)
-    console.log('AttachmentDisplay: Using fallback URL for:', attachment.name, attachment.url);
+    logger.log('AttachmentDisplay: Using fallback URL for:', attachment.name, attachment.url);
     return attachment.url;
   };
 
@@ -105,7 +106,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
   };
 
   const renderAttachment = (attachment: Attachment, index: number) => {
-    console.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
+    logger.log(`AttachmentDisplay: Rendering attachment ${index}:`, attachment);
     
     if (!attachment || !attachment.type) {
       console.warn(`AttachmentDisplay: Attachment ${index} is invalid or missing type.`, attachment);
@@ -142,7 +143,7 @@ const AttachmentDisplay = ({ attachments }: AttachmentDisplayProps) => {
                 alt={attachment.name}
                 className="max-h-48 rounded-lg object-cover group-hover:opacity-90 transition-opacity"
                 onError={() => handleImageError(attachment)}
-                onLoad={() => console.log(`AttachmentDisplay: Image loaded successfully: ${attachment.name}`)}
+                onLoad={() => logger.log(`AttachmentDisplay: Image loaded successfully: ${attachment.name}`)}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                 <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />

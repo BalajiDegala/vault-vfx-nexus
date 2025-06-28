@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UploadedFile } from '@/types/community';
@@ -9,14 +10,14 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
 
   const deletePost = async (postId: string, attachments?: UploadedFile[]) => {
     try {
-      console.log('useDeleteCommunityPost: Deleting post:', postId);
+      logger.log('useDeleteCommunityPost: Deleting post:', postId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.warn('useDeleteCommunityPost: User not authenticated for deletePost.');
         toast({ title: "Authentication Error", description: "You must be logged in to delete posts.", variant: "destructive" });
         throw new Error('Not authenticated');
       }
-      console.log('useDeleteCommunityPost: Authenticated user for deletePost:', user.id);
+      logger.log('useDeleteCommunityPost: Authenticated user for deletePost:', user.id);
 
       // Delete attachments from mock file server
       if (attachments && attachments.length > 0) {
@@ -46,7 +47,7 @@ export const useDeleteCommunityPost = (refreshPosts: () => Promise<void>) => {
         throw error;
       }
 
-      console.log('useDeleteCommunityPost: Post deleted successfully');
+      logger.log('useDeleteCommunityPost: Post deleted successfully');
       toast({
         title: "Success",
         description: "Post deleted successfully!",

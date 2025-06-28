@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +36,7 @@ export const useProjectMessages = (projectId: string) => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        console.log('Fetching messages for project:', projectId);
+        logger.log('Fetching messages for project:', projectId);
         const { data, error } = await supabase
           .from('project_messages')
           .select(`
@@ -88,7 +89,7 @@ export const useProjectMessages = (projectId: string) => {
             filter: `project_id=eq.${projectId}`,
           },
           async (payload) => {
-            console.log('Realtime event received:', payload);
+            logger.log('Realtime event received:', payload);
             if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
               const { data, error } = await supabase
                 .from('project_messages')
@@ -112,7 +113,7 @@ export const useProjectMessages = (projectId: string) => {
           }
         )
         .subscribe((status) => {
-          console.log(`Subscription to ${channelName}: ${status}`);
+          logger.log(`Subscription to ${channelName}: ${status}`);
         });
     };
 

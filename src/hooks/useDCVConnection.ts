@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -166,7 +167,7 @@ export const useDCVConnection = () => {
       try {
         await validateConnection(vmInstanceId);
       } catch (error) {
-        console.log('Connection monitoring error:', error);
+        logger.log('Connection monitoring error:', error);
         clearInterval(interval);
       }
     }, 30000);

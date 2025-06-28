@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ const UserProfile = ({ userId, currentUserRole }: UserProfileProps) => {
 
   const handleMessage = () => {
     // TODO: Implement messaging functionality
-    console.log("Start conversation with", userId);
+    logger.log("Start conversation with", userId);
     toast({
       title: "Coming Soon",
       description: "Messaging functionality will be available soon"

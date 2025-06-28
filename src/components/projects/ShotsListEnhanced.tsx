@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronRight, Loader2, SortAsc, SortDesc, Plus } from "lucide-react";
@@ -47,7 +48,7 @@ export default function ShotsListEnhanced({
 
   const fetchShots = async () => {
     try {
-      console.log('🔍 Fetching shots for sequence:', sequenceId, 'userRole:', userRole);
+      logger.log('🔍 Fetching shots for sequence:', sequenceId, 'userRole:', userRole);
       
       if (userRole === 'artist') {
         // For artists, only show shots that have tasks shared with them
@@ -93,7 +94,7 @@ export default function ShotsListEnhanced({
         });
 
         const artistShots = Array.from(uniqueShots.values());
-        console.log('✅ Artist shots with shared tasks:', artistShots.length);
+        logger.log('✅ Artist shots with shared tasks:', artistShots.length);
         setShots(artistShots);
       } else {
         // For studios/admins, show all shots in the sequence
@@ -107,7 +108,7 @@ export default function ShotsListEnhanced({
           console.error('Error fetching shots:', error);
           setShots([]);
         } else {
-          console.log('✅ All shots fetched:', data?.length || 0);
+          logger.log('✅ All shots fetched:', data?.length || 0);
           setShots(data || []);
         }
       }
@@ -120,25 +121,25 @@ export default function ShotsListEnhanced({
   };
 
   const handleCreateShot = () => {
-    console.log('🎬 Opening create shot modal for sequence:', sequenceId);
+    logger.log('🎬 Opening create shot modal for sequence:', sequenceId);
     setShowCreateModal(true);
   };
 
   const handleShotCreated = () => {
-    console.log('✅ Shot created, refreshing list');
+    logger.log('✅ Shot created, refreshing list');
     fetchShots();
   };
 
   const canCreateShots = userRole === 'studio' || userRole === 'admin' || userRole === 'producer';
 
-  console.log('🎬 ShotsListEnhanced render - userRole:', userRole, 'canCreateShots:', canCreateShots);
+  logger.log('🎬 ShotsListEnhanced render - userRole:', userRole, 'canCreateShots:', canCreateShots);
 
   let filtered = shots;
   if (statusFilter) filtered = filtered.filter(s => s.status === statusFilter);
 
   filtered = filtered.sort((a, b) => {
-    let av: any = a[sortCol];
-    let bv: any = b[sortCol];
+    const av: any = a[sortCol];
+    const bv: any = b[sortCol];
     if (av < bv) return sortDir === "asc" ? -1 : 1;
     if (av > bv) return sortDir === "asc" ? 1 : -1;
     return 0;

@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +45,7 @@ const ShotTasksView = ({ shot, userRole, onShareTask }: ShotTasksViewProps) => {
 
   const handleAssignTask = (taskId: string) => {
     // Simple assignment logic - in a real app this would open a user selection modal
-    console.log('Assign task:', taskId);
+    logger.log('Assign task:', taskId);
   };
 
   return (

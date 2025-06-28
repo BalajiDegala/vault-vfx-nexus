@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useSimpleDirectMessages } from "@/hooks/useSimpleDirectMessages";
@@ -57,7 +58,7 @@ const DirectMessaging = ({
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    console.log('📤 Sending message:', newMessage);
+    logger.log('📤 Sending message:', newMessage);
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
@@ -92,7 +93,7 @@ const DirectMessaging = ({
 
   return (
     <Dialog open={open} onOpenChange={(newOpenState) => {
-      console.log('🔄 Dialog state changing to:', newOpenState);
+      logger.log('🔄 Dialog state changing to:', newOpenState);
       onOpenChange(newOpenState);
       if (!newOpenState) {
         setOtherUserTyping(false); 

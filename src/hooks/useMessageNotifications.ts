@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -61,7 +62,7 @@ export const useMessageNotifications = (currentUserId: string) => {
     // Clean up if currentUserId changed
     if (currentUserIdRef.current !== currentUserId) {
       if (channelRef.current) {
-        console.log('Cleaning up message notifications channel due to user change');
+        logger.log('Cleaning up message notifications channel due to user change');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -70,7 +71,7 @@ export const useMessageNotifications = (currentUserId: string) => {
 
     if (!currentUserId) return;
 
-    console.log('Setting up message notifications for user:', currentUserId);
+    logger.log('Setting up message notifications for user:', currentUserId);
 
     // Check unread messages initially
     checkUnreadMessages();
@@ -93,7 +94,7 @@ export const useMessageNotifications = (currentUserId: string) => {
             filter: `receiver_id=eq.${currentUserId}`
           },
           async (payload) => {
-            console.log('New message notification:', payload);
+            logger.log('New message notification:', payload);
             
             // Fetch sender profile for notification
             const { data: senderData } = await supabase
@@ -120,14 +121,14 @@ export const useMessageNotifications = (currentUserId: string) => {
           }
         )
         .subscribe((status) => {
-          console.log('Message notifications channel subscription status:', status);
+          logger.log('Message notifications channel subscription status:', status);
         });
     }
 
     // Return cleanup function
     return () => {
       if (channelRef.current) {
-        console.log('Component unmounting - cleaning up message notifications channel');
+        logger.log('Component unmounting - cleaning up message notifications channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }

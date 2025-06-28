@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -102,12 +103,12 @@ export const useProjectPresence = (projectId: string, userId: string) => {
               filter: `project_id=eq.${projectId}`,
             },
             (payload) => {
-              console.log('Presence change:', payload);
+              logger.log('Presence change:', payload);
               fetchPresence(); // Refetch to get updated data
             }
           )
           .subscribe((status) => {
-            console.log('Presence subscription status:', status);
+            logger.log('Presence subscription status:', status);
             if (status === 'SUBSCRIBED') {
               isSubscribedRef.current = true;
             }

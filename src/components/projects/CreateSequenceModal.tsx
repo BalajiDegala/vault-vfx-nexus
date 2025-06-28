@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
     }
 
     setLoading(true);
-    console.log('🎬 Creating sequence with data:', { ...data, projectId });
+    logger.log('🎬 Creating sequence with data:', { ...data, projectId });
 
     try {
       // Get the user's current session
@@ -66,7 +67,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
         return;
       }
 
-      console.log('👤 User authenticated:', session.user.id);
+      logger.log('👤 User authenticated:', session.user.id);
 
       // Get max order for this project
       const { data: existingSequences, error: fetchError } = await supabase
@@ -84,7 +85,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
       const maxOrder = existingSequences?.[0]?.order_index || 0;
       const newOrder = maxOrder + 1;
 
-      console.log('📊 Sequence order:', { maxOrder, newOrder });
+      logger.log('📊 Sequence order:', { maxOrder, newOrder });
 
       // Create the sequence
       const sequenceData = {
@@ -95,7 +96,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
         status: 'planning' as const,
       };
 
-      console.log('📝 Inserting sequence data:', sequenceData);
+      logger.log('📝 Inserting sequence data:', sequenceData);
 
       const { data: newSequence, error } = await supabase
         .from("sequences")
@@ -130,7 +131,7 @@ const CreateSequenceModal = ({ isOpen, onClose, projectId, onSuccess }: CreateSe
         return;
       }
 
-      console.log('✅ Sequence created successfully:', newSequence);
+      logger.log('✅ Sequence created successfully:', newSequence);
       
       toast({
         title: "Success",

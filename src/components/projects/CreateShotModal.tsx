@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +50,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
     }
 
     setLoading(true);
-    console.log('🎬 Creating shot with data:', { ...data, sequenceId });
+    logger.log('🎬 Creating shot with data:', { ...data, sequenceId });
 
     try {
       // Get the user's current session
@@ -70,7 +71,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
         return;
       }
 
-      console.log('👤 User authenticated:', session.user.id);
+      logger.log('👤 User authenticated:', session.user.id);
 
       // Create the shot
       const shotData = {
@@ -82,7 +83,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
         status: 'pending' as const,
       };
 
-      console.log('📝 Inserting shot data:', shotData);
+      logger.log('📝 Inserting shot data:', shotData);
 
       const { data: newShot, error } = await supabase
         .from("shots")
@@ -117,7 +118,7 @@ const CreateShotModal = ({ isOpen, onClose, sequenceId, onSuccess }: CreateShotM
         return;
       }
 
-      console.log('✅ Shot created successfully:', newShot);
+      logger.log('✅ Shot created successfully:', newShot);
       
       toast({
         title: "Success",

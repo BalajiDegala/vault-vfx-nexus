@@ -1,4 +1,5 @@
 
+import logger from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,9 +29,9 @@ export function useV3Coins(userId?: string) {
   // Fetch balance from profile with cache busting
   const fetchBalance = useCallback(async () => {
     if (!userId) return;
-    console.log("=== FETCHING BALANCE ===");
-    console.log("User ID:", userId);
-    console.log("Timestamp:", new Date().toISOString());
+    logger.log("=== FETCHING BALANCE ===");
+    logger.log("User ID:", userId);
+    logger.log("Timestamp:", new Date().toISOString());
     
     // Add random query param to bust cache
     const { data, error } = await supabase
@@ -46,19 +47,19 @@ export function useV3Coins(userId?: string) {
     }
     
     const newBalance = data?.v3_coins_balance ?? 0;
-    console.log("Raw database response:", data);
-    console.log("Extracted balance:", newBalance);
-    console.log("Previous balance:", balance);
+    logger.log("Raw database response:", data);
+    logger.log("Extracted balance:", newBalance);
+    logger.log("Previous balance:", balance);
     
     setBalance(newBalance);
-    console.log("=== BALANCE FETCH COMPLETE ===");
+    logger.log("=== BALANCE FETCH COMPLETE ===");
   }, [userId, toast]);
 
   // Fetch transaction history with cache busting
   const fetchTransactions = useCallback(async () => {
     if (!userId) return;
-    console.log("=== FETCHING TRANSACTIONS ===");
-    console.log("User ID:", userId);
+    logger.log("=== FETCHING TRANSACTIONS ===");
+    logger.log("User ID:", userId);
     setLoading(true);
     
     const { data, error } = await (supabase as any)
@@ -74,16 +75,16 @@ export function useV3Coins(userId?: string) {
       return;
     }
     
-    console.log("Fresh transactions data:", data);
+    logger.log("Fresh transactions data:", data);
     setTransactions((data as V3CTransactionRow[]) || []);
     setLoading(false);
-    console.log("=== TRANSACTIONS FETCH COMPLETE ===");
+    logger.log("=== TRANSACTIONS FETCH COMPLETE ===");
   }, [userId, toast]);
 
   // Force refresh both balance and transactions
   const forceRefresh = useCallback(async () => {
-    console.log("=== FORCE REFRESH TRIGGERED ===");
-    console.log("User ID:", userId);
+    logger.log("=== FORCE REFRESH TRIGGERED ===");
+    logger.log("User ID:", userId);
     if (!userId) return;
     
     // Clear current data first
@@ -95,13 +96,13 @@ export function useV3Coins(userId?: string) {
     
     // Fetch fresh data
     await Promise.all([fetchBalance(), fetchTransactions()]);
-    console.log("=== FORCE REFRESH COMPLETED ===");
+    logger.log("=== FORCE REFRESH COMPLETED ===");
   }, [userId, fetchBalance, fetchTransactions]);
 
   useEffect(() => {
     if (userId) {
-      console.log("=== INITIAL DATA FETCH ===");
-      console.log("User ID:", userId);
+      logger.log("=== INITIAL DATA FETCH ===");
+      logger.log("User ID:", userId);
       fetchBalance();
       fetchTransactions();
     }
@@ -110,13 +111,13 @@ export function useV3Coins(userId?: string) {
   // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event: Event) => {
-      console.log("=== REFRESH EVENT RECEIVED ===");
-      console.log("Event type:", event.type);
+      logger.log("=== REFRESH EVENT RECEIVED ===");
+      logger.log("Event type:", event.type);
       forceRefresh();
     };
 
     const handleStorageChange = () => {
-      console.log("=== STORAGE CHANGE DETECTED ===");
+      logger.log("=== STORAGE CHANGE DETECTED ===");
       forceRefresh();
     };
 
@@ -150,8 +151,8 @@ export function useV3Coins(userId?: string) {
     if (amount <= 0) return { error: "Amount must be positive." };
     if (!toUserId || toUserId === userId) return { error: "Invalid recipient" };
 
-    console.log("=== SENDING COINS ===");
-    console.log("From:", userId, "To:", toUserId, "Amount:", amount);
+    logger.log("=== SENDING COINS ===");
+    logger.log("From:", userId, "To:", toUserId, "Amount:", amount);
 
     const { data, error } = await (supabase as any).rpc("process_v3c_donation", {
       sender_id: userId,
@@ -166,7 +167,7 @@ export function useV3Coins(userId?: string) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return { error: error.message };
     } else {
-      console.log("Send coins success:", data);
+      logger.log("Send coins success:", data);
       toast({ title: "V3C Sent!", description: "Transaction successful." });
       await forceRefresh();
       return { data };
@@ -186,8 +187,8 @@ export function useV3Coins(userId?: string) {
     if (!userId) return { error: "Not authenticated" };
     if (amount <= 0) return { error: "Amount must be positive." };
 
-    console.log("=== ADDING TRANSACTION ===");
-    console.log("User:", userId, "Amount:", amount, "Type:", type);
+    logger.log("=== ADDING TRANSACTION ===");
+    logger.log("User:", userId, "Amount:", amount, "Type:", type);
 
     const { error } = await (supabase as any).rpc("process_v3c_transaction", {
       p_user_id: userId,
@@ -202,7 +203,7 @@ export function useV3Coins(userId?: string) {
       return { error: error.message };
     }
     
-    console.log("Add transaction success");
+    logger.log("Add transaction success");
     toast({ title: "V3C Transaction", description: "Balance updated." });
     await forceRefresh();
     return { ok: true };

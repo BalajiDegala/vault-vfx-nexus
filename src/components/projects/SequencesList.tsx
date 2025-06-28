@@ -40,8 +40,8 @@ export default function SequencesList({ projectId }: { projectId: string }) {
   if (statusFilter) filtered = filtered.filter(s => s.status === statusFilter);
 
   filtered = filtered.sort((a, b) => {
-    let av: any = a[sortCol];
-    let bv: any = b[sortCol];
+    const av: any = a[sortCol];
+    const bv: any = b[sortCol];
     if (av < bv) return sortDir === "asc" ? -1 : 1;
     if (av > bv) return sortDir === "asc" ? 1 : -1;
     return 0;

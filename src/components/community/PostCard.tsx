@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ const PostCard = ({
   const isAuthor = currentUserId === post.author_id;
 
   const handleToggleComments = () => {
-    console.log('PostCard: Toggling comments for post:', post.id, 'Current showComments state:', showComments);
+    logger.log('PostCard: Toggling comments for post:', post.id, 'Current showComments state:', showComments);
     setShowComments(!showComments);
   };
 
@@ -69,7 +70,7 @@ const PostCard = ({
     }
   };
 
-  console.log('PostCard: Rendering post', post.id, 'Attachments received:', post.attachments);
+  logger.log('PostCard: Rendering post', post.id, 'Attachments received:', post.attachments);
 
   return (
     <ErrorBoundary>
