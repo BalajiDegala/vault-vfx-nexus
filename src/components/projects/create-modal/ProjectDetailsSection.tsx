@@ -1,14 +1,8 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface ProjectDetailsSectionProps {
   deadline: string;
@@ -28,46 +22,55 @@ const ProjectDetailsSection: React.FC<ProjectDetailsSectionProps> = ({
   onSecurityLevelChange,
 }) => {
   return (
-    <>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="deadline">Deadline</Label>
+          <Label htmlFor="deadline" className="text-sm font-medium text-gray-200 mb-2 block">
+            Deadline
+          </Label>
           <Input
             id="deadline"
             type="date"
             value={deadline}
             onChange={(e) => onDeadlineChange(e.target.value)}
+            className="bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
+        
         <div>
-          <Label htmlFor="project_type">Project Type</Label>
+          <Label htmlFor="projectType" className="text-sm font-medium text-gray-200 mb-2 block">
+            Project Type
+          </Label>
           <Select value={projectType} onValueChange={onProjectTypeChange}>
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500">
+              <SelectValue placeholder="Select project type" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="studio">Studio Project</SelectItem>
-              <SelectItem value="producer">Producer Project</SelectItem>
-              <SelectItem value="shared">Shared Project</SelectItem>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="studio" className="text-white hover:bg-gray-700">Studio Project</SelectItem>
+              <SelectItem value="personal" className="text-white hover:bg-gray-700">Personal Project</SelectItem>
+              <SelectItem value="freelance" className="text-white hover:bg-gray-700">Freelance Project</SelectItem>
+              <SelectItem value="test" className="text-white hover:bg-gray-700">Test Project</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-
+      
       <div>
-        <Label htmlFor="security_level">Security Level</Label>
+        <Label htmlFor="securityLevel" className="text-sm font-medium text-gray-200 mb-2 block">
+          Security Level
+        </Label>
         <Select value={securityLevel} onValueChange={onSecurityLevelChange}>
-          <SelectTrigger>
-            <SelectValue />
+          <SelectTrigger className="bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500">
+            <SelectValue placeholder="Select security level" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Standard">Standard</SelectItem>
-            <SelectItem value="High">High</SelectItem>
-            <SelectItem value="Confidential">Confidential</SelectItem>
+          <SelectContent className="bg-gray-800 border-gray-600">
+            <SelectItem value="Standard" className="text-white hover:bg-gray-700">Standard</SelectItem>
+            <SelectItem value="High" className="text-white hover:bg-gray-700">High</SelectItem>
+            <SelectItem value="Confidential" className="text-white hover:bg-gray-700">Confidential</SelectItem>
           </SelectContent>
         </Select>
       </div>
-    </>
+    </div>
   );
 };
 
