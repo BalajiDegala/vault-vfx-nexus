@@ -2,6 +2,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const logger = {
+  log: (...args: unknown[]) => console.log(...args),
+  error: (...args: unknown[]) => console.error(...args)
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -76,7 +81,7 @@ serve(async (req) => {
         .single()
 
       if (allocError) {
-        console.error('Allocation creation error:', allocError)
+        logger.error('Allocation creation error:', allocError)
         return new Response('Failed to create storage allocation', { status: 500, headers: corsHeaders })
       }
 
@@ -146,7 +151,7 @@ serve(async (req) => {
     return new Response('Invalid action', { status: 400, headers: corsHeaders })
 
   } catch (error) {
-    console.error('Storage management error:', error)
+    logger.error('Storage management error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
