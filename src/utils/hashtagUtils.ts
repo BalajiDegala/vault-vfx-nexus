@@ -1,5 +1,4 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import logger from "@/lib/logger";
 
 export const extractHashtags = (content: string): string[] => {
@@ -12,6 +11,7 @@ export const updateTrendingHashtags = async (hashtags: string[]) => {
   if (hashtags.length === 0) return;
 
   try {
+    const { supabase } = await import('@/integrations/supabase/client');
     for (const hashtag of hashtags) {
       const { error } = await supabase.rpc('update_hashtag_count', {
         hashtag_name: hashtag

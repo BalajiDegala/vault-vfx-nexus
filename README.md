@@ -4,6 +4,15 @@
 
 **URL**: https://lovable.dev/projects/4bfb95d9-8671-4636-b185-bcb9d5526848
 
+**VFX Nexus** provides a portal for visual effects artists to rent cloud
+workstations, manage project storage and collaborate with other creators. It
+uses Supabase for authentication, database access and serverless functions that
+launch and terminate VMs. Users can allocate storage space, transfer V3 Coins
+(the in‑app currency) and participate in community discussions.
+
+To run the project locally, copy `.env.example` to `.env` and set your own
+Supabase credentials before starting the dev server.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
