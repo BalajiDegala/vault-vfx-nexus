@@ -66,7 +66,7 @@ const ProjectDetail = () => {
       } else {
         setUserRole(roleData.role);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Auth error:", error);
       navigate("/login");
     } finally {
@@ -112,7 +112,7 @@ const ProjectDetail = () => {
       console.log("Project data fetched successfully:", projectData);
       setProject(projectData);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching project:", error);
       toast({
         title: "Error",

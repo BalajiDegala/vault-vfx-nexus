@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Send, MessageCircle } from "lucide-react";
-import { useProjectMessages } from "@/hooks/useProjectMessages";
+import { useProjectMessages, type ProjectMessage } from "@/hooks/useProjectMessages";
 import { format } from "date-fns";
 
 function generateTempId() {
@@ -137,7 +137,7 @@ const ProjectChat = ({ projectId, userId }: ProjectChatProps) => {
               pending: true,
             }))].sort((a, b) =>
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            ).map((message: any) => {
+            ).map((message: ProjectMessage) => {
               const isOwn = message.sender_id === userId;
               const fullName = message.profiles
                 ? `${message.profiles?.first_name || ''} ${message.profiles?.last_name || ''}`.trim()

@@ -45,7 +45,8 @@ serve(async (req) => {
 
     // Calculate current costs for running VMs
     const vmsWithCosts = vmInstances?.map(vm => {
-      const activeUsage = vm.vm_usage_logs?.find((log: any) => log.status === 'active')
+      interface VmUsageLog { status: string; start_time: string }
+      const activeUsage = vm.vm_usage_logs?.find((log: VmUsageLog) => log.status === 'active')
       let currentCost = 0
       let runtimeMinutes = 0
 

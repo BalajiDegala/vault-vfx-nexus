@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserPresence {
@@ -20,7 +21,7 @@ export const useProjectPresence = (projectId: string, userId: string) => {
   const [presenceUsers, setPresenceUsers] = useState<UserPresence[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const isSubscribedRef = useRef(false);
 
   useEffect(() => {

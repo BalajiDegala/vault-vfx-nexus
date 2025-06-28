@@ -54,7 +54,7 @@ Example folder structure on your server:
 export const extractUserIdFromUrl = (url: string): string | null => {
   try {
     const urlPath = new URL(url).pathname;
-    const match = urlPath.match(/\/api\/files\/([^\/]+)\//);
+    const match = urlPath.match(/\/api\/files\/([^/]+)\//);
     return match ? match[1] : null;
   } catch {
     return null;

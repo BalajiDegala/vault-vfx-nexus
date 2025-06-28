@@ -35,7 +35,7 @@ export const processMessageContent = (content: string) => {
   const mentionRegex = /@(\w+)/g;
   const hashtagRegex = /#(\w+)/g;
 
-  let processedContent = content
+  const processedContent = content
     .replace(mentionRegex, `<span class="bg-blue-500/20 text-blue-300 px-1 rounded">@$1</span>`)
     .replace(hashtagRegex, `<span class="bg-purple-500/20 text-purple-300 px-1 rounded">#$1</span>`);
 

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface MessageNotification {
   id: string;
@@ -18,7 +19,7 @@ export const useMessageNotifications = (currentUserId: string) => {
     localStorage.getItem(`lastReadMessages_${currentUserId}`) || new Date().toISOString()
   );
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const currentUserIdRef = useRef<string>(currentUserId);
 
   const updateLastRead = () => {

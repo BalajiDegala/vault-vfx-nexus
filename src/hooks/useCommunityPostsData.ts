@@ -33,8 +33,8 @@ export const useCommunityPostsData = () => {
         throw postsError;
       }
       
-      let bookmarkedPostIds = new Set<string>();
-      let likedPostIds = new Set<string>(); // For tracking liked posts
+      const bookmarkedPostIds = new Set<string>();
+      const likedPostIds = new Set<string>(); // For tracking liked posts
 
       if (user && postsData) {
         // Fetch bookmarks

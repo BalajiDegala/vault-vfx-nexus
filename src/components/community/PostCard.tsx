@@ -11,7 +11,8 @@ import EnhancedPostContentParser from './EnhancedPostContentParser';
 import PostEngagement from './PostEngagement';
 import AttachmentDisplay from './AttachmentDisplay';
 import { POST_CATEGORIES } from './PostCategories';
-import { CommunityPost } from '@/types/community';
+import { CommunityPost, UploadedFile } from '@/types/community';
+import type { BasicProfile } from '@/types/profile';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +27,10 @@ interface PostCardProps {
   onToggleBookmark: (postId: string) => void;
   onHashtagClick?: (hashtag: string) => void;
   onMentionClick?: (mention: string) => void;
-  onMessageUser?: (profile: any) => void;
+  onMessageUser?: (profile: BasicProfile) => void;
   currentUserId?: string;
   onEditPost: (post: CommunityPost) => void;
-  onDeletePost: (postId: string, attachments: any[] | undefined) => void;
+  onDeletePost: (postId: string, attachments: UploadedFile[] | undefined) => void;
 }
 
 const PostCard = ({ 

@@ -9,7 +9,7 @@ export interface DashboardWidget {
   config?: {
     showCount?: number;
     timeRange?: 'week' | 'month' | 'quarter';
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
