@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Monitor, 
@@ -20,6 +19,8 @@ import {
   Zap
 } from 'lucide-react';
 import { useDCVConnection } from '@/hooks/useDCVConnection';
+import { useMachineDiscovery } from '@/hooks/useMachineDiscovery';
+import { supabase } from '@/integrations/supabase/client';
 import DCVConnectionStatus from './DCVConnectionStatus';
 
 interface ArtistMachine {
@@ -33,7 +34,7 @@ interface ArtistMachine {
     gpu_model?: string;
     software_installed: string[];
   };
-  assignment: {
+  assignment?: {
     task_id?: string;
     task_name?: string;
     estimated_hours?: number;
@@ -50,58 +51,49 @@ interface ArtistMachine {
 
 const ArtistMachineInterface: React.FC = () => {
   const { connectToVM } = useDCVConnection();
-  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
+  const { discoveredMachines } = useMachineDiscovery();
+  const [assignedMachines, setAssignedMachines] = useState<ArtistMachine[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual assigned machines from your system
-  const assignedMachines: ArtistMachine[] = [
-    {
-      id: 'machine1',
-      name: 'Workstation-Alpha-01',
-      ip_address: '192.168.1.101',
-      status: 'online',
-      capabilities: {
-        cpu_cores: 16,
-        total_ram_gb: 64,
-        gpu_model: 'RTX 4080',
-        software_installed: ['Maya 2024', 'Houdini', 'Nuke', 'Blender']
-      },
-      assignment: {
-        task_id: 'TASK-001',
-        task_name: 'Character Animation - Hero Shot',
-        estimated_hours: 24,
-        deadline: '2024-02-15',
-        notes: 'Focus on facial expressions and lip sync'
-      },
-      dcv_connection_url: 'https://192.168.1.101:8443',
-      session_info: {
-        active: false
+  useEffect(() => {
+    const fetchAssignedMachines = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get machines assigned to the current user
+        const userAssignedMachines = discoveredMachines.filter(
+          machine => machine.assigned_to === user.id
+        );
+
+        // Transform to ArtistMachine format
+        const transformedMachines: ArtistMachine[] = userAssignedMachines.map(machine => ({
+          id: machine.id || machine.ip_address,
+          name: machine.name,
+          ip_address: machine.ip_address,
+          status: machine.status as 'online' | 'offline' | 'maintenance',
+          capabilities: {
+            cpu_cores: machine.capabilities.cpu_cores,
+            total_ram_gb: machine.capabilities.total_ram_gb,
+            gpu_model: machine.capabilities.gpu_model,
+            software_installed: machine.capabilities.software_installed
+          },
+          dcv_connection_url: `https://${machine.ip_address}:8443`,
+          session_info: {
+            active: false
+          }
+        }));
+
+        setAssignedMachines(transformedMachines);
+      } catch (error) {
+        console.error('Error fetching assigned machines:', error);
+      } finally {
+        setLoading(false);
       }
-    },
-    {
-      id: 'machine2',
-      name: 'Render-Node-05',
-      ip_address: '192.168.1.105',
-      status: 'online',
-      capabilities: {
-        cpu_cores: 32,
-        total_ram_gb: 128,
-        gpu_model: 'RTX 4090',
-        software_installed: ['Arnold', 'V-Ray', 'Octane', 'Redshift']
-      },
-      assignment: {
-        task_id: 'TASK-002',
-        task_name: 'Lighting and Rendering - Environment',
-        estimated_hours: 16,
-        deadline: '2024-02-12'
-      },
-      dcv_connection_url: 'https://192.168.1.105:8443',
-      session_info: {
-        active: true,
-        start_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        duration_minutes: 120
-      }
-    }
-  ];
+    };
+
+    fetchAssignedMachines();
+  }, [discoveredMachines]);
 
   const handleConnect = async (machine: ArtistMachine) => {
     if (!machine.dcv_connection_url) return;
@@ -127,6 +119,17 @@ const ArtistMachineInterface: React.FC = () => {
       default: return 'bg-gray-400 text-white';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your assigned machines...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -188,7 +191,7 @@ const ArtistMachineInterface: React.FC = () => {
               </div>
 
               {/* Task Assignment */}
-              {machine.assignment.task_id && (
+              {machine.assignment?.task_id && (
                 <div className="p-3 bg-gray-700 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <div>

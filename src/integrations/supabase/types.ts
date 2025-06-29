@@ -335,6 +335,54 @@ export type Database = {
           },
         ]
       }
+      discovered_machines: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string | null
+          capabilities: Json
+          created_at: string
+          hostname: string
+          id: string
+          ip_address: unknown
+          last_seen: string
+          location: string | null
+          name: string
+          status: string
+          updated_at: string
+          utilization: Json
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          capabilities?: Json
+          created_at?: string
+          hostname: string
+          id?: string
+          ip_address: unknown
+          last_seen?: string
+          location?: string | null
+          name: string
+          status?: string
+          updated_at?: string
+          utilization?: Json
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          capabilities?: Json
+          created_at?: string
+          hostname?: string
+          id?: string
+          ip_address?: unknown
+          last_seen?: string
+          location?: string | null
+          name?: string
+          status?: string
+          updated_at?: string
+          utilization?: Json
+        }
+        Relationships: []
+      }
       filter_presets: {
         Row: {
           created_at: string
@@ -424,6 +472,163 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machine_assignments: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          assignment_type: string
+          cost_per_hour: number | null
+          created_at: string
+          duration_hours: number | null
+          expires_at: string | null
+          id: string
+          machine_id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          assignment_type: string
+          cost_per_hour?: number | null
+          created_at?: string
+          duration_hours?: number | null
+          expires_at?: string | null
+          id?: string
+          machine_id: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          assignment_type?: string
+          cost_per_hour?: number | null
+          created_at?: string
+          duration_hours?: number | null
+          expires_at?: string | null
+          id?: string
+          machine_id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "discovered_machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machine_pool_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          machine_id: string
+          pool_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          machine_id: string
+          pool_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          machine_id?: string
+          pool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_pool_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "discovered_machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_pool_assignments_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "machine_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machine_pools: {
+        Row: {
+          access_level: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          access_level?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          access_level?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      machine_utilization_logs: {
+        Row: {
+          active_sessions: number | null
+          cpu_percent: number
+          gpu_percent: number | null
+          id: string
+          machine_id: string
+          memory_percent: number
+          metadata: Json | null
+          recorded_at: string
+        }
+        Insert: {
+          active_sessions?: number | null
+          cpu_percent?: number
+          gpu_percent?: number | null
+          id?: string
+          machine_id: string
+          memory_percent?: number
+          metadata?: Json | null
+          recorded_at?: string
+        }
+        Update: {
+          active_sessions?: number | null
+          cpu_percent?: number
+          gpu_percent?: number | null
+          id?: string
+          machine_id?: string
+          memory_percent?: number
+          metadata?: Json | null
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_utilization_logs_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "discovered_machines"
             referencedColumns: ["id"]
           },
         ]

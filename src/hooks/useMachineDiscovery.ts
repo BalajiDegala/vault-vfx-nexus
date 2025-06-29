@@ -50,17 +50,38 @@ export const useMachineDiscovery = () => {
     setScanProgress(0);
     
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase.functions.invoke('scan-network-machines', {
-        body: { network_range: networkRange }
+        body: { network_range: networkRange },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
 
       if (data.success) {
-        setDiscoveredMachines(data.machines);
+        // Simulate progress for better UX
+        for (let i = 0; i <= 100; i += 20) {
+          setScanProgress(i);
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
         toast({
           title: "Network Scan Complete",
           description: `Found ${data.machines.length} machines`,
+        });
+
+        // Add scanned machines to the discovered list without registering
+        setDiscoveredMachines(prev => {
+          const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
+            !prev.some(existing => existing.ip_address === machine.ip_address)
+          );
+          return [...prev, ...newMachines];
         });
       }
     } catch (error: any) {
@@ -78,8 +99,16 @@ export const useMachineDiscovery = () => {
 
   const registerMachine = async (machine: DiscoveredMachine) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase.functions.invoke('register-machine', {
-        body: { machine }
+        body: { machine },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
@@ -89,7 +118,6 @@ export const useMachineDiscovery = () => {
           title: "Machine Registered",
           description: `${machine.name} has been registered successfully`,
         });
-        // Refresh machine list
         await fetchRegisteredMachines();
       }
     } catch (error: any) {
@@ -104,8 +132,16 @@ export const useMachineDiscovery = () => {
 
   const assignMachine = async (machineId: string, userId: string, assignedBy: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase.functions.invoke('assign-machine', {
-        body: { machine_id: machineId, user_id: userId, assigned_by: assignedBy }
+        body: { machine_id: machineId, user_id: userId, assigned_by: assignedBy },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
@@ -129,7 +165,14 @@ export const useMachineDiscovery = () => {
 
   const fetchRegisteredMachines = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-registered-machines');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase.functions.invoke('get-registered-machines', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) throw error;
       
@@ -143,8 +186,16 @@ export const useMachineDiscovery = () => {
 
   const createMachinePool = async (name: string, description: string, machineIds: string[]) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase.functions.invoke('create-machine-pool', {
-        body: { name, description, machine_ids: machineIds }
+        body: { name, description, machine_ids: machineIds },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
@@ -168,7 +219,14 @@ export const useMachineDiscovery = () => {
 
   const fetchMachinePools = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-machine-pools');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase.functions.invoke('get-machine-pools', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) throw error;
       
@@ -179,6 +237,46 @@ export const useMachineDiscovery = () => {
       console.error('Error fetching machine pools:', error);
     }
   };
+
+  // Set up realtime subscriptions
+  useEffect(() => {
+    const machinesChannel = supabase
+      .channel('discovered-machines-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discovered_machines'
+        },
+        () => {
+          console.log('Machine data changed, refreshing...');
+          fetchRegisteredMachines();
+        }
+      )
+      .subscribe();
+
+    const poolsChannel = supabase
+      .channel('machine-pools-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'machine_pools'
+        },
+        () => {
+          console.log('Pool data changed, refreshing...');
+          fetchMachinePools();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(machinesChannel);
+      supabase.removeChannel(poolsChannel);
+    };
+  }, []);
 
   useEffect(() => {
     fetchRegisteredMachines();
