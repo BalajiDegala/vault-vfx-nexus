@@ -1,7 +1,9 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMachineStore } from '@/stores/machineStore';
+import { machineApiClient } from '@/utils/machineApiClient';
+import { tabSyncManager } from '@/utils/tabSync';
 
 export interface DiscoveredMachine {
   id?: string;
@@ -39,35 +41,52 @@ export interface MachinePool {
 }
 
 export const useMachineDiscovery = () => {
-  const [discoveredMachines, setDiscoveredMachines] = useState<DiscoveredMachine[]>([]);
-  const [machinePools, setMachinePools] = useState<MachinePool[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
   const { toast } = useToast();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const channelRef = useRef<any>(null);
+  const initializationRef = useRef(false);
+  
+  // Get state and actions from store
+  const {
+    discoveredMachines,
+    machinePools,
+    isLoading,
+    isScanning,
+    scanProgress,
+    error,
+    setDiscoveredMachines,
+    setMachinePools,
+    setLoading,
+    setScanning,
+    setError,
+    addRequestInProgress,
+    removeRequestInProgress,
+    isRequestInProgress,
+    shouldRefresh
+  } = useMachineStore();
 
-  const scanNetworkRange = async (networkRange: string) => {
-    setIsScanning(true);
-    setScanProgress(0);
+  // Unique session identifier for realtime channels
+  const sessionId = useRef(`session-${tabSyncManager.getTabId()}`);
+
+  const scanNetworkRange = useCallback(async (networkRange: string) => {
+    const requestKey = `scan-${networkRange}`;
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Scan already in progress, skipping...');
+      return;
+    }
+
+    setScanning(true, 0);
+    setError(null);
+    addRequestInProgress(requestKey);
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication required');
-      }
-
-      const { data, error } = await supabase.functions.invoke('scan-network-machines', {
-        body: { network_range: networkRange },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
+      const data = await machineApiClient.scanNetworkRange(networkRange);
 
       if (data?.success) {
         // Simulate progress for better UX
         for (let i = 0; i <= 100; i += 20) {
-          setScanProgress(i);
+          setScanning(true, i);
           await new Promise(resolve => setTimeout(resolve, 200));
         }
 
@@ -82,38 +101,40 @@ export const useMachineDiscovery = () => {
             const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
               !prev.some(existing => existing.ip_address === machine.ip_address)
             );
-            return [...prev, ...newMachines];
+            const updated = [...prev, ...newMachines];
+            
+            // Broadcast to other tabs
+            tabSyncManager.broadcast('MACHINES_UPDATED', updated);
+            return updated;
           });
         }
       }
     } catch (error: any) {
       console.error('Network scan error:', error);
+      setError(error.message || "Failed to scan network");
       toast({
         title: "Scan Failed",
         description: error.message || "Failed to scan network",
         variant: "destructive",
       });
     } finally {
-      setIsScanning(false);
-      setScanProgress(0);
+      setScanning(false, 0);
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setScanning, setError, setDiscoveredMachines, toast]);
 
-  const registerMachine = async (machine: DiscoveredMachine) => {
+  const registerMachine = useCallback(async (machine: DiscoveredMachine) => {
+    const requestKey = `register-${machine.ip_address}`;
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Registration already in progress, skipping...');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication required');
-      }
-
-      const { data, error } = await supabase.functions.invoke('register-machine', {
-        body: { machine },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
+      const data = await machineApiClient.registerMachine(machine);
 
       if (data?.success) {
         toast({
@@ -124,29 +145,29 @@ export const useMachineDiscovery = () => {
       }
     } catch (error: any) {
       console.error('Machine registration error:', error);
+      setError(error.message || "Failed to register machine");
       toast({
         title: "Registration Failed",
         description: error.message || "Failed to register machine",
         variant: "destructive",
       });
+    } finally {
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
 
-  const assignMachine = async (machineId: string, userId: string, assignedBy: string) => {
+  const assignMachine = useCallback(async (machineId: string, userId: string, assignedBy: string) => {
+    const requestKey = `assign-${machineId}-${userId}`;
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Assignment already in progress, skipping...');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication required');
-      }
-
-      const { data, error } = await supabase.functions.invoke('assign-machine', {
-        body: { machine_id: machineId, user_id: userId, assigned_by: assignedBy },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
+      const data = await machineApiClient.assignMachine(machineId, userId, assignedBy);
 
       if (data?.success) {
         toast({
@@ -157,56 +178,64 @@ export const useMachineDiscovery = () => {
       }
     } catch (error: any) {
       console.error('Machine assignment error:', error);
+      setError(error.message || "Failed to assign machine");
       toast({
         title: "Assignment Failed",
         description: error.message || "Failed to assign machine",
         variant: "destructive",
       });
+    } finally {
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
 
-  const fetchRegisteredMachines = async () => {
+  const fetchRegisteredMachines = useCallback(async () => {
+    const requestKey = 'fetch-machines';
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Fetch machines already in progress, skipping...');
+      return;
+    }
+
+    // Check if we should refresh based on cache
+    if (!shouldRefresh() && discoveredMachines.length > 0) {
+      console.log('Using cached machine data');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    setLoading(true);
+    setError(null);
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session found, skipping machine fetch');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('get-registered-machines', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        console.error('Edge function error:', error);
-        return;
-      }
+      const data = await machineApiClient.fetchRegisteredMachines();
       
       if (data?.success && data.machines) {
         setDiscoveredMachines(data.machines);
+        // Broadcast to other tabs
+        tabSyncManager.broadcast('MACHINES_UPDATED', data.machines);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching registered machines:', error);
+      setError(error.message || "Failed to fetch machines");
+    } finally {
+      setLoading(false);
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, discoveredMachines.length, setLoading, setError, setDiscoveredMachines]);
 
-  const createMachinePool = async (name: string, description: string, machineIds: string[]) => {
+  const createMachinePool = useCallback(async (name: string, description: string, machineIds: string[]) => {
+    const requestKey = `create-pool-${name}`;
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Pool creation already in progress, skipping...');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication required');
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-machine-pool', {
-        body: { name, description, machine_ids: machineIds },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
+      const data = await machineApiClient.createMachinePool(name, description, machineIds);
 
       if (data?.success) {
         toast({
@@ -217,43 +246,56 @@ export const useMachineDiscovery = () => {
       }
     } catch (error: any) {
       console.error('Machine pool creation error:', error);
+      setError(error.message || "Failed to create machine pool");
       toast({
         title: "Pool Creation Failed",
         description: error.message || "Failed to create machine pool",
         variant: "destructive",
       });
+    } finally {
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
 
-  const fetchMachinePools = async () => {
+  const fetchMachinePools = useCallback(async () => {
+    const requestKey = 'fetch-pools';
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Fetch pools already in progress, skipping...');
+      return;
+    }
+
+    // Check if we should refresh based on cache
+    if (!shouldRefresh() && machinePools.length > 0) {
+      console.log('Using cached pool data');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    setLoading(true);
+    setError(null);
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session found, skipping pools fetch');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('get-machine-pools', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        console.error('Edge function error:', error);
-        return;
-      }
+      const data = await machineApiClient.fetchMachinePools();
       
       if (data?.success && data.pools) {
         setMachinePools(data.pools);
+        // Broadcast to other tabs
+        tabSyncManager.broadcast('POOLS_UPDATED', data.pools);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching machine pools:', error);
+      setError(error.message || "Failed to fetch pools");
+    } finally {
+      setLoading(false);
+      removeRequestInProgress(requestKey);
     }
-  };
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, machinePools.length, setLoading, setError, setMachinePools]);
 
-  // Set up realtime subscriptions
+  // Set up realtime subscriptions with unique channel names
   useEffect(() => {
+    if (initializationRef.current) return;
+    
     let machinesChannel: any = null;
     let poolsChannel: any = null;
 
@@ -261,8 +303,12 @@ export const useMachineDiscovery = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      // Use unique channel names to prevent conflicts
+      const machinesChannelName = `discovered-machines-changes-${sessionId.current}`;
+      const poolsChannelName = `machine-pools-changes-${sessionId.current}`;
+
       machinesChannel = supabase
-        .channel('discovered-machines-changes')
+        .channel(machinesChannelName)
         .on(
           'postgres_changes',
           {
@@ -278,7 +324,7 @@ export const useMachineDiscovery = () => {
         .subscribe();
 
       poolsChannel = supabase
-        .channel('machine-pools-changes')
+        .channel(poolsChannelName)
         .on(
           'postgres_changes',
           {
@@ -292,20 +338,53 @@ export const useMachineDiscovery = () => {
           }
         )
         .subscribe();
+
+      channelRef.current = { machinesChannel, poolsChannel };
     };
 
     setupChannels();
+    initializationRef.current = true;
 
     return () => {
-      if (machinesChannel) supabase.removeChannel(machinesChannel);
-      if (poolsChannel) supabase.removeChannel(poolsChannel);
+      if (channelRef.current) {
+        const { machinesChannel, poolsChannel } = channelRef.current;
+        if (machinesChannel) supabase.removeChannel(machinesChannel);
+        if (poolsChannel) supabase.removeChannel(poolsChannel);
+      }
     };
-  }, []);
+  }, [fetchRegisteredMachines, fetchMachinePools]);
 
+  // Set up tab synchronization
+  useEffect(() => {
+    // Listen for updates from other tabs
+    tabSyncManager.subscribe('MACHINES_UPDATED', (machines) => {
+      setDiscoveredMachines(machines);
+    });
+
+    tabSyncManager.subscribe('POOLS_UPDATED', (pools) => {
+      setMachinePools(pools);
+    });
+
+    tabSyncManager.subscribe('CACHE_CLEAR', () => {
+      setDiscoveredMachines([]);
+      setMachinePools([]);
+    });
+
+    return () => {
+      tabSyncManager.unsubscribe('MACHINES_UPDATED');
+      tabSyncManager.unsubscribe('POOLS_UPDATED');
+      tabSyncManager.unsubscribe('CACHE_CLEAR');
+    };
+  }, [setDiscoveredMachines, setMachinePools]);
+
+  // Initial data fetch with proper dependency management
   useEffect(() => {
     const initializeData = async () => {
+      if (isInitialized) return;
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        setIsInitialized(true);
         await Promise.all([
           fetchRegisteredMachines(),
           fetchMachinePools()
@@ -314,13 +393,15 @@ export const useMachineDiscovery = () => {
     };
 
     initializeData();
-  }, []);
+  }, [isInitialized, fetchRegisteredMachines, fetchMachinePools]);
 
   return {
     discoveredMachines,
     machinePools,
     isScanning,
     scanProgress,
+    isLoading,
+    error,
     scanNetworkRange,
     registerMachine,
     assignMachine,
