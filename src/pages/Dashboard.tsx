@@ -132,8 +132,8 @@ const Dashboard = () => {
           navigate("/login");
         } else if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
-          // Refetch roles when user signs in
-          window.location.reload();
+          // Refetch roles when user signs in without full reload
+          await checkAuth();
         }
       }
     );
