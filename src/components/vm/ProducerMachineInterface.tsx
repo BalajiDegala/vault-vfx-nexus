@@ -20,12 +20,14 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useMachineDiscovery } from '@/hooks/useMachineDiscovery';
+import { RoleBasedUser } from '@/hooks/useRoleBasedUserSearch';
+import UserSearchDropdown from './UserSearchDropdown';
 import MachinePoolManagement from './MachinePoolManagement';
 
 interface MachineAssignment {
   id: string;
   machine_id: string;
-  assigned_to: string;
+  assigned_to: RoleBasedUser;
   assigned_by: string;
   assignment_type: 'studio' | 'artist';
   duration_hours?: number;
@@ -35,38 +37,45 @@ interface MachineAssignment {
 }
 
 const ProducerMachineInterface: React.FC = () => {
-  const { discoveredMachines, machinePools } = useMachineDiscovery();
+  const { discoveredMachines, machinePools, assignMachine } = useMachineDiscovery();
   const [assignments, setAssignments] = useState<MachineAssignment[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<string>('');
   const [assigneeType, setAssigneeType] = useState<'studio' | 'artist'>('studio');
-  const [assigneeId, setAssigneeId] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<RoleBasedUser | null>(null);
   const [durationHours, setDurationHours] = useState<string>('');
   const [costPerHour, setCostPerHour] = useState<string>('');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const handleAssignMachine = async () => {
-    if (!selectedMachine || !assigneeId || !costPerHour) return;
+    if (!selectedMachine || !selectedUser || !costPerHour) return;
 
-    const newAssignment: MachineAssignment = {
-      id: crypto.randomUUID(),
-      machine_id: selectedMachine,
-      assigned_to: assigneeId,
-      assigned_by: 'current_user_id', // Replace with actual user ID
-      assignment_type: assigneeType,
-      duration_hours: durationHours ? parseInt(durationHours) : undefined,
-      cost_per_hour: parseFloat(costPerHour),
-      status: 'active',
-      created_at: new Date().toISOString(),
-    };
+    try {
+      // Call the real API to assign the machine
+      await assignMachine(selectedMachine, selectedUser.id, 'current_user_id');
 
-    setAssignments([...assignments, newAssignment]);
-    setIsAssignDialogOpen(false);
-    
-    // Reset form
-    setSelectedMachine('');
-    setAssigneeId('');
-    setDurationHours('');
-    setCostPerHour('');
+      const newAssignment: MachineAssignment = {
+        id: crypto.randomUUID(),
+        machine_id: selectedMachine,
+        assigned_to: selectedUser,
+        assigned_by: 'current_user_id', // Replace with actual user ID
+        assignment_type: assigneeType,
+        duration_hours: durationHours ? parseInt(durationHours) : undefined,
+        cost_per_hour: parseFloat(costPerHour),
+        status: 'active',
+        created_at: new Date().toISOString(),
+      };
+
+      setAssignments([...assignments, newAssignment]);
+      setIsAssignDialogOpen(false);
+      
+      // Reset form
+      setSelectedMachine('');
+      setSelectedUser(null);
+      setDurationHours('');
+      setCostPerHour('');
+    } catch (error) {
+      console.error('Failed to assign machine:', error);
+    }
   };
 
   const getUtilizationStats = () => {
@@ -116,7 +125,10 @@ const ProducerMachineInterface: React.FC = () => {
               
               <div>
                 <Label className="text-gray-300">Assignment Type</Label>
-                <Select value={assigneeType} onValueChange={(value: 'studio' | 'artist') => setAssigneeType(value)}>
+                <Select value={assigneeType} onValueChange={(value: 'studio' | 'artist') => {
+                  setAssigneeType(value);
+                  setSelectedUser(null); // Reset user selection when type changes
+                }}>
                   <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -129,13 +141,13 @@ const ProducerMachineInterface: React.FC = () => {
 
               <div>
                 <Label className="text-gray-300">
-                  {assigneeType === 'studio' ? 'Studio ID' : 'Artist ID'}
+                  {assigneeType === 'studio' ? 'Select Studio' : 'Select Artist'}
                 </Label>
-                <Input
-                  value={assigneeId}
-                  onChange={(e) => setAssigneeId(e.target.value)}
-                  className="bg-gray-700 border-gray-600 text-white"
-                  placeholder={`Enter ${assigneeType} identifier`}
+                <UserSearchDropdown
+                  placeholder={`Search ${assigneeType}s...`}
+                  targetRoles={assigneeType === 'studio' ? ['studio'] : ['artist']}
+                  selectedUser={selectedUser}
+                  onUserSelect={setSelectedUser}
                 />
               </div>
 
@@ -162,7 +174,11 @@ const ProducerMachineInterface: React.FC = () => {
                 />
               </div>
 
-              <Button onClick={handleAssignMachine} className="w-full">
+              <Button 
+                onClick={handleAssignMachine} 
+                className="w-full"
+                disabled={!selectedMachine || !selectedUser || !costPerHour}
+              >
                 Assign Machine
               </Button>
             </div>
@@ -256,7 +272,7 @@ const ProducerMachineInterface: React.FC = () => {
                             {machine?.name || assignment.machine_id}
                           </h3>
                           <p className="text-sm text-gray-400">
-                            Assigned to {assignment.assignment_type}: {assignment.assigned_to}
+                            Assigned to {assignment.assignment_type}: {assignment.assigned_to.display_name}
                           </p>
                         </div>
                       </div>

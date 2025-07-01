@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -20,12 +19,13 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useMachineDiscovery } from '@/hooks/useMachineDiscovery';
+import { RoleBasedUser } from '@/hooks/useRoleBasedUserSearch';
+import UserSearchDropdown from './UserSearchDropdown';
 
 interface StudioAssignment {
   id: string;
   machine_id: string;
-  artist_id: string;
-  artist_name: string;
+  artist: RoleBasedUser;
   task_id?: string;
   assigned_at: string;
   estimated_hours?: number;
@@ -37,31 +37,23 @@ const StudioMachineInterface: React.FC = () => {
   const { discoveredMachines } = useMachineDiscovery();
   const [studioAssignments, setStudioAssignments] = useState<StudioAssignment[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<string>('');
-  const [selectedArtist, setSelectedArtist] = useState<string>('');
-  const [artistName, setArtistName] = useState<string>('');
+  const [selectedArtist, setSelectedArtist] = useState<RoleBasedUser | null>(null);
   const [taskId, setTaskId] = useState<string>('');
   const [estimatedHours, setEstimatedHours] = useState<string>('');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
-  // Mock data - replace with actual data from your system
-  const availableArtists = [
-    { id: 'artist1', name: 'John Doe', specialization: 'Modeling' },
-    { id: 'artist2', name: 'Jane Smith', specialization: 'Animation' },
-    { id: 'artist3', name: 'Mike Johnson', specialization: 'Rendering' },
-  ];
-
+  // Filter machines assigned to current studio (would be based on actual studio ID)
   const studioMachines = discoveredMachines.filter(machine => 
     machine.assigned_to === 'current_studio_id' // Replace with actual studio ID
   );
 
   const handleAssignToArtist = async () => {
-    if (!selectedMachine || !selectedArtist || !artistName) return;
+    if (!selectedMachine || !selectedArtist) return;
 
     const newAssignment: StudioAssignment = {
       id: crypto.randomUUID(),
       machine_id: selectedMachine,
-      artist_id: selectedArtist,
-      artist_name: artistName,
+      artist: selectedArtist,
       task_id: taskId || undefined,
       assigned_at: new Date().toISOString(),
       estimated_hours: estimatedHours ? parseInt(estimatedHours) : undefined,
@@ -74,8 +66,7 @@ const StudioMachineInterface: React.FC = () => {
     
     // Reset form
     setSelectedMachine('');
-    setSelectedArtist('');
-    setArtistName('');
+    setSelectedArtist(null);
     setTaskId('');
     setEstimatedHours('');
   };
@@ -112,40 +103,30 @@ const StudioMachineInterface: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <Label className="text-gray-300">Select Machine</Label>
-                <Select value={selectedMachine} onValueChange={setSelectedMachine}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder="Choose a machine" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    {studioMachines
-                      .filter(m => m.status === 'online')
-                      .map((machine) => (
-                        <SelectItem key={machine.ip_address} value={machine.ip_address}>
-                          {machine.name} ({machine.ip_address})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  value={selectedMachine}
+                  onChange={(e) => setSelectedMachine(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md px-3 py-2"
+                >
+                  <option value="">Choose a machine</option>
+                  {studioMachines
+                    .filter(m => m.status === 'online')
+                    .map((machine) => (
+                      <option key={machine.ip_address} value={machine.ip_address}>
+                        {machine.name} ({machine.ip_address})
+                      </option>
+                    ))}
+                </select>
               </div>
               
               <div>
                 <Label className="text-gray-300">Select Artist</Label>
-                <Select value={selectedArtist} onValueChange={(value) => {
-                  setSelectedArtist(value);
-                  const artist = availableArtists.find(a => a.id === value);
-                  if (artist) setArtistName(artist.name);
-                }}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder="Choose an artist" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    {availableArtists.map((artist) => (
-                      <SelectItem key={artist.id} value={artist.id}>
-                        {artist.name} - {artist.specialization}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <UserSearchDropdown
+                  placeholder="Search artists..."
+                  targetRoles={['artist']}
+                  selectedUser={selectedArtist}
+                  onUserSelect={setSelectedArtist}
+                />
               </div>
 
               <div>
@@ -169,7 +150,11 @@ const StudioMachineInterface: React.FC = () => {
                 />
               </div>
 
-              <Button onClick={handleAssignToArtist} className="w-full">
+              <Button 
+                onClick={handleAssignToArtist} 
+                className="w-full"
+                disabled={!selectedMachine || !selectedArtist}
+              >
                 Assign Machine
               </Button>
             </div>
@@ -296,7 +281,7 @@ const StudioMachineInterface: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-blue-400" />
                           <span className="text-blue-300 text-sm">
-                            Assigned to: {assignment.artist_name}
+                            Assigned to: {assignment.artist.display_name}
                           </span>
                         </div>
                         {assignment.task_id && (
@@ -350,7 +335,7 @@ const StudioMachineInterface: React.FC = () => {
                             {machine?.name || 'Unknown Machine'}
                           </h3>
                           <p className="text-sm text-gray-400">
-                            Artist: {assignment.artist_name}
+                            Artist: {assignment.artist.display_name}
                           </p>
                         </div>
                       </div>
@@ -409,7 +394,7 @@ const StudioMachineInterface: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="progress" className="space-y-4">
+        <TabsContent value="progress">
           <div className="text-center py-8">
             <Activity className="h-12 w-12 text-blue-400 mx-auto mb-4" />
             <h3 className="text-white text-lg mb-2">Progress Tracking Dashboard</h3>
