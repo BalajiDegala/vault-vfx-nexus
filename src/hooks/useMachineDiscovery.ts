@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -151,16 +149,14 @@ export const useMachineDiscovery = () => {
 
         // Add scanned machines to the discovered list without registering
         if (data.machines) {
-          setDiscoveredMachines((prev: DiscoveredMachine[]) => {
-            const newMachines = data.machines!.filter((machine: DiscoveredMachine) => 
-              !prev.some(existing => existing.ip_address === machine.ip_address)
-            );
-            const updated = [...prev, ...newMachines];
-            
-            // Broadcast to other tabs
-            tabSyncManager.broadcast('MACHINES_UPDATED', updated);
-            return updated;
-          });
+          const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
+            !discoveredMachines.some(existing => existing.ip_address === machine.ip_address)
+          );
+          const updated = [...discoveredMachines, ...newMachines];
+          
+          setDiscoveredMachines(updated);
+          // Broadcast to other tabs
+          tabSyncManager.broadcast('MACHINES_UPDATED', updated);
         }
       }
     } catch (error: any) {
@@ -175,7 +171,7 @@ export const useMachineDiscovery = () => {
       setScanning(false, 0);
       removeRequestInProgress(requestKey);
     }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setScanning, setError, setDiscoveredMachines, toast]);
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setScanning, setError, setDiscoveredMachines, discoveredMachines, toast]);
 
   const registerMachine = useCallback(async (machine: DiscoveredMachine) => {
     const requestKey = `register-${machine.ip_address}`;
@@ -208,7 +204,7 @@ export const useMachineDiscovery = () => {
     } finally {
       removeRequestInProgress(requestKey);
     }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast, fetchRegisteredMachines]);
 
   const assignMachine = useCallback(async (machineId: string, userId: string, assignedBy: string) => {
     const requestKey = `assign-${machineId}-${userId}`;
@@ -241,7 +237,7 @@ export const useMachineDiscovery = () => {
     } finally {
       removeRequestInProgress(requestKey);
     }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast, fetchRegisteredMachines]);
 
   const fetchRegisteredMachines = useCallback(async () => {
     const requestKey = 'fetch-machines';
@@ -309,7 +305,7 @@ export const useMachineDiscovery = () => {
     } finally {
       removeRequestInProgress(requestKey);
     }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast]);
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast, fetchMachinePools]);
 
   const fetchMachinePools = useCallback(async () => {
     const requestKey = 'fetch-pools';
@@ -464,4 +460,3 @@ export const useMachineDiscovery = () => {
     fetchMachinePools,
   };
 };
-
