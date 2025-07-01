@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -120,6 +121,78 @@ export const useMachineDiscovery = () => {
   // Unique session identifier for realtime channels
   const sessionId = useRef(`session-${tabSyncManager.getTabId()}`);
 
+  // Define fetchRegisteredMachines first since other functions depend on it
+  const fetchRegisteredMachines = useCallback(async () => {
+    const requestKey = 'fetch-machines';
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Fetch machines already in progress, skipping...');
+      return;
+    }
+
+    // Check if we should refresh based on cache
+    if (!shouldRefresh() && discoveredMachines.length > 0) {
+      console.log('Using cached machine data');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await machineApiClient.fetchRegisteredMachines();
+      
+      if (isFetchMachinesResponse(data) && data.success && data.machines) {
+        setDiscoveredMachines(data.machines);
+        // Broadcast to other tabs
+        tabSyncManager.broadcast('MACHINES_UPDATED', data.machines);
+      }
+    } catch (error: any) {
+      console.error('Error fetching registered machines:', error);
+      setError(error.message || "Failed to fetch machines");
+    } finally {
+      setLoading(false);
+      removeRequestInProgress(requestKey);
+    }
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, discoveredMachines.length, setLoading, setError, setDiscoveredMachines]);
+
+  // Define fetchMachinePools next since createMachinePool depends on it
+  const fetchMachinePools = useCallback(async () => {
+    const requestKey = 'fetch-pools';
+    
+    if (isRequestInProgress(requestKey)) {
+      console.log('Fetch pools already in progress, skipping...');
+      return;
+    }
+
+    // Check if we should refresh based on cache
+    if (!shouldRefresh() && machinePools.length > 0) {
+      console.log('Using cached pool data');
+      return;
+    }
+
+    addRequestInProgress(requestKey);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await machineApiClient.fetchMachinePools();
+      
+      if (isFetchPoolsResponse(data) && data.success && data.pools) {
+        setMachinePools(data.pools);
+        // Broadcast to other tabs
+        tabSyncManager.broadcast('POOLS_UPDATED', data.pools);
+      }
+    } catch (error: any) {
+      console.error('Error fetching machine pools:', error);
+      setError(error.message || "Failed to fetch pools");
+    } finally {
+      setLoading(false);
+      removeRequestInProgress(requestKey);
+    }
+  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, machinePools.length, setLoading, setError, setMachinePools]);
+
   const scanNetworkRange = useCallback(async (networkRange: string) => {
     const requestKey = `scan-${networkRange}`;
     
@@ -238,41 +311,6 @@ export const useMachineDiscovery = () => {
       removeRequestInProgress(requestKey);
     }
   }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast, fetchRegisteredMachines]);
-
-  const fetchRegisteredMachines = useCallback(async () => {
-    const requestKey = 'fetch-machines';
-    
-    if (isRequestInProgress(requestKey)) {
-      console.log('Fetch machines already in progress, skipping...');
-      return;
-    }
-
-    // Check if we should refresh based on cache
-    if (!shouldRefresh() && discoveredMachines.length > 0) {
-      console.log('Using cached machine data');
-      return;
-    }
-
-    addRequestInProgress(requestKey);
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const data = await machineApiClient.fetchRegisteredMachines();
-      
-      if (isFetchMachinesResponse(data) && data.success && data.machines) {
-        setDiscoveredMachines(data.machines);
-        // Broadcast to other tabs
-        tabSyncManager.broadcast('MACHINES_UPDATED', data.machines);
-      }
-    } catch (error: any) {
-      console.error('Error fetching registered machines:', error);
-      setError(error.message || "Failed to fetch machines");
-    } finally {
-      setLoading(false);
-      removeRequestInProgress(requestKey);
-    }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, discoveredMachines.length, setLoading, setError, setDiscoveredMachines]);
 
   const createMachinePool = useCallback(async (name: string, description: string, machineIds: string[]) => {
     const requestKey = `create-pool-${name}`;
