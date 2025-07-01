@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -150,7 +151,7 @@ export const useMachineDiscovery = () => {
 
         // Add scanned machines to the discovered list without registering
         if (data.machines) {
-          setDiscoveredMachines(prev => {
+          setDiscoveredMachines((prev: DiscoveredMachine[]) => {
             const newMachines = data.machines!.filter((machine: DiscoveredMachine) => 
               !prev.some(existing => existing.ip_address === machine.ip_address)
             );
@@ -463,3 +464,4 @@ export const useMachineDiscovery = () => {
     fetchMachinePools,
   };
 };
+
