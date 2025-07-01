@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -344,41 +343,6 @@ export const useMachineDiscovery = () => {
       removeRequestInProgress(requestKey);
     }
   }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, setError, toast, fetchMachinePools]);
-
-  const fetchMachinePools = useCallback(async () => {
-    const requestKey = 'fetch-pools';
-    
-    if (isRequestInProgress(requestKey)) {
-      console.log('Fetch pools already in progress, skipping...');
-      return;
-    }
-
-    // Check if we should refresh based on cache
-    if (!shouldRefresh() && machinePools.length > 0) {
-      console.log('Using cached pool data');
-      return;
-    }
-
-    addRequestInProgress(requestKey);
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const data = await machineApiClient.fetchMachinePools();
-      
-      if (isFetchPoolsResponse(data) && data.success && data.pools) {
-        setMachinePools(data.pools);
-        // Broadcast to other tabs
-        tabSyncManager.broadcast('POOLS_UPDATED', data.pools);
-      }
-    } catch (error: any) {
-      console.error('Error fetching machine pools:', error);
-      setError(error.message || "Failed to fetch pools");
-    } finally {
-      setLoading(false);
-      removeRequestInProgress(requestKey);
-    }
-  }, [isRequestInProgress, addRequestInProgress, removeRequestInProgress, shouldRefresh, machinePools.length, setLoading, setError, setMachinePools]);
 
   // Set up realtime subscriptions with unique channel names
   useEffect(() => {
