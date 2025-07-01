@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,58 @@ export interface MachinePool {
   machines: DiscoveredMachine[];
   created_by: string;
   access_level: 'producer' | 'studio' | 'artist';
+}
+
+// Type guards for API responses
+interface ScanNetworkResponse {
+  success: boolean;
+  machines?: DiscoveredMachine[];
+}
+
+interface FetchMachinesResponse {
+  success: boolean;
+  machines?: DiscoveredMachine[];
+}
+
+interface FetchPoolsResponse {
+  success: boolean;
+  pools?: MachinePool[];
+}
+
+interface RegisterMachineResponse {
+  success: boolean;
+}
+
+interface AssignMachineResponse {
+  success: boolean;
+}
+
+interface CreatePoolResponse {
+  success: boolean;
+}
+
+function isScanNetworkResponse(data: unknown): data is ScanNetworkResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
+}
+
+function isFetchMachinesResponse(data: unknown): data is FetchMachinesResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
+}
+
+function isFetchPoolsResponse(data: unknown): data is FetchPoolsResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
+}
+
+function isRegisterMachineResponse(data: unknown): data is RegisterMachineResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
+}
+
+function isAssignMachineResponse(data: unknown): data is AssignMachineResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
+}
+
+function isCreatePoolResponse(data: unknown): data is CreatePoolResponse {
+  return typeof data === 'object' && data !== null && 'success' in data;
 }
 
 export const useMachineDiscovery = () => {
@@ -83,7 +136,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.scanNetworkRange(networkRange);
 
-      if (data?.success) {
+      if (isScanNetworkResponse(data) && data.success) {
         // Simulate progress for better UX
         for (let i = 0; i <= 100; i += 20) {
           setScanning(true, i);
@@ -98,7 +151,7 @@ export const useMachineDiscovery = () => {
         // Add scanned machines to the discovered list without registering
         if (data.machines) {
           setDiscoveredMachines(prev => {
-            const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
+            const newMachines = data.machines!.filter((machine: DiscoveredMachine) => 
               !prev.some(existing => existing.ip_address === machine.ip_address)
             );
             const updated = [...prev, ...newMachines];
@@ -136,7 +189,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.registerMachine(machine);
 
-      if (data?.success) {
+      if (isRegisterMachineResponse(data) && data.success) {
         toast({
           title: "Machine Registered",
           description: `${machine.name} has been registered successfully`,
@@ -169,7 +222,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.assignMachine(machineId, userId, assignedBy);
 
-      if (data?.success) {
+      if (isAssignMachineResponse(data) && data.success) {
         toast({
           title: "Machine Assigned",
           description: "Machine has been assigned successfully",
@@ -210,7 +263,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.fetchRegisteredMachines();
       
-      if (data?.success && data.machines) {
+      if (isFetchMachinesResponse(data) && data.success && data.machines) {
         setDiscoveredMachines(data.machines);
         // Broadcast to other tabs
         tabSyncManager.broadcast('MACHINES_UPDATED', data.machines);
@@ -237,7 +290,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.createMachinePool(name, description, machineIds);
 
-      if (data?.success) {
+      if (isCreatePoolResponse(data) && data.success) {
         toast({
           title: "Machine Pool Created",
           description: `${name} pool created with ${machineIds.length} machines`,
@@ -278,7 +331,7 @@ export const useMachineDiscovery = () => {
     try {
       const data = await machineApiClient.fetchMachinePools();
       
-      if (data?.success && data.pools) {
+      if (isFetchPoolsResponse(data) && data.success && data.pools) {
         setMachinePools(data.pools);
         // Broadcast to other tabs
         tabSyncManager.broadcast('POOLS_UPDATED', data.pools);
