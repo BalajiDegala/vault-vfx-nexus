@@ -34,23 +34,37 @@ serve(async (req) => {
     // Get machines based on user role and permissions via RLS
     const { data: machines, error } = await supabase
       .from('discovered_machines')
-      .select(`
-        *,
-        assigned_user:profiles!discovered_machines_assigned_to_fkey(
-          id,
-          first_name,
-          last_name,
-          username
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
       throw new Error(`Failed to fetch machines: ${error.message}`)
     }
 
+    // Get assigned user profiles separately if needed
+    const machinesWithAssignedUsers = []
+    
+    for (const machine of machines || []) {
+      let assignedUser = null
+      
+      if (machine.assigned_to) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, username')
+          .eq('id', machine.assigned_to)
+          .single()
+        
+        assignedUser = profile
+      }
+
+      machinesWithAssignedUsers.push({
+        ...machine,
+        assigned_user: assignedUser
+      })
+    }
+
     // Transform the data to match the expected interface
-    const transformedMachines = machines?.map(machine => ({
+    const transformedMachines = machinesWithAssignedUsers.map(machine => ({
       id: machine.id,
       ip_address: machine.ip_address,
       hostname: machine.hostname,
@@ -61,8 +75,9 @@ serve(async (req) => {
       assigned_to: machine.assigned_to,
       assigned_by: machine.assigned_by,
       last_seen: machine.last_seen,
-      utilization: machine.utilization
-    })) || []
+      utilization: machine.utilization,
+      assigned_user: machine.assigned_user
+    }))
 
     return new Response(
       JSON.stringify({ 

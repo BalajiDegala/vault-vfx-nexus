@@ -64,7 +64,7 @@ export const useMachineDiscovery = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         // Simulate progress for better UX
         for (let i = 0; i <= 100; i += 20) {
           setScanProgress(i);
@@ -73,16 +73,18 @@ export const useMachineDiscovery = () => {
 
         toast({
           title: "Network Scan Complete",
-          description: `Found ${data.machines.length} machines`,
+          description: `Found ${data.machines?.length || 0} machines`,
         });
 
         // Add scanned machines to the discovered list without registering
-        setDiscoveredMachines(prev => {
-          const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
-            !prev.some(existing => existing.ip_address === machine.ip_address)
-          );
-          return [...prev, ...newMachines];
-        });
+        if (data.machines) {
+          setDiscoveredMachines(prev => {
+            const newMachines = data.machines.filter((machine: DiscoveredMachine) => 
+              !prev.some(existing => existing.ip_address === machine.ip_address)
+            );
+            return [...prev, ...newMachines];
+          });
+        }
       }
     } catch (error: any) {
       console.error('Network scan error:', error);
@@ -113,7 +115,7 @@ export const useMachineDiscovery = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast({
           title: "Machine Registered",
           description: `${machine.name} has been registered successfully`,
@@ -146,7 +148,7 @@ export const useMachineDiscovery = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast({
           title: "Machine Assigned",
           description: "Machine has been assigned successfully",
@@ -166,7 +168,10 @@ export const useMachineDiscovery = () => {
   const fetchRegisteredMachines = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.log('No session found, skipping machine fetch');
+        return;
+      }
 
       const { data, error } = await supabase.functions.invoke('get-registered-machines', {
         headers: {
@@ -174,9 +179,12 @@ export const useMachineDiscovery = () => {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        return;
+      }
       
-      if (data.success) {
+      if (data?.success && data.machines) {
         setDiscoveredMachines(data.machines);
       }
     } catch (error) {
@@ -200,7 +208,7 @@ export const useMachineDiscovery = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast({
           title: "Machine Pool Created",
           description: `${name} pool created with ${machineIds.length} machines`,
@@ -220,7 +228,10 @@ export const useMachineDiscovery = () => {
   const fetchMachinePools = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.log('No session found, skipping pools fetch');
+        return;
+      }
 
       const { data, error } = await supabase.functions.invoke('get-machine-pools', {
         headers: {
@@ -228,9 +239,12 @@ export const useMachineDiscovery = () => {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        return;
+      }
       
-      if (data.success) {
+      if (data?.success && data.pools) {
         setMachinePools(data.pools);
       }
     } catch (error) {
@@ -240,47 +254,66 @@ export const useMachineDiscovery = () => {
 
   // Set up realtime subscriptions
   useEffect(() => {
-    const machinesChannel = supabase
-      .channel('discovered-machines-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'discovered_machines'
-        },
-        () => {
-          console.log('Machine data changed, refreshing...');
-          fetchRegisteredMachines();
-        }
-      )
-      .subscribe();
+    let machinesChannel: any = null;
+    let poolsChannel: any = null;
 
-    const poolsChannel = supabase
-      .channel('machine-pools-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'machine_pools'
-        },
-        () => {
-          console.log('Pool data changed, refreshing...');
-          fetchMachinePools();
-        }
-      )
-      .subscribe();
+    const setupChannels = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      machinesChannel = supabase
+        .channel('discovered-machines-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'discovered_machines'
+          },
+          () => {
+            console.log('Machine data changed, refreshing...');
+            fetchRegisteredMachines();
+          }
+        )
+        .subscribe();
+
+      poolsChannel = supabase
+        .channel('machine-pools-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'machine_pools'
+          },
+          () => {
+            console.log('Pool data changed, refreshing...');
+            fetchMachinePools();
+          }
+        )
+        .subscribe();
+    };
+
+    setupChannels();
 
     return () => {
-      supabase.removeChannel(machinesChannel);
-      supabase.removeChannel(poolsChannel);
+      if (machinesChannel) supabase.removeChannel(machinesChannel);
+      if (poolsChannel) supabase.removeChannel(poolsChannel);
     };
   }, []);
 
   useEffect(() => {
-    fetchRegisteredMachines();
-    fetchMachinePools();
+    const initializeData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await Promise.all([
+          fetchRegisteredMachines(),
+          fetchMachinePools()
+        ]);
+      }
+    };
+
+    initializeData();
   }, []);
 
   return {
