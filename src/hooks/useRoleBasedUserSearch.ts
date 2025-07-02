@@ -34,60 +34,89 @@ export function useRoleBasedUserSearch() {
     try {
       console.log("Searching for users with roles:", targetRoles, "query:", query);
       
-      let queryBuilder = supabase
-        .from("profiles")
-        .select(`
-          id, 
-          username, 
-          email, 
-          avatar_url, 
-          first_name, 
-          last_name,
-          user_roles!inner(role)
-        `);
-
-      // Build the search filter
+      // First, get users that match the search query
       const searchQuery = `%${query.toLowerCase()}%`;
-      queryBuilder = queryBuilder.or(
-        `username.ilike.${searchQuery},email.ilike.${searchQuery},first_name.ilike.${searchQuery},last_name.ilike.${searchQuery}`
-      );
+      let profilesQuery = supabase
+        .from("profiles")
+        .select("id, username, email, avatar_url, first_name, last_name")
+        .or(
+          `username.ilike.${searchQuery},email.ilike.${searchQuery},first_name.ilike.${searchQuery},last_name.ilike.${searchQuery}`
+        );
 
-      // Filter by roles if specified
-      if (targetRoles.length > 0) {
-        queryBuilder = queryBuilder.in('user_roles.role', targetRoles);
-      }
+      const { data: profilesData, error: profilesError } = await profilesQuery.limit(50);
 
-      const { data, error } = await queryBuilder.limit(50);
-
-      if (error) {
-        console.error("Search error:", error);
-        setError(error.message);
+      if (profilesError) {
+        console.error("Profiles search error:", profilesError);
+        setError(profilesError.message);
         setSearchResults([]);
-      } else {
-        const transformedData: RoleBasedUser[] = (data || []).map(user => {
-          const roles = Array.isArray(user.user_roles) 
-            ? user.user_roles.map((ur: any) => ur.role)
-            : [user.user_roles?.role].filter(Boolean);
-          
-          const displayName = user.first_name && user.last_name 
-            ? `${user.first_name} ${user.last_name}`
-            : user.username || user.email;
-
-          return {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            avatar_url: user.avatar_url,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            roles,
-            display_name: displayName
-          };
-        });
-
-        setSearchResults(transformedData);
-        console.log(`Found ${transformedData.length} users matching "${query}" with roles:`, targetRoles);
+        return;
       }
+
+      if (!profilesData || profilesData.length === 0) {
+        setSearchResults([]);
+        return;
+      }
+
+      // Get user IDs for role filtering
+      const userIds = profilesData.map(profile => profile.id);
+
+      // Get roles for these users
+      let rolesQuery = supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      // Filter by target roles if specified
+      if (targetRoles.length > 0) {
+        rolesQuery = rolesQuery.in("role", targetRoles);
+      }
+
+      const { data: rolesData, error: rolesError } = await rolesQuery;
+
+      if (rolesError) {
+        console.error("Roles search error:", rolesError);
+        setError(rolesError.message);
+        setSearchResults([]);
+        return;
+      }
+
+      // Create a map of user roles
+      const userRolesMap = new Map<string, AppRole[]>();
+      rolesData?.forEach(roleEntry => {
+        const userId = roleEntry.user_id;
+        const role = roleEntry.role;
+        if (!userRolesMap.has(userId)) {
+          userRolesMap.set(userId, []);
+        }
+        userRolesMap.get(userId)?.push(role);
+      });
+
+      // Filter profiles to only include those with matching roles (if targetRoles specified)
+      const filteredProfiles = targetRoles.length > 0 
+        ? profilesData.filter(profile => userRolesMap.has(profile.id))
+        : profilesData.filter(profile => userRolesMap.has(profile.id)); // Only include users who have roles
+
+      // Transform the data
+      const transformedData: RoleBasedUser[] = filteredProfiles.map(user => {
+        const roles = userRolesMap.get(user.id) || [];
+        const displayName = user.first_name && user.last_name 
+          ? `${user.first_name} ${user.last_name}`
+          : user.username || user.email;
+
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar_url: user.avatar_url,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          roles,
+          display_name: displayName
+        };
+      });
+
+      setSearchResults(transformedData);
+      console.log(`Found ${transformedData.length} users matching "${query}" with roles:`, targetRoles);
     } catch (err) {
       console.error("Unexpected search error:", err);
       setError("Failed to search users");
