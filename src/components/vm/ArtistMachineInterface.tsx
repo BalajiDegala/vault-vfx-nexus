@@ -1,307 +1,294 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   Monitor, 
-  ExternalLink, 
-  Clock, 
   Activity, 
+  Clock,
   CheckCircle,
-  PlayCircle,
-  PauseCircle,
-  Info,
-  Wifi,
-  HardDrive,
-  Cpu,
-  Zap
+  AlertCircle,
+  ExternalLink,
+  FileText
 } from 'lucide-react';
-import { useDCVConnection } from '@/hooks/useDCVConnection';
 import { useMachineDiscovery } from '@/hooks/useMachineDiscovery';
 import { supabase } from '@/integrations/supabase/client';
-import DCVConnectionStatus from './DCVConnectionStatus';
+import { useEffect } from 'react';
 
-interface ArtistMachine {
+interface ArtistTask {
   id: string;
   name: string;
-  ip_address: string;
-  status: 'online' | 'offline' | 'maintenance';
-  capabilities: {
-    cpu_cores: number;
-    total_ram_gb: number;
-    gpu_model?: string;
-    software_installed: string[];
-  };
-  assignment?: {
-    task_id?: string;
-    task_name?: string;
-    estimated_hours?: number;
-    deadline?: string;
-    notes?: string;
-  };
-  dcv_connection_url?: string;
-  session_info?: {
-    active: boolean;
-    start_time?: string;
-    duration_minutes?: number;
-  };
+  description: string;
+  status: string;
+  machine_ip?: string;
+  estimated_hours?: number;
+  actual_hours: number;
+  project_name: string;
+  show_name: string;
 }
 
 const ArtistMachineInterface: React.FC = () => {
-  const { connectToVM } = useDCVConnection();
   const { discoveredMachines } = useMachineDiscovery();
-  const [assignedMachines, setAssignedMachines] = useState<ArtistMachine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [assignedTasks, setAssignedTasks] = useState<ArtistTask[]>([]);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAssignedMachines = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Get machines assigned to the current user
-        const userAssignedMachines = discoveredMachines.filter(
-          machine => machine.assigned_to === user.id
-        );
-
-        // Transform to ArtistMachine format
-        const transformedMachines: ArtistMachine[] = userAssignedMachines.map(machine => ({
-          id: machine.id || machine.ip_address,
-          name: machine.name,
-          ip_address: machine.ip_address,
-          status: machine.status as 'online' | 'offline' | 'maintenance',
-          capabilities: {
-            cpu_cores: machine.capabilities.cpu_cores,
-            total_ram_gb: machine.capabilities.total_ram_gb,
-            gpu_model: machine.capabilities.gpu_model,
-            software_installed: machine.capabilities.software_installed
-          },
-          dcv_connection_url: `https://${machine.ip_address}:8443`,
-          session_info: {
-            active: false
-          }
-        }));
-
-        setAssignedMachines(transformedMachines);
-      } catch (error) {
-        console.error('Error fetching assigned machines:', error);
-      } finally {
-        setLoading(false);
+    const getCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setCurrentUser(session.user.id);
       }
     };
+    getCurrentUser();
+  }, []);
 
-    fetchAssignedMachines();
-  }, [discoveredMachines]);
+  // Filter machines assigned to current artist
+  const assignedMachines = discoveredMachines.filter(machine => 
+    machine.assigned_to === currentUser
+  );
 
-  const handleConnect = async (machine: ArtistMachine) => {
-    if (!machine.dcv_connection_url) return;
-    
-    try {
-      await connectToVM(machine.id, machine.dcv_connection_url);
-    } catch (error) {
-      console.error('Connection failed:', error);
-    }
-  };
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const getTaskProgress = (task: ArtistTask) => {
+    if (!task.estimated_hours) return 0;
+    return Math.min((task.actual_hours / task.estimated_hours) * 100, 100);
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500 text-white';
-      case 'offline': return 'bg-gray-500 text-white';
-      case 'maintenance': return 'bg-red-500 text-white';
-      default: return 'bg-gray-400 text-white';
+    switch (status.toLowerCase()) {
+      case 'active':
+      case 'in_progress':
+        return 'bg-blue-500';
+      case 'completed':
+        return 'bg-green-500';
+      case 'on_hold':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading your assigned machines...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">My Assigned Machines</h2>
-          <p className="text-gray-400">Connect to your assigned workstations and manage your tasks</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-green-400" />
-          <span className="text-green-400 text-sm">
-            {assignedMachines.filter(m => m.status === 'online').length} online
-          </span>
+          <h2 className="text-2xl font-bold text-white">My Assigned Machines & Tasks</h2>
+          <p className="text-gray-400">Work on your assigned tasks using secure, isolated machines</p>
         </div>
       </div>
 
-      {/* Active Session Alert */}
-      {assignedMachines.some(m => m.session_info?.active) && (
-        <Alert className="bg-blue-900/20 border-blue-700">
-          <Activity className="h-4 w-4" />
-          <AlertDescription className="text-blue-300">
-            You have an active DCV session running. Remember to save your work regularly.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {assignedMachines.map((machine) => (
-          <Card key={machine.id} className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg text-white">{machine.name}</CardTitle>
-                  <p className="text-sm text-gray-400">{machine.ip_address}</p>
-                </div>
-                <Badge className={getStatusColor(machine.status)}>
-                  {machine.status}
-                </Badge>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Monitor className="h-5 w-5 text-blue-400" />
+              <div>
+                <p className="text-sm text-gray-400">Assigned Machines</p>
+                <p className="text-2xl font-bold text-white">{assignedMachines.length}</p>
               </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {/* Machine Specifications */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Cpu className="h-4 w-4" />
-                  <span>{machine.capabilities.cpu_cores} cores</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <HardDrive className="h-4 w-4" />
-                  <span>{machine.capabilities.total_ram_gb} GB RAM</span>
-                </div>
-                {machine.capabilities.gpu_model && (
-                  <div className="flex items-center gap-2 text-gray-300 col-span-2">
-                    <Zap className="h-4 w-4" />
-                    <span>{machine.capabilities.gpu_model}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-green-400" />
+              <div>
+                <p className="text-sm text-gray-400">Active Tasks</p>
+                <p className="text-2xl font-bold text-white">{assignedTasks.filter(t => t.status === 'active').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-purple-400" />
+              <div>
+                <p className="text-sm text-gray-400">Completed Tasks</p>
+                <p className="text-2xl font-bold text-white">{assignedTasks.filter(t => t.status === 'completed').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-yellow-400" />
+              <div>
+                <p className="text-sm text-gray-400">Total Hours</p>
+                <p className="text-2xl font-bold text-white">
+                  {assignedTasks.reduce((sum, task) => sum + task.actual_hours, 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="machines" className="space-y-6">
+        <TabsList className="bg-gray-800 border-gray-700">
+          <TabsTrigger value="machines" className="data-[state=active]:bg-gray-700">
+            My Machines ({assignedMachines.length})
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="data-[state=active]:bg-gray-700">
+            My Tasks ({assignedTasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="data-mounts" className="data-[state=active]:bg-gray-700">
+            Show Data Access
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="machines" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {assignedMachines.map((machine) => (
+              <Card key={machine.ip_address} className="bg-gray-800 border-gray-700">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg text-white">{machine.name}</CardTitle>
+                    <Badge className={
+                      machine.status === 'online' ? 'bg-green-500' :
+                      machine.status === 'busy' ? 'bg-blue-500' :
+                      'bg-gray-500'
+                    }>
+                      {machine.status}
+                    </Badge>
                   </div>
-                )}
-              </div>
-
-              {/* Task Assignment */}
-              {machine.assignment?.task_id && (
-                <div className="p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="text-white font-medium">{machine.assignment.task_name}</h4>
-                      <p className="text-xs text-gray-400">Task ID: {machine.assignment.task_id}</p>
+                  <p className="text-sm text-gray-400">{machine.ip_address}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-gray-300">
+                      CPU: {machine.capabilities.cpu_cores} cores
                     </div>
-                    {machine.assignment.deadline && (
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400">Deadline</p>
-                        <p className="text-sm text-yellow-400">
-                          {new Date(machine.assignment.deadline).toLocaleDateString()}
-                        </p>
+                    <div className="text-gray-300">
+                      RAM: {machine.capabilities.total_ram_gb} GB
+                    </div>
+                    {machine.capabilities.gpu_model && (
+                      <div className="text-gray-300 col-span-2">
+                        GPU: {machine.capabilities.gpu_model}
                       </div>
                     )}
                   </div>
-                  
-                  {machine.assignment.estimated_hours && (
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <Clock className="h-4 w-4" />
-                      <span>Estimated: {machine.assignment.estimated_hours} hours</span>
-                    </div>
-                  )}
 
-                  {machine.assignment.notes && (
-                    <div className="mt-2 p-2 bg-gray-600 rounded text-sm">
-                      <div className="flex items-start gap-2">
-                        <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-gray-300">{machine.assignment.notes}</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>CPU Usage</span>
+                      <span>{machine.utilization.cpu_percent}%</span>
+                    </div>
+                    <Progress value={machine.utilization.cpu_percent} className="h-1" />
+                    
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Memory Usage</span>
+                      <span>{machine.utilization.memory_percent}%</span>
+                    </div>
+                    <Progress value={machine.utilization.memory_percent} className="h-1" />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm flex items-center justify-center gap-1">
+                      <ExternalLink className="h-4 w-4" />
+                      Connect
+                    </button>
+                    <button className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm flex items-center justify-center gap-1">
+                      <Activity className="h-4 w-4" />
+                      Monitor
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {assignedMachines.length === 0 && (
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-8 text-center">
+                <Monitor className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-gray-400 text-lg mb-2">No Assigned Machines</h3>
+                <p className="text-gray-500">Contact your studio manager to get machine assignments for your tasks.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-4">
+          <div className="grid gap-4">
+            {assignedTasks.map((task) => {
+              const progressPercent = getTaskProgress(task);
+              
+              return (
+                <Card key={task.id} className="bg-gray-800 border-gray-700">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-blue-400" />
+                        <div>
+                          <h3 className="text-white font-medium">{task.name}</h3>
+                          <p className="text-sm text-gray-400">
+                            {task.show_name} - {task.project_name}
+                          </p>
+                        </div>
                       </div>
+                      <Badge className={getStatusColor(task.status)}>
+                        {task.status}
+                      </Badge>
                     </div>
-                  )}
-                </div>
-              )}
+                    
+                    {task.description && (
+                      <p className="text-sm text-gray-300 mb-3">{task.description}</p>
+                    )}
 
-              {/* Session Information */}
-              {machine.session_info?.active && (
-                <div className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <PlayCircle className="h-4 w-4 text-green-400" />
-                    <span className="text-green-400 font-medium">Active Session</span>
-                  </div>
-                  <div className="text-sm text-gray-300">
-                    <p>Started: {new Date(machine.session_info.start_time!).toLocaleTimeString()}</p>
-                    <p>Duration: {formatDuration(machine.session_info.duration_minutes!)}</p>
-                  </div>
-                </div>
-              )}
+                    {task.machine_ip && (
+                      <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                        <Monitor className="h-4 w-4" />
+                        <span>Machine: {task.machine_ip}</span>
+                      </div>
+                    )}
 
-              {/* Software Available */}
-              <div>
-                <p className="text-sm text-gray-400 mb-2">Available Software:</p>
-                <div className="flex flex-wrap gap-1">
-                  {machine.capabilities.software_installed.map((software, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {software}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+                    {task.estimated_hours && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Progress</span>
+                          <span className="text-white">
+                            {task.actual_hours}h / {task.estimated_hours}h
+                          </span>
+                        </div>
+                        <Progress value={progressPercent} className="h-2" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            
+            {assignedTasks.length === 0 && (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-gray-400 text-lg mb-2">No Assigned Tasks</h3>
+                  <p className="text-gray-500">Tasks will appear here when assigned by your studio.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
 
-              {/* DCV Connection */}
-              <DCVConnectionStatus
-                vmId={machine.id}
-                vmStatus={machine.status}
-                dcvUrl={machine.dcv_connection_url || null}
-                onConnect={() => handleConnect(machine)}
-              />
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
-                {machine.status === 'online' && machine.dcv_connection_url && (
-                  <Button 
-                    onClick={() => handleConnect(machine)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Connect to Desktop
-                  </Button>
-                )}
-                
-                {machine.session_info?.active && (
-                  <Button variant="outline" size="sm">
-                    <PauseCircle className="h-4 w-4 mr-1" />
-                    Pause
-                  </Button>
-                )}
-              </div>
+        <TabsContent value="data-mounts">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
+              <h3 className="text-white text-lg mb-2">Secure Show Data Access</h3>
+              <p className="text-gray-400">
+                Show data is securely mounted on your assigned machines. All work remains isolated and secure.
+              </p>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {assignedMachines.length === 0 && (
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-12 text-center">
-            <Monitor className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-gray-400 text-xl mb-2">No Machines Assigned</h3>
-            <p className="text-gray-500 mb-4">
-              You don't have any machines assigned to you yet. 
-              Contact your studio manager to get machine access.
-            </p>
-            <Alert className="bg-blue-900/20 border-blue-700 text-left max-w-md mx-auto">
-              <Info className="h-4 w-4" />
-              <AlertDescription className="text-blue-300">
-                Once assigned, your machines will appear here with connection details and task information.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
